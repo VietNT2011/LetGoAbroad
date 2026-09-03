@@ -1,0 +1,17 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/TestResults/
+.vs/
+.idea/
+.env
+*.db
+*.db-shm
+*.db-wal
+*.user
+artifacts/
+work/
+!docs/workflows/
+web/.env.local
+**/appsettings.Local.json

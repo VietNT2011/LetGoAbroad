@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/EnglishHub.Domain/EnglishHub.Domain.csproj" />
+    <Project Path="src/EnglishHub.Application/EnglishHub.Application.csproj" />
+    <Project Path="src/EnglishHub.Infrastructure/EnglishHub.Infrastructure.csproj" />
+    <Project Path="src/EnglishHub.Api/EnglishHub.Api.csproj" />
+    <Project Path="src/EnglishHub.Worker/EnglishHub.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/"><Project Path="tests/EnglishHub.Tests/EnglishHub.Tests.csproj" /></Folder>
+</Solution>

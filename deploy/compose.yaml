@@ -1,0 +1,33 @@
+name: englishhub
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-CU22-ubuntu-22.04
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run scripts/start-infra.ps1 first}
+      MSSQL_PID: Developer
+    ports: ['127.0.0.1:14333:1433']
+    volumes: [sql-data:/var/opt/mssql]
+    healthcheck:
+      test: ['CMD-SHELL', '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" -b -o /dev/null']
+      interval: 10s
+      retries: 20
+      start_period: 30s
+    mem_limit: 3g
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+    command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    ports: ['127.0.0.1:10000:10000']
+    volumes: [blob-data:/data]
+  redis:
+    image: redis:7.4.2-alpine
+    profiles: [social]
+    ports: ['127.0.0.1:16379:6379']
+  livekit:
+    image: livekit/livekit-server:v1.9.3
+    profiles: [calls]
+    command: --dev --bind 0.0.0.0
+    ports: ['127.0.0.1:7880:7880', '7881:7881', '7882:7882/udp']
+volumes:
+  sql-data:
+  blob-data:
