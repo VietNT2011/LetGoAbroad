@@ -14,4 +14,5 @@ artifacts/
 work/
 !docs/workflows/
 web/.env.local
+*.tsbuildinfo
 **/appsettings.Local.json

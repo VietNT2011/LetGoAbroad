@@ -1,15 +1,52 @@
 using EnglishHub.Application;
 using EnglishHub.Domain;
 using Microsoft.AspNetCore.Diagnostics;
+using EnglishHub.Api.Endpoints;
+using EnglishHub.Infrastructure;
+using EnglishHub.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Antiforgery;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<IClock, SystemClock>();
+builder.Services.AddEnglishHub(builder.Configuration);
+builder.Services.AddAuthorization();
+builder.Services.AddAntiforgery(o => o.HeaderName = "X-CSRF-TOKEN");
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower)));
+builder.Services.AddRateLimiter(o => o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "local", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
 builder.Services.AddOpenApi();
 builder.Services.AddHealthChecks();
 var app = builder.Build();
 app.UseExceptionHandler();
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+// VI: Mọi thao tác ghi browser đều cần CSRF, kể cả login. EN: Every unsafe browser API request, including login, needs an antiforgery token.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/api") && !HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method) && !HttpMethods.IsOptions(context.Request.Method))
+    {
+        try { await context.RequestServices.GetRequiredService<IAntiforgery>().ValidateRequestAsync(context); }
+        catch (AntiforgeryValidationException) { await Results.Problem(statusCode: 400, title: "invalid_csrf", extensions: new Dictionary<string, object?> { ["code"] = "invalid_csrf" }).ExecuteAsync(context); return; }
+    }
+    await next(context);
+});
+if (app.Configuration.GetValue<bool>("Database:Initialize"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<HubDbContext>();
+    if (db.Database.IsSqlite()) await db.Database.EnsureCreatedAsync();
+    else await db.Database.MigrateAsync();
+    if (app.Configuration.GetValue<bool>("Seed:Demo") && !app.Environment.IsProduction())
+        await DemoSeed.Run(db, scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>());
+}
+app.MapIdentity();
+app.MapContent();
 app.MapHealthChecks("/health/live");
 app.MapOpenApi();
 app.MapGet("/api/v1/status", () => new { name = "EnglishHub", version = "0.1.0", aiEnabled = false });

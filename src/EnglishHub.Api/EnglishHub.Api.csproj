@@ -2,5 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="../EnglishHub.Infrastructure/EnglishHub.Infrastructure.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14"><PrivateAssets>all</PrivateAssets></PackageReference>
   </ItemGroup>
 </Project>

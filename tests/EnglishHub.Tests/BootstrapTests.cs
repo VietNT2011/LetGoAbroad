@@ -9,7 +9,7 @@ public sealed class BootstrapTests
     [InlineData("/openapi/v1.json")]
     public async Task Host_exposes_health_and_contract(string route)
     {
-        await using var app = new WebApplicationFactory<Program>();
+        await using var app = new TestApp();
         using var response = await app.CreateClient().GetAsync(route);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
