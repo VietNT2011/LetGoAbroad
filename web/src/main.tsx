@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { BookOpen, ArrowUpRight } from 'lucide-react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, AuthPage, RequireAuth } from './Auth';
+import { Layout } from './Layout';
+import { Dashboard, Catalog } from './pages/Catalog';
+import { Loading } from './hooks';
 import './styles.css';
 
-// VI: Shell khởi đầu, các màn hình gọi API được bổ sung theo milestone. EN: The initial shell grows with verified API milestones.
+const Lesson = lazy(() => import('./pages/Lesson'));
+// VI: Không giả chức năng chưa triển khai. EN: Pending screens explicitly describe their implementation status.
+function Pending() { return <div className="empty"><h2>Từng bước, mình tiến lên.</h2><p>Tính năng này đang được triển khai theo đặc tả.</p></div>; }
 function App() {
-  return <main className="welcome"><span className="brand"><BookOpen size={25}/> englishhub<span className="dot">.</span></span><span className="eyebrow">A LITTLE EVERY DAY. A WORLD OF DIFFERENCE.</span><h1>Your next chapter<br/>starts <em>today.</em></h1><p>Một lộ trình rõ ràng. Một chút tiến bộ mỗi ngày.<br/>Cùng mở ra thế giới của bạn với tiếng Anh.</p><a className="primary" href="/dashboard">Bắt đầu học <ArrowUpRight size={18}/></a><p className="muted">Không cần AI · Học thật, tiến bộ thật</p></main>;
+  return <AuthProvider><Suspense fallback={<Loading/>}><Routes><Route path="/" element={<Navigate to="/dashboard" replace/>}/>{(['login','register','forgot-password','reset-password','verify-email'] as const).map(mode => <Route key={mode} path={`/${mode}`} element={<AuthPage mode={mode}/>}/>)}<Route element={<RequireAuth><Layout/></RequireAuth>}><Route path="/dashboard" element={<Dashboard/>}/><Route path="/catalog" element={<Catalog/>}/><Route path="/tests" element={<Catalog tests/>}/><Route path="/learn/:id" element={<Lesson/>}/>{['paths','tests/:id','attempts/:id','settings','vocabulary','groups','admin'].map(path => <Route key={path} path={path} element={<Pending/>}/>)}</Route><Route path="*" element={<div className="empty"><h1>Không tìm thấy trang.</h1><a href="/dashboard">Trở về không gian học tập →</a></div>}/></Routes></Suspense></AuthProvider>;
 }
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><BrowserRouter><App/></BrowserRouter></React.StrictMode>);
