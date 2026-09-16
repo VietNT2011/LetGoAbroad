@@ -22,6 +22,134 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("EnglishHub.Domain.Attempt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("DeadlineAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentVersionId");
+
+                    b.HasIndex("UserId", "StartedAt", "Id");
+
+                    b.ToTable("Attempts");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.AttemptItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AcceptedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("OptionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid?>("SelectedOptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Stimulus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttemptId", "Order")
+                        .IsUnique();
+
+                    b.HasIndex("AttemptId", "QuestionId")
+                        .IsUnique();
+
+                    b.HasIndex("QuestionId", "SelectedOptionId");
+
+                    b.ToTable("AttemptItems");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.AttemptResult", b =>
+                {
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BlankCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CorrectCount")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("FinalizedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("ListeningRaw")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReadingRaw")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ScoreCalculationVersion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("AttemptId");
+
+                    b.ToTable("AttemptResults");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.AuditEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -45,6 +173,46 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("AuditEntries");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.CommandReceipt", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CommandId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PayloadHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ResponseJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Scope", "CommandId")
+                        .IsUnique();
+
+                    b.ToTable("CommandReceipts");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.ContentRoot", b =>
@@ -142,6 +310,70 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("ContentVersions");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.GradingKey", b =>
+                {
+                    b.Property<Guid>("AttemptItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CorrectOptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Explanation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("GradingPolicyVersion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Part")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Skill")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AttemptItemId");
+
+                    b.ToTable("GradingKey");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.OutboxEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AggregateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProcessedAt", "OccurredAt");
+
+                    b.ToTable("OutboxEvents");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
                 {
                     b.Property<Guid>("Id")
@@ -218,8 +450,6 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("QuestionId");
 
                     b.ToTable("QuestionOptions");
                 });
@@ -470,6 +700,57 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.Attempt", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ContentVersion", "ContentVersion")
+                        .WithMany()
+                        .HasForeignKey("ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.AttemptItem", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.Attempt", "Attempt")
+                        .WithMany("Items")
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.QuestionOption", null)
+                        .WithMany()
+                        .HasForeignKey("QuestionId", "SelectedOptionId")
+                        .HasPrincipalKey("QuestionId", "Id")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Attempt");
+
+                    b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.AttemptResult", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.Attempt", null)
+                        .WithOne("Result")
+                        .HasForeignKey("EnglishHub.Domain.AttemptResult", "AttemptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.ContentRoot", b =>
                 {
                     b.HasOne("EnglishHub.Domain.ContentVersion", "CurrentPublishedVersion")
@@ -490,6 +771,15 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Root");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.GradingKey", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.AttemptItem", null)
+                        .WithOne("GradingKey")
+                        .HasForeignKey("EnglishHub.Domain.GradingKey", "AttemptItemId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
@@ -573,6 +863,19 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.Attempt", b =>
+                {
+                    b.Navigation("Items");
+
+                    b.Navigation("Result");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.AttemptItem", b =>
+                {
+                    b.Navigation("GradingKey")
                         .IsRequired();
                 });
 

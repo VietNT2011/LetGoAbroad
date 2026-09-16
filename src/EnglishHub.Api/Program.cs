@@ -47,6 +47,7 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
 }
 app.MapIdentity();
 app.MapContent();
+app.MapAssessment();
 app.MapHealthChecks("/health/live");
 app.MapOpenApi();
 app.MapGet("/api/v1/status", () => new { name = "EnglishHub", version = "0.1.0", aiEnabled = false });
