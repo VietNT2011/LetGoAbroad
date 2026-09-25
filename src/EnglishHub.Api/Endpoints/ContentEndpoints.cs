@@ -20,7 +20,8 @@ public static class ContentEndpoints
         }).WithTags("Content");
         app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, HubDbContext db) =>
         {
-            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new { x.Id, x.Title, x.Summary, x.Body, x.Skill, x.Minutes, x.Attribution, x.Version }).SingleOrDefaultAsync();
+            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new { x.Id, x.Title, x.Summary, x.Body, x.Skill, x.Minutes, x.Attribution, x.Version,
+                quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, options = q.Options.Select(o => new { o.Id, o.Text }) }) }).SingleOrDefaultAsync();
             return lesson is null ? Results.NotFound() : Results.Ok(lesson);
         }).RequireAuthorization().WithTags("Content");
         var admin = app.MapGroup("/api/v1/admin").RequireAuthorization(p => p.RequireRole("Admin", "ContentEditor")).WithTags("CMS");

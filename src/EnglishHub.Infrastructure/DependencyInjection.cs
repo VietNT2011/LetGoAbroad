@@ -2,6 +2,7 @@ using EnglishHub.Application;
 using EnglishHub.Infrastructure.Content;
 using EnglishHub.Infrastructure.Identity;
 using EnglishHub.Infrastructure.Assessment;
+using EnglishHub.Infrastructure.Learning;
 using EnglishHub.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,7 @@ public static class DependencyInjection
         services.AddScoped<MailDispatcher>();
         services.AddScoped<Receipts>();
         services.AddScoped<AssessmentService>();
+        services.AddScoped<LearningService>();
         return services;
     }
 }

@@ -5,6 +5,7 @@ import { AuthProvider, AuthPage, RequireAuth } from './Auth';
 import { Layout } from './Layout';
 import { Dashboard, Catalog } from './pages/Catalog';
 import { Loading } from './hooks';
+import { PathsPage, SettingsPage } from './pages/Learning';
 import './styles.css';
 
 const Lesson = lazy(() => import('./pages/Lesson'));
@@ -21,7 +22,8 @@ function App() {
       <Route path="/dashboard" element={<Dashboard/>}/><Route path="/catalog" element={<Catalog/>}/><Route path="/tests" element={<Catalog tests/>}/>
       <Route path="/learn/:id" element={<Lesson/>}/><Route path="/tests/:id" element={<TestIntro/>}/>
       <Route path="/attempts/:id" element={<AttemptPage/>}/><Route path="/attempts/:id/result" element={<ResultPage/>}/>
-      {['paths','settings','vocabulary','groups','admin'].map(path => <Route key={path} path={path} element={<Pending/>}/>)}
+      <Route path="/paths" element={<PathsPage/>}/><Route path="/settings" element={<SettingsPage/>}/>
+      {['vocabulary','groups','admin'].map(path => <Route key={path} path={path} element={<Pending/>}/>)}
     </Route>
     <Route path="*" element={<div className="empty"><h1>Không tìm thấy trang.</h1><a href="/dashboard">Trở về không gian học tập →</a></div>}/>
   </Routes></Suspense></AuthProvider>;

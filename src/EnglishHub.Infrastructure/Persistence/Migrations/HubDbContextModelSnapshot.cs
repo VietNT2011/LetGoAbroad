@@ -261,6 +261,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("CurriculumOrder")
+                        .HasColumnType("int");
+
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("int");
 
@@ -310,6 +313,115 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("ContentVersions");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.DailyTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("EnrollmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("EstimatedMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("LocalDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ReasonText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SlotKey")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentVersionId");
+
+                    b.HasIndex("EnrollmentId", "UserId");
+
+                    b.HasIndex("EnrollmentId", "LocalDate", "SlotKey")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "LocalDate", "Status");
+
+                    b.ToTable("DailyTasks");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.Enrollment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("MinutesPerDay")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlanRevision")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("RuleVersion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TargetScore")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("Enrollments");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.GradingKey", b =>
                 {
                     b.Property<Guid>("AttemptItemId")
@@ -335,6 +447,37 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasKey("AttemptItemId");
 
                     b.ToTable("GradingKey");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.LessonProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentVersionId");
+
+                    b.HasIndex("UserId", "ContentVersionId")
+                        .IsUnique();
+
+                    b.ToTable("LessonProgress");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.OutboxEvent", b =>
@@ -452,6 +595,40 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("QuestionOptions");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.TaskCompletion", b =>
+                {
+                    b.Property<Guid>("DailyTaskId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("LessonProgressId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("LocalDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("DailyTaskId");
+
+                    b.HasIndex("AttemptId");
+
+                    b.HasIndex("LessonProgressId");
+
+                    b.ToTable("TaskCompletions", t =>
+                        {
+                            t.HasCheckConstraint("CK_TaskCompletion_OneSource", "([LessonProgressId] IS NOT NULL AND [AttemptId] IS NULL) OR ([LessonProgressId] IS NULL AND [AttemptId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("EnglishHub.Infrastructure.Identity.DevMail", b =>
@@ -773,6 +950,35 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Navigation("Root");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.DailyTask", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ContentVersion", "ContentVersion")
+                        .WithMany()
+                        .HasForeignKey("ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.Enrollment", "Enrollment")
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
+
+                    b.Navigation("Enrollment");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.Enrollment", b =>
+                {
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.GradingKey", b =>
                 {
                     b.HasOne("EnglishHub.Domain.AttemptItem", null)
@@ -780,6 +986,23 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("EnglishHub.Domain.GradingKey", "AttemptItemId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.LessonProgress", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ContentVersion", "ContentVersion")
+                        .WithMany()
+                        .HasForeignKey("ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
@@ -813,6 +1036,25 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.TaskCompletion", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.Attempt", null)
+                        .WithMany()
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.DailyTask", null)
+                        .WithOne()
+                        .HasForeignKey("EnglishHub.Domain.TaskCompletion", "DailyTaskId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.LessonProgress", null)
+                        .WithMany()
+                        .HasForeignKey("LessonProgressId")
+                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

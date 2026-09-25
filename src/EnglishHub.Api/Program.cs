@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEnglishHub(builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddAntiforgery(o => o.HeaderName = "X-CSRF-TOKEN");
-builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower)));
+builder.Services.ConfigureHttpJsonOptions(o => { o.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower)); o.SerializerOptions.RespectNullableAnnotations = true; o.SerializerOptions.RespectRequiredConstructorParameters = true; });
 builder.Services.AddRateLimiter(o => o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(ctx.Connection.RemoteIpAddress?.ToString() ?? "local", _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<BusinessExceptionHandler>();
@@ -43,11 +43,15 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
     if (db.Database.IsSqlite()) await db.Database.EnsureCreatedAsync();
     else await db.Database.MigrateAsync();
     if (app.Configuration.GetValue<bool>("Seed:Demo") && !app.Environment.IsProduction())
+    {
         await DemoSeed.Run(db, scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>());
+        await DemoLearningSeed.Ensure(db);
+    }
 }
 app.MapIdentity();
 app.MapContent();
 app.MapAssessment();
+app.MapLearning();
 app.MapHealthChecks("/health/live");
 app.MapOpenApi();
 app.MapGet("/api/v1/status", () => new { name = "EnglishHub", version = "0.1.0", aiEnabled = false });
