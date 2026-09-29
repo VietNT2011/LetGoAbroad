@@ -10,9 +10,10 @@ public sealed record QuestionInput(string Prompt, string Skill, string Explanati
 public sealed record GroupInput(int Part, string Stimulus, QuestionInput[] Questions);
 public sealed record ContentInput(string Title, string Summary, string Body, string Skill, int Minutes, int DurationSeconds, bool IsFixture, string Attribution, GroupInput[] Groups);
 public sealed record CreateContentInput(string Slug, ContentKind Kind, ContentInput Content);
+public sealed record ImportInput(Guid ClientRequestId, CreateContentInput[] Items);
 
 /// <summary>VI: CMS chỉ tạo bản mới, không sửa payload đã publish. EN: CMS writes drafts; publishing freezes their question and answer graph.</summary>
-public sealed class ContentService(HubDbContext db, Transactions tx, IClock clock)
+public sealed class ContentService(HubDbContext db, Transactions tx, IClock clock, Receipts receipts)
 {
     public IQueryable<ContentVersion> FullVersions => db.ContentVersions.Include(x => x.Root).Include(x => x.Groups).ThenInclude(x => x.Questions).ThenInclude(x => x.Options);
 
@@ -27,13 +28,62 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         return version;
     });
 
-    public Task<ContentVersion> NewVersion(Guid rootId, ContentInput input, Guid actor) => tx.Run($"content:{rootId}", async () =>
+    public Task<ContentVersion> NewVersion(Guid rootId, ContentInput input, Guid actor) => tx.Run("catalog", async () =>
     {
         DomainError.Require(await db.ContentRoots.AnyAsync(x => x.Id == rootId), 404, "content_not_found", "Không tìm thấy nội dung.");
         var number = await db.ContentVersions.Where(x => x.RootId == rootId).MaxAsync(x => x.Version) + 1;
         var version = MakeVersion(rootId, number, input);
         db.ContentVersions.Add(version); Audit(actor, "content.version_created", version.Id);
         return version;
+    });
+
+    /// <summary>VI: Chỉ draft được sửa; xóa graph nháp theo thứ tự FK. EN: Only drafts are editable; replace draft children in foreign-key order.</summary>
+    public Task<ContentVersion> UpdateDraft(Guid id, ContentInput input, string? etag, Guid actor) => tx.Run("catalog", async () =>
+    {
+        var v = await FullVersions.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy bản nháp.");
+        Etags.Check(v, etag); DomainError.Require(v.Status == PublicationStatus.Draft, 409, "immutable_version", "Hãy tạo version mới để sửa nội dung đã publish.");
+        var replacement = MakeVersion(v.RootId, v.Version, input);
+        db.QuestionOptions.RemoveRange(v.Groups.SelectMany(g => g.Questions).SelectMany(q => q.Options));
+        db.Questions.RemoveRange(v.Groups.SelectMany(g => g.Questions)); db.QuestionGroups.RemoveRange(v.Groups);
+        await db.SaveChangesAsync();
+        v.Title = replacement.Title; v.Summary = replacement.Summary; v.Body = replacement.Body; v.Skill = replacement.Skill;
+        v.Minutes = replacement.Minutes; v.DurationSeconds = replacement.DurationSeconds; v.IsFixture = replacement.IsFixture; v.Attribution = replacement.Attribution;
+        v.Groups = replacement.Groups;
+        Audit(actor, "content.draft_updated", id); return v;
+    });
+
+    public Task Archive(Guid id, string? etag, Guid actor) => tx.Run("catalog", async () =>
+    {
+        var v = await db.ContentVersions.Include(x => x.Root).SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
+        Etags.Check(v, etag); v.Status = PublicationStatus.Archived;
+        if (v.Root.CurrentPublishedVersionId == id) v.Root.CurrentPublishedVersionId = null;
+        Audit(actor, "content.archived", id); return true;
+    });
+
+    public static object DryRun(CreateContentInput[] items)
+    {
+        DomainError.Require(items.Length is >= 1 and <= 20, 422, "invalid_import_size", "Một import gồm 1–20 nội dung.");
+        return new { rows = items.Select((item,index) =>
+        {
+            try { var version = MakeVersion(Guid.NewGuid(),1,item.Content); version.Root = new ContentRoot { Kind = item.Kind }; Validate(version); return new { index, valid = true, code = (string?)null, message = (string?)null }; }
+            catch (DomainError error) { return new { index, valid = false, code = (string?)error.Code, message = (string?)error.Message }; }
+        }).ToArray() };
+    }
+
+    public Task<Guid[]> Import(ImportInput input, Guid actor) => tx.Run("catalog", async () =>
+    {
+        var hash = Receipts.Hash(input); var duplicate = await receipts.Find(actor, "content-import", input.ClientRequestId, hash);
+        if (duplicate is not null) return System.Text.Json.JsonSerializer.Deserialize<Guid[]>(duplicate.ResponseJson)!;
+        DomainError.Require(input.Items.Length is >= 1 and <= 20 && input.Items.Select(x => x.Slug).Distinct().Count() == input.Items.Length, 422, "invalid_import_size", "Cần 1–20 slug duy nhất.");
+        var ids = new List<Guid>();
+        foreach (var item in input.Items)
+        {
+            DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug,"^[a-z0-9-]{3,120}$"),422,"invalid_slug","Slug không hợp lệ.");
+            DomainError.Require(!await db.ContentRoots.AnyAsync(x => x.Slug == item.Slug),409,"slug_exists","Import xung đột slug đã tồn tại.");
+            var root = new ContentRoot { Kind = item.Kind, Slug = item.Slug }; var version = MakeVersion(root.Id,1,item.Content); version.Root = root; Validate(version);
+            db.ContentRoots.Add(root); db.ContentVersions.Add(version); ids.Add(version.Id); Audit(actor,"content.imported",version.Id);
+        }
+        receipts.Save(actor,"content-import",input.ClientRequestId,hash,input.ClientRequestId,ids.ToArray()); return ids.ToArray();
     });
 
     public Task<ContentVersion> Publish(Guid id, string? etag, Guid actor) => tx.Run("catalog", async () =>

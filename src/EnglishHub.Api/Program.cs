@@ -42,6 +42,10 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
     var db = scope.ServiceProvider.GetRequiredService<HubDbContext>();
     if (db.Database.IsSqlite()) await db.Database.EnsureCreatedAsync();
     else await db.Database.MigrateAsync();
+    // VI: Role hệ thống cần tồn tại cả khi không dùng demo seed. EN: Registration roles must exist even when demo accounts are disabled.
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+    foreach (var role in new[] { "Learner", "ContentEditor", "Admin" })
+        if (!await roleManager.RoleExistsAsync(role)) await roleManager.CreateAsync(new IdentityRole<Guid>(role));
     if (app.Configuration.GetValue<bool>("Seed:Demo") && !app.Environment.IsProduction())
     {
         await DemoSeed.Run(db, scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>());

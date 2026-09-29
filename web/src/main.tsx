@@ -12,6 +12,7 @@ const Lesson = lazy(() => import('./pages/Lesson'));
 const TestIntro = lazy(() => import('./pages/Assessment').then(m => ({ default: m.TestIntro })));
 const AttemptPage = lazy(() => import('./pages/Assessment').then(m => ({ default: m.AttemptPage })));
 const ResultPage = lazy(() => import('./pages/Assessment').then(m => ({ default: m.ResultPage })));
+const AdminPage = lazy(() => import('./pages/Admin'));
 // VI: Không giả chức năng chưa triển khai. EN: Pending screens explicitly describe their implementation status.
 function Pending() { return <div className="empty"><h2>Từng bước, mình tiến lên.</h2><p>Tính năng này đang được triển khai theo đặc tả.</p></div>; }
 function App() {
@@ -23,7 +24,8 @@ function App() {
       <Route path="/learn/:id" element={<Lesson/>}/><Route path="/tests/:id" element={<TestIntro/>}/>
       <Route path="/attempts/:id" element={<AttemptPage/>}/><Route path="/attempts/:id/result" element={<ResultPage/>}/>
       <Route path="/paths" element={<PathsPage/>}/><Route path="/settings" element={<SettingsPage/>}/>
-      {['vocabulary','groups','admin'].map(path => <Route key={path} path={path} element={<Pending/>}/>)}
+      <Route path="/admin" element={<AdminPage/>}/>
+      {['vocabulary','groups'].map(path => <Route key={path} path={path} element={<Pending/>}/>)}
     </Route>
     <Route path="*" element={<div className="empty"><h1>Không tìm thấy trang.</h1><a href="/dashboard">Trở về không gian học tập →</a></div>}/>
   </Routes></Suspense></AuthProvider>;
