@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from './api';
 /** VI: Hủy request cũ để tránh ghi đè dữ liệu mới. EN: Abort obsolete requests so stale responses cannot overwrite the new view. */
-export function useResource<T>(path: string) {
+export function useResource<T>(path: string | null) {
   const [data, setData] = useState<T>(); const [error, setError] = useState<Error>(); const [loading, setLoading] = useState(true); const [revision, setRevision] = useState(0);
   useEffect(() => {
+    if (!path) { setLoading(false); return; }
     const abort = new AbortController(); setLoading(true); setError(undefined); setData(undefined);
     api<T>(path, { signal: abort.signal }).then(result => { if (!abort.signal.aborted) setData(result); }).catch(e => { if (!abort.signal.aborted) setError(e); }).finally(() => { if (!abort.signal.aborted) setLoading(false); });
     return () => abort.abort();

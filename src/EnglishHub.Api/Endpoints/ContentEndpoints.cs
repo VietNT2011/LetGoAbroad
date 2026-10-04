@@ -20,7 +20,7 @@ public static class ContentEndpoints
         }).WithTags("Content");
         app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, HubDbContext db) =>
         {
-            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new { x.Id, x.Title, x.Summary, x.Body, x.Skill, x.Minutes, x.Attribution, x.Version,
+            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new { x.Id, x.Title, x.Summary, x.Body, x.Skill, x.Minutes, x.Attribution, x.Version, x.MediaAssetId,
                 quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, options = q.Options.Select(o => new { o.Id, o.Text }) }) }).SingleOrDefaultAsync();
             return lesson is null ? Results.NotFound() : Results.Ok(lesson);
         }).RequireAuthorization().WithTags("Content");
@@ -29,7 +29,7 @@ public static class ContentEndpoints
         admin.MapGet("/versions/{id:guid}", async (Guid id, ContentService service) =>
         {
             var v = await service.FullVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
-            return new { v.Id, v.RootId, v.Title, v.Summary, v.Body, v.Skill, v.Minutes, v.DurationSeconds, v.IsFixture, v.Attribution, v.Version, v.Status, etag = Etags.Of(v), groups = v.Groups.OrderBy(x => x.Order).Select(g => new { g.Part, g.Stimulus, questions = g.Questions.OrderBy(x => x.Order).Select(q => new { q.Prompt, q.Skill, q.Explanation, options = q.Options.Select(o => new { o.Text, o.IsCorrect }) }) }) };
+            return new { v.Id, v.RootId, v.Title, v.Summary, v.Body, v.Skill, v.Minutes, v.DurationSeconds, v.IsFixture, v.Attribution, v.MediaAssetId, v.Version, v.Status, etag = Etags.Of(v), groups = v.Groups.OrderBy(x => x.Order).Select(g => new { g.Part, g.Stimulus, questions = g.Questions.OrderBy(x => x.Order).Select(q => new { q.Prompt, q.Skill, q.Explanation, options = q.Options.Select(o => new { o.Text, o.IsCorrect }) }) }) };
         });
         admin.MapPost("/content", async (CreateContentInput input, ClaimsPrincipal user, ContentService service) =>
         {

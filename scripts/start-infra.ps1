@@ -8,6 +8,10 @@ if (!(Test-Path -LiteralPath $envFile)) {
     "MSSQL_SA_PASSWORD=Eh_${random}!9a" | Set-Content -LiteralPath $envFile -Encoding utf8
 }
 $composeArgs = @('compose', '--env-file', $envFile, '-f', (Join-Path $repo 'deploy/compose.yaml'))
+if (!(Get-Content -LiteralPath $envFile | Where-Object { $_ -like 'AZURITE_ACCOUNT_KEY=*' })) {
+    $storageKey=[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(64))
+    "AZURITE_ACCOUNT_KEY=$storageKey" | Add-Content -LiteralPath $envFile -Encoding utf8
+}
 if ($Social) { $composeArgs += @('--profile', 'social') }
 if ($Calls) { $composeArgs += @('--profile', 'calls') }
 & docker @composeArgs up -d --wait

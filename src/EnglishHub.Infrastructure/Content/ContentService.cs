@@ -8,7 +8,7 @@ namespace EnglishHub.Infrastructure.Content;
 public sealed record OptionInput(string Text, bool IsCorrect);
 public sealed record QuestionInput(string Prompt, string Skill, string Explanation, OptionInput[] Options);
 public sealed record GroupInput(int Part, string Stimulus, QuestionInput[] Questions);
-public sealed record ContentInput(string Title, string Summary, string Body, string Skill, int Minutes, int DurationSeconds, bool IsFixture, string Attribution, GroupInput[] Groups);
+public sealed record ContentInput(string Title, string Summary, string Body, string Skill, int Minutes, int DurationSeconds, bool IsFixture, string Attribution, GroupInput[] Groups, Guid? MediaAssetId = null);
 public sealed record CreateContentInput(string Slug, ContentKind Kind, ContentInput Content);
 public sealed record ImportInput(Guid ClientRequestId, CreateContentInput[] Items);
 
@@ -48,6 +48,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         await db.SaveChangesAsync();
         v.Title = replacement.Title; v.Summary = replacement.Summary; v.Body = replacement.Body; v.Skill = replacement.Skill;
         v.Minutes = replacement.Minutes; v.DurationSeconds = replacement.DurationSeconds; v.IsFixture = replacement.IsFixture; v.Attribution = replacement.Attribution;
+        v.MediaAssetId = replacement.MediaAssetId;
         v.Groups = replacement.Groups;
         Audit(actor, "content.draft_updated", id); return v;
     });
@@ -92,6 +93,8 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         Etags.Check(v, etag);
         DomainError.Require(v.Status == PublicationStatus.Draft, 409, "immutable_version", "Bản đã publish bất biến; hãy tạo version mới.");
         Validate(v);
+        if (v.MediaAssetId is { } mediaId)
+            DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id==mediaId && x.Status==MediaStatus.Ready && x.Purpose=="lesson_audio"),422,"media_not_ready","Chỉ publish lesson audio đã được worker xác minh Ready.");
         v.Status = PublicationStatus.Published; v.PublishedAt = clock.UtcNow;
         // VI: Lưu version trước con trỏ để thỏa FK vòng. EN: Persist the version before changing the composite publication pointer.
         await db.SaveChangesAsync();
@@ -121,7 +124,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     {
         DomainError.Require(input.Groups.Length <= 200 && input.Title.Length <= 240 && input.Body.Length <= 100000, 422, "content_too_large", "Nội dung vượt giới hạn.");
         return new ContentVersion { RootId = rootId, Version = number, Title = input.Title, Summary = input.Summary, Body = input.Body, Skill = input.Skill,
-            Minutes = input.Minutes, DurationSeconds = input.DurationSeconds, IsFixture = input.IsFixture, Attribution = input.Attribution,
+            Minutes = input.Minutes, DurationSeconds = input.DurationSeconds, IsFixture = input.IsFixture, Attribution = input.Attribution, MediaAssetId = input.MediaAssetId,
             Groups = input.Groups.Select((g, i) => new QuestionGroup { Order = i, Part = g.Part, Stimulus = g.Stimulus,
                 Questions = g.Questions.Select((q, j) => new Question { Order = j, Prompt = q.Prompt, Skill = q.Skill, Explanation = q.Explanation,
                     Options = q.Options.Select(o => new QuestionOption { Text = o.Text, IsCorrect = o.IsCorrect }).ToList() }).ToList() }).ToList() };

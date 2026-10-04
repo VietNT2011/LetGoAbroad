@@ -12,6 +12,6 @@ jobs:
         with:
           node-version: '22'
       - run: dotnet restore --locked-mode
-      - run: dotnet test --no-restore --configuration Release
+      - run: dotnet test --no-restore --configuration Release --filter 'Category!=Storage'
       - run: npm ci && npm run build
         working-directory: web

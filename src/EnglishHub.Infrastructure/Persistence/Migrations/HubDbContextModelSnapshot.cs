@@ -175,6 +175,61 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("AuditEntries");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.BackgroundJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DedupKey")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTimeOffset>("DueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LastErrorCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("LeaseToken")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("LeaseUntil")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DedupKey")
+                        .IsUnique();
+
+                    b.HasIndex("State", "DueAt", "LeaseUntil");
+
+                    b.ToTable("BackgroundJobs");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.CommandReceipt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -270,6 +325,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsFixture")
                         .HasColumnType("bit");
 
+                    b.Property<Guid?>("MediaAssetId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("Minutes")
                         .HasColumnType("int");
 
@@ -306,6 +364,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MediaAssetId");
 
                     b.HasIndex("RootId", "Version")
                         .IsUnique();
@@ -478,6 +538,90 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("LessonProgress");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MediaAsset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Attribution")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DeclaredContentType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<long?>("DurationMs")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("ExpectedBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FailureCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("Generation")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("RenditionKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long>("ReservedBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Sha256")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceETag")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceKey")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StagingKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<long>("StoredBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UploadExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId", "Status");
+
+                    b.ToTable("MediaAssets");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.OutboxEvent", b =>
@@ -941,6 +1085,11 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("EnglishHub.Domain.ContentVersion", b =>
                 {
+                    b.HasOne("EnglishHub.Domain.MediaAsset", null)
+                        .WithMany()
+                        .HasForeignKey("MediaAssetId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("EnglishHub.Domain.ContentRoot", "Root")
                         .WithMany("Versions")
                         .HasForeignKey("RootId")
@@ -1003,6 +1152,15 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("ContentVersion");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MediaAsset", b =>
+                {
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>

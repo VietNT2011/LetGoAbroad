@@ -34,6 +34,7 @@ public sealed class ContentVersion : VersionedEntity
     public string Skill { get; set; } = "grammar";
     public int Minutes { get; set; } = 10;
     public int CurriculumOrder { get; set; }
+    public Guid? MediaAssetId { get; set; }
     public int DurationSeconds { get; set; } = 1200;
     public bool IsFixture { get; set; }
     public string Attribution { get; set; } = "";

@@ -3,6 +3,9 @@ using EnglishHub.Infrastructure.Content;
 using EnglishHub.Infrastructure.Identity;
 using EnglishHub.Infrastructure.Assessment;
 using EnglishHub.Infrastructure.Learning;
+using EnglishHub.Application.Media;
+using EnglishHub.Infrastructure.Media;
+using EnglishHub.Infrastructure.Operations;
 using EnglishHub.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +48,11 @@ public static class DependencyInjection
         services.AddScoped<Receipts>();
         services.AddScoped<AssessmentService>();
         services.AddScoped<LearningService>();
+        services.AddSingleton<IObjectStorage,AzureObjectStorage>();
+        services.AddSingleton<IMediaProcessor,FfmpegProcessor>();
+        services.AddScoped<MediaService>();
+        services.AddScoped<BackgroundQueue>();
+        services.AddScoped<MediaPipeline>();
         return services;
     }
 }

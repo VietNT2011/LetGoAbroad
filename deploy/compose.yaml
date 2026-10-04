@@ -17,6 +17,8 @@ services:
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite:3.35.0
     command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+    environment:
+      AZURITE_ACCOUNTS: englishhub:${AZURITE_ACCOUNT_KEY:?Run scripts/start-infra.ps1 first}
     ports: ['127.0.0.1:10000:10000']
     volumes: [blob-data:/data]
   redis:
@@ -28,6 +30,42 @@ services:
     profiles: [calls]
     command: --dev --bind 0.0.0.0
     ports: ['127.0.0.1:7880:7880', '7881:7881', '7882:7882/udp']
+  api:
+    profiles: [app]
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    ports: ['127.0.0.1:5188:8080']
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Database__Provider: SqlServer
+      Database__Initialize: 'true'
+      Seed__Demo: 'true'
+      FeatureFlags__EnableMedia: 'true'
+      ConnectionStrings__Database: Server=sql;Database=EnglishHub;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False
+      Storage__ConnectionString: DefaultEndpointsProtocol=http;AccountName=englishhub;AccountKey=${AZURITE_ACCOUNT_KEY};BlobEndpoint=http://azurite:10000/englishhub;
+      Storage__PublicEndpoint: http://127.0.0.1:10000/englishhub
+      Storage__ConfigureLocalCors: 'true'
+    volumes: [data-protection:/home/app/.aspnet/DataProtection-Keys]
+    depends_on:
+      sql: {condition: service_healthy}
+      azurite: {condition: service_started}
+    mem_limit: 768m
+  worker:
+    profiles: [app]
+    build:
+      context: ..
+      dockerfile: deploy/worker.Dockerfile
+    environment:
+      Database__Provider: SqlServer
+      FeatureFlags__EnableMedia: 'true'
+      ConnectionStrings__Database: Server=sql;Database=EnglishHub;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False
+      Storage__ConnectionString: DefaultEndpointsProtocol=http;AccountName=englishhub;AccountKey=${AZURITE_ACCOUNT_KEY};BlobEndpoint=http://azurite:10000/englishhub;
+    depends_on:
+      api: {condition: service_started}
+    mem_limit: 768m
+    cpus: '1'
 volumes:
   sql-data:
   blob-data:
+  data-protection:

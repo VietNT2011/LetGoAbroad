@@ -26,6 +26,8 @@ app.UseExceptionHandler();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 // VI: Mọi thao tác ghi browser đều cần CSRF, kể cả login. EN: Every unsafe browser API request, including login, needs an antiforgery token.
 app.Use(async (context, next) =>
 {
@@ -56,9 +58,13 @@ app.MapIdentity();
 app.MapContent();
 app.MapAssessment();
 app.MapLearning();
+app.MapMedia();
 app.MapHealthChecks("/health/live");
+app.MapGet("/health/ready",async (HubDbContext db,CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status="ready" }) : Results.StatusCode(503));
 app.MapOpenApi();
-app.MapGet("/api/v1/status", () => new { name = "EnglishHub", version = "0.1.0", aiEnabled = false });
+app.MapGet("/api/v1/status", () => new { name = "EnglishHub", version = "0.1.0", aiEnabled = false, mediaEnabled = app.Configuration.GetValue<bool>("FeatureFlags:EnableMedia") });
+app.MapFallbackToFile("index.html");
+app.Map("/api/{**path}",() => Results.Problem(statusCode:404,title:"endpoint_not_found"));
 app.Run();
 
 /// <summary>VI: Điểm vào cho integration test. EN: Exposes the entry point to WebApplicationFactory.</summary>
