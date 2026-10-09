@@ -11,6 +11,8 @@ public interface IObjectStorage
     Task Freeze(string stagingKey, string expectedETag, string canonicalKey, CancellationToken ct);
     Task Download(string canonicalKey, string destination, CancellationToken ct);
     Task Upload(string canonicalKey, string localFile, CancellationToken ct);
+    Task DeleteAsset(Guid assetId, string stagingKey, CancellationToken ct);
+    Task Cleanup(Guid assetId, string stagingKey, string? sourceKey, string? renditionKey, DateTimeOffset olderThan, CancellationToken ct);
 }
 public interface IMediaProcessor
 {

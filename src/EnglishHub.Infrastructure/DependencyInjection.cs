@@ -53,6 +53,8 @@ public static class DependencyInjection
         services.AddScoped<MediaService>();
         services.AddScoped<BackgroundQueue>();
         services.AddScoped<MediaPipeline>();
+        services.AddScoped<MediaLifecycle>();
+        services.AddScoped<MediaCleanup>();
         return services;
     }
 }

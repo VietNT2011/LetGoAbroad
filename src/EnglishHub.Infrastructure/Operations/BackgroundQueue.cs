@@ -10,14 +10,14 @@ public sealed class BackgroundQueue(HubDbContext db, Transactions tx, IClock clo
     public Task<BackgroundJob?> Claim() => tx.Run("jobs:claim",async () =>
     {
         var now=clock.UtcNow;
-        var exhausted=await db.BackgroundJobs.Where(x => x.State=="running" && x.LeaseUntil<=now && x.Attempts>=4).Take(10).ToListAsync();
+        var exhausted=await db.BackgroundJobs.Where(x => x.State=="running" && x.LeaseUntil<=now && x.Attempts>=4).OrderBy(x => x.LeaseUntil).ThenBy(x => x.Id).Take(10).ToListAsync();
         foreach (var job in exhausted)
         {
             job.State="failed"; job.LastErrorCode="lease_exhausted";
             var media=await db.MediaAssets.SingleOrDefaultAsync(x => x.Id==job.ResourceId && x.Status==MediaStatus.Processing);
             if (media is not null) { media.Status=MediaStatus.Failed; media.FailureCode="lease_exhausted"; }
         }
-        var candidate=await db.BackgroundJobs.Where(x => x.Kind=="process_media" && x.Attempts<4 && x.DueAt<=now && (x.State=="pending" || x.State=="running" && x.LeaseUntil<=now)).OrderBy(x => x.DueAt).ThenBy(x => x.Id).FirstOrDefaultAsync();
+        var candidate=await db.BackgroundJobs.Where(x => (x.Kind=="process_media" || x.Kind=="delete_media") && x.Attempts<4 && x.DueAt<=now && (x.State=="pending" || x.State=="running" && x.LeaseUntil<=now)).OrderBy(x => x.DueAt).ThenBy(x => x.Id).FirstOrDefaultAsync();
         if (candidate is null) return null;
         candidate.State="running"; candidate.LeaseToken=Guid.NewGuid(); candidate.LeaseUntil=now.AddSeconds(90); candidate.Attempts++;
         return candidate;
@@ -45,7 +45,7 @@ public sealed class BackgroundQueue(HubDbContext db, Transactions tx, IClock clo
         job.State=permanent || job.Attempts>=4 ? "failed" : "pending";
         var delays=new[] { 15,60,300,300 }; job.DueAt=clock.UtcNow.AddSeconds(delays[Math.Min(job.Attempts-1,3)]+Random.Shared.Next(0,4));
         var asset=await db.MediaAssets.SingleOrDefaultAsync(x => x.Id==job.ResourceId);
-        if (asset is not null) { asset.Status=job.State=="failed" ? MediaStatus.Failed : MediaStatus.Uploaded; asset.FailureCode=code; }
+        if (asset is not null) { if(asset.Status is MediaStatus.Processing or MediaStatus.Uploaded) asset.Status=job.State=="failed" ? MediaStatus.Failed : MediaStatus.Uploaded; asset.FailureCode=code; }
         return true;
     });
 }

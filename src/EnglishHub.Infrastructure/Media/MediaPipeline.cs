@@ -25,6 +25,20 @@ public sealed class MediaPipeline(HubDbContext db, BackgroundQueue queue, Transa
         try
         {
             var asset=await db.MediaAssets.AsNoTracking().SingleAsync(x => x.Id==job.ResourceId,ct);
+            if(job.Kind=="delete_media")
+            {
+                DomainError.Require(asset.Status==MediaStatus.DeletePending,409,"asset_state_changed","Asset không chờ xóa.");
+                await storage.DeleteAsset(asset.Id,asset.StagingKey,processingStop.Token);
+                await leaseStop.CancelAsync(); await StopHeartbeat(heartbeat); db.ChangeTracker.Clear();
+                await queue.Finish(job.Id,token,async () =>
+                {
+                    var row=await db.MediaAssets.SingleAsync(x => x.Id==asset.Id,ct);
+                    DomainError.Require(row.Status==MediaStatus.DeletePending,409,"asset_state_changed","Asset đã đổi trạng thái.");
+                    row.Status=MediaStatus.Deleted; row.RenditionKey=null; row.ReservedBytes=0; row.StoredBytes=0; row.FailureCode=null;
+                    db.OutboxEvents.Add(new OutboxEvent { Type="media.asset_deleted",AggregateId=row.Id,OccurredAt=clock.UtcNow });
+                },$"media-quota:{asset.OwnerId}");
+                return true;
+            }
             DomainError.Require(asset.Status is MediaStatus.Uploaded or MediaStatus.Processing,409,"asset_state_changed","Asset không còn chờ xử lý.");
             var sourceKey=asset.SourceKey ?? $"{asset.Id:N}/{asset.Generation:N}/source";
             await tx.Run($"media-quota:{asset.OwnerId}",async () =>

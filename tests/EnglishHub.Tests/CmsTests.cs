@@ -43,4 +43,15 @@ public sealed class CmsTests(TestApp app) : IClassFixture<TestApp>
         // VI: Nếu rollback đúng, cùng slug thứ hai vẫn tạo mới được. EN: Successful creation proves the earlier row rolled back.
         (await client.PostAsJsonAsync("/api/v1/admin/content",item with { Slug = secondSlug })).EnsureSuccessStatusCode();
     }
+    [Fact]
+    public async Task Draft_edits_require_current_etag_and_persist_the_replacement()
+    {
+        using var client=await app.Login("admin@englishhub.local"); var input=new CreateContentInput($"test-edit-{Guid.NewGuid():N}",ContentKind.Lesson,Lesson());
+        var created=await client.PostAsJsonAsync("/api/v1/admin/content",input); created.EnsureSuccessStatusCode(); var v=await created.Content.ReadFromJsonAsync<JsonElement>();
+        var id=v.GetProperty("id").GetGuid(); var etag=v.GetProperty("etag").GetString()!;
+        var changed=Lesson("This draft has a new, complete body that the author can review before publishing.");
+        (await client.SendAsync(Command(HttpMethod.Put,$"/api/v1/admin/versions/{id}",etag,changed))).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.PreconditionFailed,(await client.SendAsync(Command(HttpMethod.Put,$"/api/v1/admin/versions/{id}",etag,Lesson()))).StatusCode);
+        Assert.Equal(changed.Body,(await client.GetFromJsonAsync<JsonElement>($"/api/v1/admin/versions/{id}")).GetProperty("body").GetString());
+    }
 }

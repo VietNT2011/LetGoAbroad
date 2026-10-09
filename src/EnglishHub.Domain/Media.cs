@@ -1,5 +1,5 @@
 namespace EnglishHub.Domain;
-public enum MediaStatus { PendingUpload = 0, Uploaded = 1, Processing = 2, Ready = 3, Failed = 4, Deleted = 5 }
+public enum MediaStatus { PendingUpload = 0, Uploaded = 1, Processing = 2, Ready = 3, Failed = 4, Deleted = 5, DeletePending = 6, Expired = 7 }
 /// <summary>VI: Blob key do server sinh, không dùng tên file làm đường dẫn. EN: Server-generated storage keys isolate user filenames from storage paths.</summary>
 public sealed class MediaAsset : VersionedEntity
 {
@@ -22,6 +22,7 @@ public sealed class MediaAsset : VersionedEntity
     public string Attribution { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UploadExpiresAt { get; set; }
+    public DateTimeOffset? LastCleanupAt { get; set; }
 }
 public sealed class BackgroundJob : VersionedEntity
 {

@@ -575,6 +575,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Generation")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset?>("LastCleanupAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<Guid>("OwnerId")
                         .HasColumnType("uniqueidentifier");
 

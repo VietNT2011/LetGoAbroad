@@ -67,6 +67,23 @@ public sealed class AzureObjectStorage : IObjectStorage
         }
     }
     public async Task Download(string key, string destination, CancellationToken ct) => await service.GetBlobContainerClient("canonical").GetBlobClient(key).DownloadToAsync(destination,ct);
+    public async Task DeleteAsset(Guid id,string stagingKey,CancellationToken ct)
+    {
+        DomainError.Require(id!=Guid.Empty,422,"invalid_asset_id","AssetId không hợp lệ.");
+        var container=service.GetBlobContainerClient("canonical");
+        await foreach(var blob in container.GetBlobsAsync(BlobTraits.None,BlobStates.None,prefix:$"{id:N}/",cancellationToken:ct))
+            await container.DeleteBlobIfExistsAsync(blob.Name,DeleteSnapshotsOption.IncludeSnapshots,cancellationToken:ct);
+        await service.GetBlobContainerClient("staging").DeleteBlobIfExistsAsync(stagingKey,DeleteSnapshotsOption.IncludeSnapshots,cancellationToken:ct);
+    }
+    public async Task Cleanup(Guid id,string stagingKey,string? sourceKey,string? renditionKey,DateTimeOffset olderThan,CancellationToken ct)
+    {
+        var container=service.GetBlobContainerClient("canonical");
+        // VI: Buffer 24 giờ bảo vệ output của claim mới. EN: A 24-hour age buffer protects in-flight output.
+        await foreach(var blob in container.GetBlobsAsync(BlobTraits.None,BlobStates.None,prefix:$"{id:N}/",cancellationToken:ct))
+            if(blob.Name!=sourceKey && blob.Name!=renditionKey && blob.Properties.CreatedOn<olderThan)
+                await container.DeleteBlobIfExistsAsync(blob.Name,DeleteSnapshotsOption.IncludeSnapshots,cancellationToken:ct);
+        await service.GetBlobContainerClient("staging").DeleteBlobIfExistsAsync(stagingKey,DeleteSnapshotsOption.IncludeSnapshots,cancellationToken:ct);
+    }
     public async Task Upload(string key, string file, CancellationToken ct)
     {
         var target = service.GetBlobContainerClient("canonical").GetBlobClient(key);

@@ -1,7 +1,7 @@
 name: englishhub
 services:
   sql:
-    image: mcr.microsoft.com/mssql/server:2022-CU22-ubuntu-22.04
+    image: mcr.microsoft.com/mssql/server:2022-CU22-ubuntu-22.04@sha256:db9a8fe3098b7e8bbde41106bdc7caee942e97124e5fdb71b872ca208de3092d
     environment:
       ACCEPT_EULA: 'Y'
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run scripts/start-infra.ps1 first}
@@ -15,7 +15,7 @@ services:
       start_period: 30s
     mem_limit: 3g
   azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+    image: mcr.microsoft.com/azure-storage/azurite:3.35.0@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37
     command: azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
     environment:
       AZURITE_ACCOUNTS: englishhub:${AZURITE_ACCOUNT_KEY:?Run scripts/start-infra.ps1 first}

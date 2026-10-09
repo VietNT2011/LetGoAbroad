@@ -8,4 +8,8 @@ Private playback checks owner or a published lesson reference, then issues a two
 
 Verified integration cases: valid WAV → real FFmpeg MP3 → Ready; private ACL; HTTP 206 byte range; staging rewrite after complete → Failed; fake WAV → decode failure; two workers claiming one job; stale lease cannot finalize after reclaim.
 
-Remaining work: durable deletion/orphan cleanup, manual retry UI, longer media corpus with authored segments, video/HLS, resumable block uploads, per-purpose quota policies and reconciliation reporting. No P0/P1 gate is declared complete until its remaining acceptance criteria pass.
+Deletion first marks DeletePending and cancels processing claims, immediately blocking new playback grants. A fenced delete job removes blobs before marking Deleted and releasing quota. Published lesson references block deletion. Cleanup waits 24 hours after upload expiry, preserves both canonical references and checkpoints LastCleanupAt in SQL. Manual retries create a fresh job/generation, preserve the previous failure, and reuse a frozen immutable source when available.
+
+Verified retention cases: duplicate delete requests produce one effective deletion; old playback URL returns 404 after deletion; expired staging releases quota while Ready media remains playable; manual retry is idempotent and keeps failure history.
+
+Remaining work: longer media corpus with authored segments, video/HLS, resumable block uploads, per-purpose quota policies and reconciliation reporting. Quota is a logical reservation/publication limit; untrusted staging and orphan blobs are reconciled after retention, not a hard Azure billing cap. No P0/P1 gate is declared complete until its remaining acceptance criteria pass.

@@ -65,4 +65,44 @@ public sealed class MediaIntegrationTests(TestApp app) : IClassFixture<TestApp>
         (await owner.PostAsync($"/api/v1/media/{grant.AssetId}/complete",null)).EnsureSuccessStatusCode(); await Process();
         var state=await owner.GetFromJsonAsync<JsonElement>($"/api/v1/media/{grant.AssetId}"); Assert.Equal("failed",state.GetProperty("status").GetString()); Assert.Equal("media_decode_failed",state.GetProperty("failureCode").GetString());
     }
+    [Fact]
+    public async Task Delete_revokes_playback_then_removes_blobs_once_and_can_be_retried()
+    {
+        var (client,grant,_)=await Upload(); using var owner=client;
+        (await owner.PostAsync($"/api/v1/media/{grant.AssetId}/complete",null)).EnsureSuccessStatusCode(); await Process();
+        var read=await owner.GetAsync($"/api/v1/media/{grant.AssetId}/content"); var oldUrl=read.Headers.Location;
+        (await owner.DeleteAsync($"/api/v1/media/{grant.AssetId}")).EnsureSuccessStatusCode();
+        (await owner.DeleteAsync($"/api/v1/media/{grant.AssetId}")).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Conflict,(await owner.GetAsync($"/api/v1/media/{grant.AssetId}/content")).StatusCode);
+        await Process();
+        var state=await owner.GetFromJsonAsync<JsonElement>($"/api/v1/media/{grant.AssetId}"); Assert.Equal("deleted",state.GetProperty("status").GetString());
+        using var storage=new HttpClient(); Assert.Equal(HttpStatusCode.NotFound,(await storage.GetAsync(oldUrl)).StatusCode);
+        (await owner.DeleteAsync($"/api/v1/media/{grant.AssetId}")).EnsureSuccessStatusCode();
+    }
+    [Fact]
+    public async Task Expired_staging_cleanup_releases_quota_without_touching_ready_media()
+    {
+        await using var isolated=new TestApp(); var suite=new MediaIntegrationTests(isolated);
+        var (client,grant,_)=await suite.Upload(); using var owner=client;
+        var (readyClient,readyGrant,_)=await suite.Upload(); using var readyOwner=readyClient;
+        (await readyOwner.PostAsync($"/api/v1/media/{readyGrant.AssetId}/complete",null)).EnsureSuccessStatusCode(); await suite.Process();
+        isolated.Clock.Advance(TimeSpan.FromHours(26));
+        await using var scope=isolated.Services.CreateAsyncScope(); await scope.ServiceProvider.GetRequiredService<MediaCleanup>().Run(CancellationToken.None);
+        var state=await owner.GetFromJsonAsync<JsonElement>($"/api/v1/media/{grant.AssetId}"); Assert.Equal("expired",state.GetProperty("status").GetString());
+        var ready=await readyOwner.GetFromJsonAsync<JsonElement>($"/api/v1/media/{readyGrant.AssetId}"); Assert.Equal("ready",ready.GetProperty("status").GetString());
+        var playback=await readyOwner.GetAsync($"/api/v1/media/{readyGrant.AssetId}/content"); using var blobs=new HttpClient(); (await blobs.GetAsync(playback.Headers.Location)).EnsureSuccessStatusCode();
+    }
+    [Fact]
+    public async Task Manual_retry_creates_one_new_job_and_preserves_the_previous_failure()
+    {
+        var (client,grant,_)=await Upload("Invalid audio fixture for retry history."u8.ToArray()); using var owner=client;
+        (await owner.PostAsync($"/api/v1/media/{grant.AssetId}/complete",null)).EnsureSuccessStatusCode(); await Process();
+        var jobs=await owner.GetFromJsonAsync<JsonElement>("/api/v1/admin/jobs"); var failed=jobs.EnumerateArray().Single(x => x.GetProperty("resourceId").GetGuid()==grant.AssetId);
+        var id=failed.GetProperty("id").GetGuid(); var payload=new { clientRequestId=Guid.NewGuid() };
+        var first=await owner.PostAsJsonAsync($"/api/v1/admin/jobs/{id}/retry",payload); first.EnsureSuccessStatusCode();
+        var second=await owner.PostAsJsonAsync($"/api/v1/admin/jobs/{id}/retry",payload); second.EnsureSuccessStatusCode();
+        Assert.Equal(await first.Content.ReadAsStringAsync(),await second.Content.ReadAsStringAsync());
+        jobs=await owner.GetFromJsonAsync<JsonElement>("/api/v1/admin/jobs"); Assert.Equal("failed",jobs.EnumerateArray().Single(x => x.GetProperty("id").GetGuid()==id).GetProperty("state").GetString());
+        await Process();
+    }
 }
