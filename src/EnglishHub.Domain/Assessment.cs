@@ -10,6 +10,7 @@ public sealed class Attempt : VersionedEntity
     public string Mode { get; set; } = "mini";
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset DeadlineAt { get; set; }
+    public DateTimeOffset? ListeningDeadlineAt { get; set; }
     public AttemptStatus Status { get; set; }
     public List<AttemptItem> Items { get; set; } = [];
     public AttemptResult? Result { get; set; }

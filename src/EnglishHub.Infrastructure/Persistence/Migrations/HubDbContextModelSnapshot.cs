@@ -34,6 +34,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("DeadlineAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<DateTimeOffset?>("ListeningDeadlineAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Mode")
                         .IsRequired()
                         .HasMaxLength(40)

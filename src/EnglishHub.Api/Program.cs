@@ -52,6 +52,8 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
     {
         await DemoSeed.Run(db, scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>());
         await DemoLearningSeed.Ensure(db);
+        await DemoAssessmentSeed.Ensure(db);
+        await DemoFoundationSeed.Ensure(db);
     }
 }
 app.MapIdentity();

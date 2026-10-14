@@ -10,6 +10,14 @@ public static class AssessmentEndpoints
     {
         var group = app.MapGroup("/api/v1/attempts").RequireAuthorization().WithTags("Assessment");
         group.MapPost("/", (StartAttempt input, ClaimsPrincipal user, AssessmentService service) => service.Start(user.UserId(), input));
+        group.MapPost("/preview",(StartAttempt input,AssessmentService service) => service.Preview(input));
+        app.MapGet("/api/v1/tests/{id:guid}/configuration",async (Guid id,HubDbContext db) =>
+        {
+            var exists=await db.ContentVersions.AnyAsync(x => x.Id==id && x.Status==EnglishHub.Domain.PublicationStatus.Published && x.Root.Kind==EnglishHub.Domain.ContentKind.Assessment);
+            if(!exists) return Results.NotFound();
+            var parts=await db.QuestionGroups.AsNoTracking().Where(x => x.ContentVersionId==id).GroupBy(x => x.Part).Select(g => new { part=g.Key,questionCount=g.Sum(x => x.Questions.Count) }).OrderBy(x => x.part).ToListAsync();
+            return Results.Ok(new { parts });
+        }).RequireAuthorization().WithTags("Assessment");
         group.MapGet("/{id:guid}", (Guid id, ClaimsPrincipal user, AssessmentService service) => service.Read(user.UserId(), id));
         group.MapPut("/{id:guid}/answers", (Guid id, SaveAnswers input, ClaimsPrincipal user, AssessmentService service) => service.Save(user.UserId(), id, input));
         group.MapPost("/{id:guid}/submit", (Guid id, SaveAnswers input, ClaimsPrincipal user, AssessmentService service) => service.Submit(user.UserId(), id, input));
