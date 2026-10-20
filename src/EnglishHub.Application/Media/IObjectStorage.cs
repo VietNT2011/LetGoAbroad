@@ -1,4 +1,5 @@
 namespace EnglishHub.Application.Media;
+
 public sealed record BlobFacts(long Bytes, string ETag, string ContentType);
 public sealed record MediaProbe(long DurationMs, string Codec, long OutputBytes, string Sha256);
 /// <summary>VI: Boundary storage không lộ SDK vào nghiệp vụ. EN: Storage boundary keeps provider SDK types out of application contracts.</summary>

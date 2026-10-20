@@ -1,3 +1,144 @@
 /* VI: Editor và trạng thái publish phân biệt rõ. EN: Keep draft editing and publication state visually distinct. */
-.cms-layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:22px;align-items:start}.cms-list{background:#fff;border:1px solid #e3e9d9;border-radius:10px;padding:14px;max-height:850px;overflow-y:auto}.cms-list .section-heading{margin:5px 4px 17px;align-items:center}.cms-list h3{font-size:13px;letter-spacing:-.01em;margin:0}.icon-button{border:0;background:#f1f5e8;border-radius:6px;padding:6px;display:grid;place-items:center;color:#8ba569}.cms-list>button{width:100%;text-align:left;border:0;border-bottom:1px solid #eef1e8;background:none;padding:15px 10px;border-radius:6px;display:grid;gap:6px;color:#6b7f56}.cms-list>button.active{background:#eef4e5}.cms-list b{font-size:11px;font-weight:500}.cms-list span{font-size:9px;color:#a0ac90}.cms-editor{background:#fff;border:1px solid #e2e8d8;border-radius:11px;padding:25px}.cms-editor-header{display:flex;justify-content:space-between;gap:10px;margin-bottom:25px;flex-wrap:wrap}.cms-editor-header h3{font-size:13px;letter-spacing:0;text-transform:capitalize;margin:0}.cms-editor code{font-size:8px;color:#9bab89}.cms-new-fields{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}.editor-label{font-size:10px}.editor-label textarea,.cms-import textarea{font-family:Consolas,monospace;font-size:11px;line-height:1.8;tab-size:2;resize:vertical;background:#fafcf6;min-height:150px}.cms-editor details summary{display:flex;align-items:center;gap:7px}.preview-body{white-space:pre-line;line-height:1.8;font-size:13px}.cms-import{margin-top:35px;padding:27px;background:#fff;border:1px solid #e2e8d9;border-radius:11px}.cms-import h2{font-size:22px}.cms-import pre{font-size:11px;overflow:auto;background:#f7f9f1;border-radius:8px;padding:20px;color:#7b9064}.cms-editor>.button-row{gap:9px}.cms-editor>.button-row button{font-size:10px;padding:10px 12px}
-@media(max-width:1000px){.cms-layout{grid-template-columns:1fr}.cms-list{max-height:230px}.cms-editor{padding:22px}}
+.cms-layout {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.cms-list {
+  background: #fff;
+  border: 1px solid #e3e9d9;
+  border-radius: 10px;
+  padding: 14px;
+  max-height: 850px;
+  overflow-y: auto;
+}
+.cms-list .section-heading {
+  margin: 5px 4px 17px;
+  align-items: center;
+}
+.cms-list h3 {
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.icon-button {
+  border: 0;
+  background: #f1f5e8;
+  border-radius: 6px;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  color: #8ba569;
+}
+.cms-list > button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid #eef1e8;
+  background: none;
+  padding: 15px 10px;
+  border-radius: 6px;
+  display: grid;
+  gap: 6px;
+  color: #6b7f56;
+}
+.cms-list > button.active {
+  background: #eef4e5;
+}
+.cms-list b {
+  font-size: 11px;
+  font-weight: 500;
+}
+.cms-list span {
+  font-size: 9px;
+  color: #a0ac90;
+}
+.cms-editor {
+  background: #fff;
+  border: 1px solid #e2e8d8;
+  border-radius: 11px;
+  padding: 25px;
+}
+.cms-editor-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+.cms-editor-header h3 {
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: capitalize;
+  margin: 0;
+}
+.cms-editor code {
+  font-size: 8px;
+  color: #9bab89;
+}
+.cms-new-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.editor-label {
+  font-size: 10px;
+}
+.editor-label textarea,
+.cms-import textarea {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  tab-size: 2;
+  resize: vertical;
+  background: #fafcf6;
+  min-height: 150px;
+}
+.cms-editor details summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.preview-body {
+  white-space: pre-line;
+  line-height: 1.8;
+  font-size: 13px;
+}
+.cms-import {
+  margin-top: 35px;
+  padding: 27px;
+  background: #fff;
+  border: 1px solid #e2e8d9;
+  border-radius: 11px;
+}
+.cms-import h2 {
+  font-size: 22px;
+}
+.cms-import pre {
+  font-size: 11px;
+  overflow: auto;
+  background: #f7f9f1;
+  border-radius: 8px;
+  padding: 20px;
+  color: #7b9064;
+}
+.cms-editor > .button-row {
+  gap: 9px;
+}
+.cms-editor > .button-row button {
+  font-size: 10px;
+  padding: 10px 12px;
+}
+@media (max-width: 1000px) {
+  .cms-layout {
+    grid-template-columns: 1fr;
+  }
+  .cms-list {
+    max-height: 230px;
+  }
+  .cms-editor {
+    padding: 22px;
+  }
+}

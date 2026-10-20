@@ -12,7 +12,7 @@ public sealed class LearningTests(TestApp app) : IClassFixture<TestApp>
     public async Task Enrollment_and_daily_generation_are_idempotent_and_completion_requires_quiz_evidence()
     {
         using var client = await app.Login();
-        (await client.PutAsJsonAsync("/api/v1/profile", new { displayName = "Minh Anh", timeZoneId = "Asia/Ho_Chi_Minh", targetScore = 650, minutesPerDay = 30, studyDays = new[] { 0,1,2,3,4,5,6 } })).EnsureSuccessStatusCode();
+        (await client.PutAsJsonAsync("/api/v1/profile", new { displayName = "Minh Anh", timeZoneId = "Asia/Ho_Chi_Minh", targetScore = 650, minutesPerDay = 30, studyDays = new[] { 0, 1, 2, 3, 4, 5, 6 } })).EnsureSuccessStatusCode();
         var enrollments = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/learning/enrollment", new { startFromBasics = true }), client.PostAsJsonAsync("/api/v1/learning/enrollment", new { startFromBasics = true }));
         Assert.All(enrollments, x => x.EnsureSuccessStatusCode());
         Assert.Equal(await enrollments[0].Content.ReadAsStringAsync(), await enrollments[1].Content.ReadAsStringAsync());
@@ -49,13 +49,15 @@ public sealed class LearningTests(TestApp app) : IClassFixture<TestApp>
     }
 
     [Theory]
-    [InlineData(20)] [InlineData(30)] [InlineData(45)]
+    [InlineData(20)]
+    [InlineData(30)]
+    [InlineData(45)]
     public void Planner_respects_budget_and_never_duplicates_candidates(int minutes)
     {
-        var lessons = Enumerable.Range(0,6).Select(i => new PlanCandidate(Guid.NewGuid(),10,"lesson",i)).ToArray();
-        var practice = new PlanCandidate(Guid.NewGuid(),15,"practice",0);
-        var plan = Planner.Select(lessons,[practice],minutes);
-        Assert.InRange(plan.Count,1,3); Assert.True(plan.Sum(x => x.Minutes) <= minutes);
-        Assert.Equal(plan.Count,plan.Select(x => x.ContentVersionId).Distinct().Count());
+        var lessons = Enumerable.Range(0, 6).Select(i => new PlanCandidate(Guid.NewGuid(), 10, "lesson", i)).ToArray();
+        var practice = new PlanCandidate(Guid.NewGuid(), 15, "practice", 0);
+        var plan = Planner.Select(lessons, [practice], minutes);
+        Assert.InRange(plan.Count, 1, 3); Assert.True(plan.Sum(x => x.Minutes) <= minutes);
+        Assert.Equal(plan.Count, plan.Select(x => x.ContentVersionId).Distinct().Count());
     }
 }

@@ -23,8 +23,21 @@ public static class DemoLearningSeed
                 ("Which sentence expresses a decided plan?", "We are going to practise tonight.", "We going practise tonight.", "Kế hoạch dùng be going to + động từ nguyên mẫu."),
                 ("What does opportunity mean?", "A chance to do something useful.", "A feeling of being tired.", "Opportunity nghĩa là cơ hội, như định nghĩa trong bài học.") };
             var q = quizData[index];
-            var v = new ContentVersion { RootId = root.Id, Version = old.Version + 1, Status = PublicationStatus.Published, Title = old.Title, Summary = old.Summary, Body = old.Body, Skill = old.Skill, Minutes = old.Minutes, CurriculumOrder = index, Attribution = old.Attribution, PublishedAt = DateTimeOffset.UtcNow,
-                Groups = [new QuestionGroup { Part = 5, Questions = [new Question { Prompt = q.Item1, Skill = old.Skill, Explanation = q.Item4, Options = [new() { Text = q.Item2, IsCorrect = true }, new() { Text = q.Item3 }, new() { Text = "None of the above." }, new() { Text = "Both statements are correct." }] }] }] };
+            var v = new ContentVersion
+            {
+                RootId = root.Id,
+                Version = old.Version + 1,
+                Status = PublicationStatus.Published,
+                Title = old.Title,
+                Summary = old.Summary,
+                Body = old.Body,
+                Skill = old.Skill,
+                Minutes = old.Minutes,
+                CurriculumOrder = index,
+                Attribution = old.Attribution,
+                PublishedAt = DateTimeOffset.UtcNow,
+                Groups = [new QuestionGroup { Part = 5, Questions = [new Question { Prompt = q.Item1, Skill = old.Skill, Explanation = q.Item4, Options = [new() { Text = q.Item2, IsCorrect = true }, new() { Text = q.Item3 }, new() { Text = "None of the above." }, new() { Text = "Both statements are correct." }] }] }]
+            };
             db.ContentVersions.Add(v); await db.SaveChangesAsync(); root.CurrentPublishedVersionId = v.Id;
         }
         await db.SaveChangesAsync();

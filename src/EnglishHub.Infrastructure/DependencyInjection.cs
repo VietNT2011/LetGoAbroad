@@ -48,8 +48,8 @@ public static class DependencyInjection
         services.AddScoped<Receipts>();
         services.AddScoped<AssessmentService>();
         services.AddScoped<LearningService>();
-        services.AddSingleton<IObjectStorage,AzureObjectStorage>();
-        services.AddSingleton<IMediaProcessor,FfmpegProcessor>();
+        services.AddSingleton<IObjectStorage, AzureObjectStorage>();
+        services.AddSingleton<IMediaProcessor, FfmpegProcessor>();
         services.AddScoped<MediaService>();
         services.AddScoped<BackgroundQueue>();
         services.AddScoped<MediaPipeline>();

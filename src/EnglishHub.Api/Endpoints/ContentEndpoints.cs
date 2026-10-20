@@ -20,8 +20,19 @@ public static class ContentEndpoints
         }).WithTags("Content");
         app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, HubDbContext db) =>
         {
-            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new { x.Id, x.Title, x.Summary, x.Body, x.Skill, x.Minutes, x.Attribution, x.Version, x.MediaAssetId,
-                quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, options = q.Options.Select(o => new { o.Id, o.Text }) }) }).SingleOrDefaultAsync();
+            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new
+            {
+                x.Id,
+                x.Title,
+                x.Summary,
+                x.Body,
+                x.Skill,
+                x.Minutes,
+                x.Attribution,
+                x.Version,
+                x.MediaAssetId,
+                quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, options = q.Options.Select(o => new { o.Id, o.Text }) })
+            }).SingleOrDefaultAsync();
             return lesson is null ? Results.NotFound() : Results.Ok(lesson);
         }).RequireAuthorization().WithTags("Content");
         var admin = app.MapGroup("/api/v1/admin").RequireAuthorization(p => p.RequireRole("Admin", "ContentEditor")).WithTags("CMS");
@@ -43,9 +54,9 @@ public static class ContentEndpoints
         {
             var v = await service.Publish(id, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return Results.Ok(new { v.Id, v.Status, etag = Etags.Of(v) });
         }).RequireAuthorization(p => p.RequireRole("Admin"));
-        admin.MapPut("/versions/{id:guid}", async (Guid id, ContentInput input, HttpContext ctx, ContentService service) => { var v = await service.UpdateDraft(id,input,ctx.Request.Headers.IfMatch,ctx.User.UserId()); return new { v.Id, etag = Etags.Of(v) }; });
-        admin.MapPost("/versions/{id:guid}/archive", async (Guid id, HttpContext ctx, ContentService service) => { await service.Archive(id,ctx.Request.Headers.IfMatch,ctx.User.UserId()); return Results.NoContent(); }).RequireAuthorization(p => p.RequireRole("Admin"));
+        admin.MapPut("/versions/{id:guid}", async (Guid id, ContentInput input, HttpContext ctx, ContentService service) => { var v = await service.UpdateDraft(id, input, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return new { v.Id, etag = Etags.Of(v) }; });
+        admin.MapPost("/versions/{id:guid}/archive", async (Guid id, HttpContext ctx, ContentService service) => { await service.Archive(id, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return Results.NoContent(); }).RequireAuthorization(p => p.RequireRole("Admin"));
         admin.MapPost("/imports/dry-run", (CreateContentInput[] input) => ContentService.DryRun(input));
-        admin.MapPost("/imports", (ImportInput input, ClaimsPrincipal user, ContentService service) => service.Import(input,user.UserId()));
+        admin.MapPost("/imports", (ImportInput input, ClaimsPrincipal user, ContentService service) => service.Import(input, user.UserId()));
     }
 }

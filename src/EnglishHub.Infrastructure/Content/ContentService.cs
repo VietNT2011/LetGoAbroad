@@ -64,11 +64,14 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     public static object DryRun(CreateContentInput[] items)
     {
         DomainError.Require(items.Length is >= 1 and <= 20, 422, "invalid_import_size", "Một import gồm 1–20 nội dung.");
-        return new { rows = items.Select((item,index) =>
+        return new
         {
-            try { var version = MakeVersion(Guid.NewGuid(),1,item.Content); version.Root = new ContentRoot { Kind = item.Kind }; Validate(version); return new { index, valid = true, code = (string?)null, message = (string?)null }; }
+            rows = items.Select((item, index) =>
+        {
+            try { var version = MakeVersion(Guid.NewGuid(), 1, item.Content); version.Root = new ContentRoot { Kind = item.Kind }; Validate(version); return new { index, valid = true, code = (string?)null, message = (string?)null }; }
             catch (DomainError error) { return new { index, valid = false, code = (string?)error.Code, message = (string?)error.Message }; }
-        }).ToArray() };
+        }).ToArray()
+        };
     }
 
     public Task<Guid[]> Import(ImportInput input, Guid actor) => tx.Run("catalog", async () =>
@@ -79,12 +82,12 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         var ids = new List<Guid>();
         foreach (var item in input.Items)
         {
-            DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug,"^[a-z0-9-]{3,120}$"),422,"invalid_slug","Slug không hợp lệ.");
-            DomainError.Require(!await db.ContentRoots.AnyAsync(x => x.Slug == item.Slug),409,"slug_exists","Import xung đột slug đã tồn tại.");
-            var root = new ContentRoot { Kind = item.Kind, Slug = item.Slug }; var version = MakeVersion(root.Id,1,item.Content); version.Root = root; Validate(version);
-            db.ContentRoots.Add(root); db.ContentVersions.Add(version); ids.Add(version.Id); Audit(actor,"content.imported",version.Id);
+            DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug, "^[a-z0-9-]{3,120}$"), 422, "invalid_slug", "Slug không hợp lệ.");
+            DomainError.Require(!await db.ContentRoots.AnyAsync(x => x.Slug == item.Slug), 409, "slug_exists", "Import xung đột slug đã tồn tại.");
+            var root = new ContentRoot { Kind = item.Kind, Slug = item.Slug }; var version = MakeVersion(root.Id, 1, item.Content); version.Root = root; Validate(version);
+            db.ContentRoots.Add(root); db.ContentVersions.Add(version); ids.Add(version.Id); Audit(actor, "content.imported", version.Id);
         }
-        receipts.Save(actor,"content-import",input.ClientRequestId,hash,input.ClientRequestId,ids.ToArray()); return ids.ToArray();
+        receipts.Save(actor, "content-import", input.ClientRequestId, hash, input.ClientRequestId, ids.ToArray()); return ids.ToArray();
     });
 
     public Task<ContentVersion> Publish(Guid id, string? etag, Guid actor) => tx.Run("catalog", async () =>
@@ -94,7 +97,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         DomainError.Require(v.Status == PublicationStatus.Draft, 409, "immutable_version", "Bản đã publish bất biến; hãy tạo version mới.");
         Validate(v);
         if (v.MediaAssetId is { } mediaId)
-            DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id==mediaId && x.Status==MediaStatus.Ready && x.Purpose=="lesson_audio"),422,"media_not_ready","Chỉ publish lesson audio đã được worker xác minh Ready.");
+            DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id == mediaId && x.Status == MediaStatus.Ready && x.Purpose == "lesson_audio"), 422, "media_not_ready", "Chỉ publish lesson audio đã được worker xác minh Ready.");
         v.Status = PublicationStatus.Published; v.PublishedAt = clock.UtcNow;
         // VI: Lưu version trước con trỏ để thỏa FK vòng. EN: Persist the version before changing the composite publication pointer.
         await db.SaveChangesAsync();
@@ -123,11 +126,34 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     private static ContentVersion MakeVersion(Guid rootId, int number, ContentInput input)
     {
         DomainError.Require(input.Groups.Length <= 200 && input.Title.Length <= 240 && input.Body.Length <= 100000, 422, "content_too_large", "Nội dung vượt giới hạn.");
-        return new ContentVersion { RootId = rootId, Version = number, Title = input.Title, Summary = input.Summary, Body = input.Body, Skill = input.Skill,
-            Minutes = input.Minutes, DurationSeconds = input.DurationSeconds, IsFixture = input.IsFixture, Attribution = input.Attribution, MediaAssetId = input.MediaAssetId,
-            Groups = input.Groups.Select((g, i) => new QuestionGroup { Order = i, Part = g.Part, Stimulus = g.Stimulus,
-                Questions = g.Questions.Select((q, j) => new Question { Order = j, Prompt = q.Prompt, Skill = q.Skill, Explanation = q.Explanation,
-                    Options = q.Options.Select(o => new QuestionOption { Text = o.Text, IsCorrect = o.IsCorrect }).ToList() }).ToList() }).ToList() };
+        return new ContentVersion
+        {
+            RootId = rootId,
+            Version = number,
+            Title = input.Title,
+            Summary = input.Summary,
+            Body = input.Body,
+            Skill = input.Skill,
+            Minutes = input.Minutes,
+            DurationSeconds = input.DurationSeconds,
+            IsFixture = input.IsFixture,
+            Attribution = input.Attribution,
+            MediaAssetId = input.MediaAssetId,
+            Groups = input.Groups.Select((g, i) => new QuestionGroup
+            {
+                Order = i,
+                Part = g.Part,
+                Stimulus = g.Stimulus,
+                Questions = g.Questions.Select((q, j) => new Question
+                {
+                    Order = j,
+                    Prompt = q.Prompt,
+                    Skill = q.Skill,
+                    Explanation = q.Explanation,
+                    Options = q.Options.Select(o => new QuestionOption { Text = o.Text, IsCorrect = o.IsCorrect }).ToList()
+                }).ToList()
+            }).ToList()
+        };
     }
 
     private void Audit(Guid actor, string action, Guid id) => db.AuditEntries.Add(new AuditEntry { ActorId = actor, Action = action, ResourceId = id, OccurredAt = clock.UtcNow });

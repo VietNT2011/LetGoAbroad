@@ -1,4 +1,5 @@
 namespace EnglishHub.Application.Learning;
+
 public sealed record PlanCandidate(Guid ContentVersionId, int Minutes, string Kind, int Order);
 
 /// <summary>VI: Planner v1 xác định sẵn, không gọi AI. EN: A deterministic, budget-constrained planner with explainable rules.</summary>

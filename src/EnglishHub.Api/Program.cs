@@ -62,11 +62,11 @@ app.MapAssessment();
 app.MapLearning();
 app.MapMedia();
 app.MapHealthChecks("/health/live");
-app.MapGet("/health/ready",async (HubDbContext db,CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status="ready" }) : Results.StatusCode(503));
+app.MapGet("/health/ready", async (HubDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 app.MapOpenApi();
 app.MapGet("/api/v1/status", () => new { name = "EnglishHub", version = "0.1.0", aiEnabled = false, mediaEnabled = app.Configuration.GetValue<bool>("FeatureFlags:EnableMedia") });
 app.MapFallbackToFile("index.html");
-app.Map("/api/{**path}",() => Results.Problem(statusCode:404,title:"endpoint_not_found"));
+app.Map("/api/{**path}", () => Results.Problem(statusCode: 404, title: "endpoint_not_found"));
 app.Run();
 
 /// <summary>VI: Điểm vào cho integration test. EN: Exposes the entry point to WebApplicationFactory.</summary>

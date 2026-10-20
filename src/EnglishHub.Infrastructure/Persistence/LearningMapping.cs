@@ -1,6 +1,7 @@
 using EnglishHub.Domain;
 using Microsoft.EntityFrameworkCore;
 namespace EnglishHub.Infrastructure.Persistence;
+
 public sealed partial class HubDbContext
 {
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();

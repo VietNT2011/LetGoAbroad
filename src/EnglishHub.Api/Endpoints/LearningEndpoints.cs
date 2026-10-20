@@ -4,6 +4,7 @@ using EnglishHub.Infrastructure.Persistence;
 using EnglishHub.Domain;
 using Microsoft.EntityFrameworkCore;
 namespace EnglishHub.Api.Endpoints;
+
 public static class LearningEndpoints
 {
     public static void MapLearning(this WebApplication app)

@@ -53,7 +53,8 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
         foreach (var fk in b.Model.GetEntityTypes().SelectMany(x => x.GetForeignKeys())) fk.DeleteBehavior = DeleteBehavior.NoAction;
         if (Database.IsSqlite())
             foreach (var property in b.Model.GetEntityTypes().SelectMany(x => x.GetProperties()).Where(x => x.ClrType == typeof(DateTimeOffset) || x.ClrType == typeof(DateTimeOffset?)))
-                property.SetValueConverter(new Microsoft.EntityFrameworkCore.Storage.ValueConversion.DateTimeOffsetToBinaryConverter());
+                // VI: UTC ticks giữ nguyên precision; converter binary chuẩn làm mất phần lẻ và đổi response khi replay. EN: UTC ticks preserve precision so persisted replays match the original acknowledgement.
+                property.SetValueConverter(new Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTimeOffset, long>(value => value.UtcTicks, value => new DateTimeOffset(value, TimeSpan.Zero)));
     }
 
     partial void ConfigureAssessment(ModelBuilder b);

@@ -16,6 +16,7 @@ public sealed record LessonCheck(bool Completed, LessonFeedback[] Feedback);
 /// <summary>VI: Tiến độ dựa trên quiz/kết quả đã lưu. EN: Completion comes from persisted quiz evidence, never from simply opening a page.</summary>
 public sealed class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock)
 {
+    /// <summary>VI: Khóa theo user ngăn hai enrollment từ nhiều tab. EN: A user-level lock prevents duplicate enrollment across tabs or API instances.</summary>
     public Task<Enrollment> Enroll(Guid userId, EnrollInput input) => tx.Run($"learning:{userId}", async () =>
     {
         var existing = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);
@@ -32,6 +33,7 @@ public sealed class LearningService(HubDbContext db, Transactions tx, Receipts r
         db.Enrollments.Add(enrollment); return enrollment;
     });
 
+    /// <summary>VI: Ngày học tính trong timezone hồ sơ và được ghim vào task. EN: Resolve the local study date from the profile timezone and pin it to generated tasks.</summary>
     public Task<object> Dashboard(Guid userId) => tx.Run($"learning:{userId}", async () =>
     {
         var user = await db.Users.SingleAsync(x => x.Id == userId);
@@ -47,11 +49,21 @@ public sealed class LearningService(HubDbContext db, Transactions tx, Receipts r
                 var doneRoots = await db.LessonProgress.Where(x => x.UserId == userId).Select(x => x.ContentVersion.RootId).Distinct().ToArrayAsync();
                 var versions = await db.ContentVersions.Include(x => x.Root).Where(x => x.Status == PublicationStatus.Published && x.Root.CurrentPublishedVersionId == x.Id && !x.IsFixture).ToListAsync();
                 var lessons = versions.Where(x => x.Root.Kind == ContentKind.Lesson && !doneRoots.Contains(x.RootId)).Select(x => new PlanCandidate(x.Id, x.Minutes, "lesson", x.CurriculumOrder));
-                var practices = versions.Where(x => x.Root.Kind == ContentKind.Assessment && x.Root.Slug != "placement-demo").Select((x,i) => new PlanCandidate(x.Id, x.Minutes, "practice", i));
+                var practices = versions.Where(x => x.Root.Kind == ContentKind.Assessment && x.Root.Slug != "placement-demo").Select((x, i) => new PlanCandidate(x.Id, x.Minutes, "practice", i));
                 var selected = Planner.Select(lessons, practices, user.MinutesPerDay);
                 foreach (var (item, slot) in selected.Select((item, slot) => (item, slot)))
-                    db.DailyTasks.Add(new DailyTask { EnrollmentId = enrollment.Id, UserId = userId, LocalDate = today, SlotKey = slot, ContentVersionId = item.ContentVersionId, EstimatedMinutes = item.Minutes, CreatedAt = clock.UtcNow,
-                        ReasonCode = item.Kind == "lesson" ? "FOUNDATION_NEXT" : "SHORT_PRACTICE", ReasonText = item.Kind == "lesson" ? "Bài tiếp theo chưa hoàn thành trong lộ trình; quy tắc v1." : "Luyện ngắn để củng cố kiến thức, vừa ngân sách thời gian; quy tắc v1." });
+                    db.DailyTasks.Add(new DailyTask
+                    {
+                        EnrollmentId = enrollment.Id,
+                        UserId = userId,
+                        LocalDate = today,
+                        SlotKey = slot,
+                        ContentVersionId = item.ContentVersionId,
+                        EstimatedMinutes = item.Minutes,
+                        CreatedAt = clock.UtcNow,
+                        ReasonCode = item.Kind == "lesson" ? "FOUNDATION_NEXT" : "SHORT_PRACTICE",
+                        ReasonText = item.Kind == "lesson" ? "Bài tiếp theo chưa hoàn thành trong lộ trình; quy tắc v1." : "Luyện ngắn để củng cố kiến thức, vừa ngân sách thời gian; quy tắc v1."
+                    });
                 await db.SaveChangesAsync();
             }
             await SyncCompleted(userId, today, user.TimeZoneId);
@@ -59,10 +71,17 @@ public sealed class LearningService(HubDbContext db, Transactions tx, Receipts r
         var tasks = await db.DailyTasks.AsNoTracking().Where(x => x.UserId == userId && x.LocalDate == today).OrderBy(x => x.SlotKey).Select(x => new { x.Id, x.ContentVersionId, x.ContentVersion.Title, kind = x.ContentVersion.Root.Kind, x.EstimatedMinutes, x.Status, x.ReasonCode, x.ReasonText }).ToListAsync();
         var lessonsCompleted = await db.LessonProgress.CountAsync(x => x.UserId == userId);
         var attempts = await db.Attempts.Where(x => x.UserId == userId && x.Status == AttemptStatus.Graded && !x.ContentVersion.IsFixture && x.Mode != "mistake_review").Select(x => x.Result!).ToListAsync();
-        return (object)new { localDate = today, timeZoneId = user.TimeZoneId, enrollment = enrollment is null ? null : new { enrollment.Id, enrollment.Level, enrollment.TargetScore, enrollment.MinutesPerDay, enrollment.RuleVersion, enrollment.PlanRevision }, tasks,
-            statistics = new { lessonsCompleted, attemptsCompleted = attempts.Count, questionsCorrect = attempts.Sum(x => x.CorrectCount), questionsObserved = attempts.Sum(x => x.TotalCount) } };
+        return (object)new
+        {
+            localDate = today,
+            timeZoneId = user.TimeZoneId,
+            enrollment = enrollment is null ? null : new { enrollment.Id, enrollment.Level, enrollment.TargetScore, enrollment.MinutesPerDay, enrollment.RuleVersion, enrollment.PlanRevision },
+            tasks,
+            statistics = new { lessonsCompleted, attemptsCompleted = attempts.Count, questionsCorrect = attempts.Sum(x => x.CorrectCount), questionsObserved = attempts.Sum(x => x.TotalCount) }
+        };
     });
 
+    /// <summary>VI: Lượt kiểm tra sai chỉ trả feedback; lượt đúng mới ghi progress. EN: Incorrect checks return feedback; only successful evidence creates progress.</summary>
     public Task<LessonCheck> CompleteLesson(Guid user, Guid versionId, CompleteLessonInput input) => tx.Run($"learning:{user}", async () =>
     {
         var scope = $"lesson:{versionId}"; var hash = Receipts.Hash(input); var duplicate = await receipts.Find(user, scope, input.ClientRequestId, hash);
@@ -82,6 +101,7 @@ public sealed class LearningService(HubDbContext db, Transactions tx, Receipts r
         return result;
     });
 
+    /// <summary>VI: Dữ liệu dẫn xuất có nguồn FK thật và outbox duy nhất theo task. EN: Complete tasks from real source foreign keys with one completion/outbox effect.</summary>
     private async Task SyncCompleted(Guid user, DateOnly date, string timezone)
     {
         var tasks = await db.DailyTasks.Where(x => x.UserId == user && x.LocalDate == date && x.Status != "completed").ToListAsync();

@@ -4,8 +4,8 @@ namespace EnglishHub.Infrastructure.Persistence;
 /// <summary>VI: Nâng seed bằng version mới, không sửa đề lịch sử. EN: Publish improved original demo content without changing pinned historical exams.</summary>
 public static class DemoAssessmentSeed
 {
-    private const string Attribution="EnglishHub original demonstration content · CC0 · question-pool-v2 · not ETS material";
-    private static readonly (string Prompt,string Correct,string B,string C,string D,string Explanation)[] Pool = [
+    private const string Attribution = "EnglishHub original demonstration content · CC0 · question-pool-v2 · not ETS material";
+    private static readonly (string Prompt, string Correct, string B, string C, string D, string Explanation)[] Pool = [
         ("She ___ to work every morning.","goes","go","going","gone","She là ngôi thứ ba số ít, dùng goes."),
         ("Please send the report ___ Friday.","by","at","with","into","By chỉ hạn cuối hoàn thành công việc."),
         ("The meeting has been ___ until next week.","postponed","arrived","spoken","grown","Postponed là quá khứ phân từ trong câu bị động."),
@@ -29,43 +29,43 @@ public static class DemoAssessmentSeed
     ];
     public static async Task Ensure(HubDbContext db)
     {
-        foreach(var slug in new[] { "placement-demo","mini-grammar","mini-reading","full-mock-fixture" })
+        foreach (var slug in new[] { "placement-demo", "mini-grammar", "mini-reading", "full-mock-fixture" })
         {
-            var root=await db.ContentRoots.Include(x => x.CurrentPublishedVersion).SingleAsync(x => x.Slug==slug);
-            var old=root.CurrentPublishedVersion!; if(old.Attribution==Attribution) continue;
-            var v=new ContentVersion { RootId=root.Id,Version=old.Version+1,Status=PublicationStatus.Published,Title=old.Title,Summary=old.Summary,Skill=slug=="mini-reading" ? "reading" : old.Skill,Minutes=old.Minutes,DurationSeconds=old.DurationSeconds,IsFixture=old.IsFixture,Attribution=Attribution,PublishedAt=DateTimeOffset.UtcNow };
-            if(slug=="full-mock-fixture")
+            var root = await db.ContentRoots.Include(x => x.CurrentPublishedVersion).SingleAsync(x => x.Slug == slug);
+            var old = root.CurrentPublishedVersion!; if (old.Attribution == Attribution) continue;
+            var v = new ContentVersion { RootId = root.Id, Version = old.Version + 1, Status = PublicationStatus.Published, Title = old.Title, Summary = old.Summary, Skill = slug == "mini-reading" ? "reading" : old.Skill, Minutes = old.Minutes, DurationSeconds = old.DurationSeconds, IsFixture = old.IsFixture, Attribution = Attribution, PublishedAt = DateTimeOffset.UtcNow };
+            if (slug == "full-mock-fixture")
             {
-                var counts=new[] { 6,25,39,30,30,16,54 }; var order=0;
-                for(var part=1;part<=7;part++)
+                var counts = new[] { 6, 25, 39, 30, 30, 16, 54 }; var order = 0;
+                for (var part = 1; part <= 7; part++)
                 {
-                    var size=part is 3 or 4 or 7 ? 3 : part==6 ? 4 : 1;
-                    for(var offset=0;offset<counts[part-1];offset+=size)
+                    var size = part is 3 or 4 or 7 ? 3 : part == 6 ? 4 : 1;
+                    for (var offset = 0; offset < counts[part - 1]; offset += size)
                     {
-                        var group=new QuestionGroup { Part=part,Order=v.Groups.Count,Stimulus=$"Technical format fixture · Part {part} · original grammar items, not simulated ETS content." };
-                        for(var j=0;j<Math.Min(size,counts[part-1]-offset);j++) group.Questions.Add(MakeQuestion(order++,part,j));
+                        var group = new QuestionGroup { Part = part, Order = v.Groups.Count, Stimulus = $"Technical format fixture · Part {part} · original grammar items, not simulated ETS content." };
+                        for (var j = 0; j < Math.Min(size, counts[part - 1] - offset); j++) group.Questions.Add(MakeQuestion(order++, part, j));
                         v.Groups.Add(group);
                     }
                 }
             }
-            else if(slug=="mini-reading")
+            else if (slug == "mini-reading")
             {
-                var passages=new[] { ("Thursday","10 a.m.","Room 204","project updates"),("Monday","9 a.m.","Room 105","sales figures"),("Tuesday","2 p.m.","the main hall","training materials"),("Friday","11 a.m.","Room 302","design sketches"),("Wednesday","3 p.m.","the library","research notes") };
-                foreach(var (day,time,room,bring) in passages)
+                var passages = new[] { ("Thursday", "10 a.m.", "Room 204", "project updates"), ("Monday", "9 a.m.", "Room 105", "sales figures"), ("Tuesday", "2 p.m.", "the main hall", "training materials"), ("Friday", "11 a.m.", "Room 302", "design sketches"), ("Wednesday", "3 p.m.", "the library", "research notes") };
+                foreach (var (day, time, room, bring) in passages)
                 {
-                    var group=new QuestionGroup { Part=7,Order=v.Groups.Count,Stimulus=$"Dear team, our meeting is on {day} at {time} in {room}. Please bring your {bring}. If you cannot attend, email the coordinator before the meeting. Thank you." };
-                    var questions=new[] { ("On which day is the meeting?",day,"Saturday","Sunday","Not stated"),("Where will the team meet?",room,"At a restaurant","In the car park","Online only"),("What should participants bring?",bring,"Their passports","Lunch for everyone","Nothing"),("What should someone do if unable to attend?","Email the coordinator","Call the police","Ignore the invitation","Reschedule it alone") };
-                    foreach(var (prompt,correct,b,c,d) in questions) group.Questions.Add(new Question { Order=group.Questions.Count,Prompt=prompt,Skill="reading",Explanation=$"Đọc thông tin cụ thể trong email. Đáp án được nêu trực tiếp: {correct}.",Options=[new(){Text=correct,IsCorrect=true},new(){Text=b},new(){Text=c},new(){Text=d}] });
+                    var group = new QuestionGroup { Part = 7, Order = v.Groups.Count, Stimulus = $"Dear team, our meeting is on {day} at {time} in {room}. Please bring your {bring}. If you cannot attend, email the coordinator before the meeting. Thank you." };
+                    var questions = new[] { ("On which day is the meeting?", day, "Saturday", "Sunday", "Not stated"), ("Where will the team meet?", room, "At a restaurant", "In the car park", "Online only"), ("What should participants bring?", bring, "Their passports", "Lunch for everyone", "Nothing"), ("What should someone do if unable to attend?", "Email the coordinator", "Call the police", "Ignore the invitation", "Reschedule it alone") };
+                    foreach (var (prompt, correct, b, c, d) in questions) group.Questions.Add(new Question { Order = group.Questions.Count, Prompt = prompt, Skill = "reading", Explanation = $"Đọc thông tin cụ thể trong email. Đáp án được nêu trực tiếp: {correct}.", Options = [new() { Text = correct, IsCorrect = true }, new() { Text = b }, new() { Text = c }, new() { Text = d }] });
                     v.Groups.Add(group);
                 }
             }
-            else for(var i=0;i<20;i++) v.Groups.Add(new QuestionGroup { Order=i,Part=5,Stimulus="Original EnglishHub workplace English",Questions=[MakeQuestion(i,5,0)] });
-            db.ContentVersions.Add(v); await db.SaveChangesAsync(); root.CurrentPublishedVersionId=v.Id; await db.SaveChangesAsync();
+            else for (var i = 0; i < 20; i++) v.Groups.Add(new QuestionGroup { Order = i, Part = 5, Stimulus = "Original EnglishHub workplace English", Questions = [MakeQuestion(i, 5, 0)] });
+            db.ContentVersions.Add(v); await db.SaveChangesAsync(); root.CurrentPublishedVersionId = v.Id; await db.SaveChangesAsync();
         }
     }
-    private static Question MakeQuestion(int index,int part,int order)
+    private static Question MakeQuestion(int index, int part, int order)
     {
-        var q=Pool[index%Pool.Length]; var options=new List<QuestionOption> { new(){Text=q.Correct,IsCorrect=true},new(){Text=q.B},new(){Text=q.C} }; if(part!=2) options.Add(new(){Text=q.D});
-        return new Question { Order=order,Prompt=q.Prompt,Skill=part<=4 ? "listening" : "grammar",Explanation=q.Explanation,Options=options };
+        var q = Pool[index % Pool.Length]; var options = new List<QuestionOption> { new() { Text = q.Correct, IsCorrect = true }, new() { Text = q.B }, new() { Text = q.C } }; if (part != 2) options.Add(new() { Text = q.D });
+        return new Question { Order = order, Prompt = q.Prompt, Skill = part <= 4 ? "listening" : "grammar", Explanation = q.Explanation, Options = options };
     }
 }

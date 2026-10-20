@@ -19,10 +19,13 @@ public sealed class TestApp : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services => { services.RemoveAll<IClock>(); services.AddSingleton<IClock>(Clock); });
         var sql = Environment.GetEnvironmentVariable("EH_TEST_SQL");
         if (sql is not null) { var cs = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(sql) { InitialCatalog = $"EnglishHubTest_{Guid.NewGuid():N}" }; sql = cs.ConnectionString; }
-        builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?> {
+        builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
+        {
             ["Database:Provider"] = Environment.GetEnvironmentVariable("EH_TEST_SQL") is null ? "Sqlite" : "SqlServer",
             ["ConnectionStrings:Database"] = sql ?? $"Data Source={DatabasePath}",
-            ["Database:Initialize"] = "true", ["Seed:Demo"] = "true", ["FeatureFlags:EnableCommunity"] = "true"
+            ["Database:Initialize"] = "true",
+            ["Seed:Demo"] = "true",
+            ["FeatureFlags:EnableCommunity"] = "true"
         }));
     }
 
