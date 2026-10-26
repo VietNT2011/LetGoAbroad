@@ -2,7 +2,7 @@ param([switch]$SqlServer,[switch]$Storage)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot
 $dockerArgs = @('run','--rm','--name','englishhub-tests')
-$image='mcr.microsoft.com/dotnet/sdk:10.0'
+$image='mcr.microsoft.com/dotnet/sdk:10.0@sha256:212fe4cb74627d5adf9817a4088906ae3edff1bd853bb27565d4b46731efe61e'
 if ($Storage) {
     $localStorageKey=((Get-Content -LiteralPath (Join-Path $repo 'deploy/.env') | Where-Object { $_ -like 'AZURITE_ACCOUNT_KEY=*' }) -replace '^AZURITE_ACCOUNT_KEY=', '')
     $env:Storage__ConnectionString="DefaultEndpointsProtocol=http;AccountName=englishhub;AccountKey=$localStorageKey;BlobEndpoint=http://azurite:10000/englishhub;"
@@ -18,6 +18,7 @@ if ($SqlServer) {
     $dockerArgs += @('--env','EH_TEST_SQL')
 }
 $dockerArgs += @('-v',"${repo}:/repo",'-v','englishhub-nuget:/root/.nuget/packages','-w','/repo',$image,'dotnet','test','EnglishHub.slnx','--artifacts-path','/repo/artifacts/linux','--disable-build-servers','-m:1','--logger','console;verbosity=minimal')
+$dockerArgs += @('--logger','trx;LogFileName=results.trx','--results-directory','/repo/artifacts/TestResults')
 if (!$Storage) { $dockerArgs += @('--filter','Category!=Storage') }
 & docker @dockerArgs
 if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }

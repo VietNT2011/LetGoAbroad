@@ -15,3 +15,20 @@ jobs:
       - run: dotnet test --no-restore --configuration Release --filter 'Category!=Storage'
       - run: npm ci && npm run build
         working-directory: web
+  sql-and-media:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start SQL Server and Azurite
+        shell: pwsh
+        run: ./scripts/start-infra.ps1
+      - name: Run real database and FFmpeg integration suite
+        shell: pwsh
+        run: ./scripts/test.ps1 -SqlServer -Storage
+      - name: Save test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results
+          path: artifacts/TestResults
+          if-no-files-found: ignore

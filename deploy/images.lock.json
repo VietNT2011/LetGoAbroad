@@ -1,0 +1,12 @@
+{
+  "verifiedOn": "2026-11-09",
+  "sdkVersion": "10.0.403",
+  "runtimeVersion": "10.0.14",
+  "sdk": "mcr.microsoft.com/dotnet/sdk:10.0@sha256:212fe4cb74627d5adf9817a4088906ae3edff1bd853bb27565d4b46731efe61e",
+  "aspnet": "mcr.microsoft.com/dotnet/aspnet:10.0@sha256:1a48394b6f29d3a32c79d9edecd4abda0ecbe8776d567dbfc4590ed6979c740c",
+  "node": "node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914",
+  "sql": "mcr.microsoft.com/mssql/server:2022-CU22-ubuntu-22.04@sha256:db9a8fe3098b7e8bbde41106bdc7caee942e97124e5fdb71b872ca208de3092d",
+  "azurite": "mcr.microsoft.com/azure-storage/azurite:3.35.0@sha256:647c63a91102a9d8e8000aab803436e1fc85fbb285e7ce830a82ee5d6661cf37",
+  "ffmpegPackage": "7:6.1.1-3ubuntu5",
+  "note": "Core base images are pinned in Dockerfiles/Compose. FFmpeg is installed from the official Ubuntu repository; its observed package version is recorded here. Optional social/call profiles are not accepted product integrations."
+}
