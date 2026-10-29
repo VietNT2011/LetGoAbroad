@@ -66,8 +66,9 @@ public static class IdentityEndpoints
         app.MapPut("/api/v1/profile", async (ProfileInput input, ClaimsPrincipal principal, UserManager<AppUser> users) =>
         {
             DomainError.Require(input.TargetScore is 450 or 650 or 800 && input.MinutesPerDay is 20 or 30 or 45 && input.StudyDays.Length is >= 1 and <= 7 && input.StudyDays.All(x => x is >= 0 and <= 6) && !string.IsNullOrWhiteSpace(input.DisplayName) && input.DisplayName.Length <= 120, 422, "invalid_profile", "Cấu hình học không hợp lệ.");
+            DomainError.Require(!string.IsNullOrWhiteSpace(input.TimeZoneId) && input.TimeZoneId.Length<=80,422,"invalid_timezone","Múi giờ không hợp lệ.");
             try { TimeZoneInfo.FindSystemTimeZoneById(input.TimeZoneId); }
-            catch (TimeZoneNotFoundException) { throw new DomainError(422, "invalid_timezone", "Múi giờ không hợp lệ."); }
+            catch (Exception error) when(error is TimeZoneNotFoundException or InvalidTimeZoneException) { throw new DomainError(422, "invalid_timezone", "Múi giờ không hợp lệ."); }
             var user = (await users.GetUserAsync(principal))!;
             user.DisplayName = input.DisplayName.Trim(); user.TimeZoneId = TimeZoneInfo.TryConvertWindowsIdToIanaId(input.TimeZoneId, out var canonicalZone) ? canonicalZone : input.TimeZoneId; user.TargetScore = input.TargetScore;
             user.MinutesPerDay = input.MinutesPerDay; user.StudyDays = string.Join(',', input.StudyDays.Distinct().Order());

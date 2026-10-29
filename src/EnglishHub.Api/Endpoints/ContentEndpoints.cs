@@ -56,7 +56,7 @@ public static class ContentEndpoints
         }).RequireAuthorization(p => p.RequireRole("Admin"));
         admin.MapPut("/versions/{id:guid}", async (Guid id, ContentInput input, HttpContext ctx, ContentService service) => { var v = await service.UpdateDraft(id, input, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return new { v.Id, etag = Etags.Of(v) }; });
         admin.MapPost("/versions/{id:guid}/archive", async (Guid id, HttpContext ctx, ContentService service) => { await service.Archive(id, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return Results.NoContent(); }).RequireAuthorization(p => p.RequireRole("Admin"));
-        admin.MapPost("/imports/dry-run", (CreateContentInput[] input) => ContentService.DryRun(input));
+        admin.MapPost("/imports/dry-run", (CreateContentInput[] input,ContentService service) => service.DryRun(input));
         admin.MapPost("/imports", (ImportInput input, ClaimsPrincipal user, ContentService service) => service.Import(input, user.UserId()));
     }
 }

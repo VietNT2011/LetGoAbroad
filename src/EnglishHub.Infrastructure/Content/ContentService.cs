@@ -19,6 +19,8 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
 
     public Task<ContentVersion> Create(CreateContentInput input, Guid actor) => tx.Run("catalog", async () =>
     {
+        CheckKind(input.Kind);
+        await CheckMedia(input.Content.MediaAssetId);
         DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(input.Slug, "^[a-z0-9-]{3,120}$"), 422, "invalid_slug", "Slug phải gồm chữ thường, số và dấu gạch.");
         DomainError.Require(!await db.ContentRoots.AnyAsync(x => x.Slug == input.Slug), 409, "slug_exists", "Slug đã tồn tại.");
         var root = new ContentRoot { Slug = input.Slug, Kind = input.Kind };
@@ -30,6 +32,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
 
     public Task<ContentVersion> NewVersion(Guid rootId, ContentInput input, Guid actor) => tx.Run("catalog", async () =>
     {
+        await CheckMedia(input.MediaAssetId);
         DomainError.Require(await db.ContentRoots.AnyAsync(x => x.Id == rootId), 404, "content_not_found", "Không tìm thấy nội dung.");
         var number = await db.ContentVersions.Where(x => x.RootId == rootId).MaxAsync(x => x.Version) + 1;
         var version = MakeVersion(rootId, number, input);
@@ -42,6 +45,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     {
         var v = await FullVersions.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy bản nháp.");
         Etags.Check(v, etag); DomainError.Require(v.Status == PublicationStatus.Draft, 409, "immutable_version", "Hãy tạo version mới để sửa nội dung đã publish.");
+        await CheckMedia(input.MediaAssetId);
         var replacement = MakeVersion(v.RootId, v.Version, input);
         db.QuestionOptions.RemoveRange(v.Groups.SelectMany(g => g.Questions).SelectMany(q => q.Options));
         db.Questions.RemoveRange(v.Groups.SelectMany(g => g.Questions)); db.QuestionGroups.RemoveRange(v.Groups);
@@ -61,27 +65,34 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         Audit(actor, "content.archived", id); return true;
     });
 
-    public static object DryRun(CreateContentInput[] items)
+    public async Task<object> DryRun(CreateContentInput[] items)
     {
-        DomainError.Require(items.Length is >= 1 and <= 20, 422, "invalid_import_size", "Một import gồm 1–20 nội dung.");
-        return new
+        DomainError.Require(items.Length is >= 1 and <= 20 && items.All(x => x is not null), 422, "invalid_import_size", "Một import gồm 1–20 nội dung hợp lệ.");
+        var rows=new List<object>();
+        foreach(var (item,index) in items.Select((item,index)=>(item,index)))
         {
-            rows = items.Select((item, index) =>
-        {
-            try { var version = MakeVersion(Guid.NewGuid(), 1, item.Content); version.Root = new ContentRoot { Kind = item.Kind }; Validate(version); return new { index, valid = true, code = (string?)null, message = (string?)null }; }
-            catch (DomainError error) { return new { index, valid = false, code = (string?)error.Code, message = (string?)error.Message }; }
-        }).ToArray()
-        };
+            try
+            {
+                CheckKind(item.Kind); await CheckMedia(item.Content.MediaAssetId);
+                DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug,"^[a-z0-9-]{3,120}$"),422,"invalid_slug","Slug không hợp lệ.");
+                DomainError.Require(items.Count(x => x.Slug==item.Slug)==1 && !await db.ContentRoots.AnyAsync(x => x.Slug==item.Slug),409,"slug_exists","Slug đã tồn tại hoặc bị lặp trong lô.");
+                var version=MakeVersion(Guid.NewGuid(),1,item.Content); version.Root=new ContentRoot { Kind=item.Kind }; Validate(version);
+                rows.Add(new { index,valid=true,code=(string?)null,message=(string?)null });
+            }
+            catch(DomainError error) { rows.Add(new { index,valid=false,code=error.Code,message=error.Message }); }
+        }
+        return new { rows };
     }
 
     public Task<Guid[]> Import(ImportInput input, Guid actor) => tx.Run("catalog", async () =>
     {
         var hash = Receipts.Hash(input); var duplicate = await receipts.Find(actor, "content-import", input.ClientRequestId, hash);
         if (duplicate is not null) return System.Text.Json.JsonSerializer.Deserialize<Guid[]>(duplicate.ResponseJson)!;
-        DomainError.Require(input.Items.Length is >= 1 and <= 20 && input.Items.Select(x => x.Slug).Distinct().Count() == input.Items.Length, 422, "invalid_import_size", "Cần 1–20 slug duy nhất.");
+        DomainError.Require(input.Items.Length is >= 1 and <= 20 && input.Items.All(x => x is not null) && input.Items.Select(x => x.Slug).Distinct().Count() == input.Items.Length, 422, "invalid_import_size", "Cần 1–20 slug duy nhất.");
         var ids = new List<Guid>();
         foreach (var item in input.Items)
         {
+            CheckKind(item.Kind); await CheckMedia(item.Content.MediaAssetId);
             DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug, "^[a-z0-9-]{3,120}$"), 422, "invalid_slug", "Slug không hợp lệ.");
             DomainError.Require(!await db.ContentRoots.AnyAsync(x => x.Slug == item.Slug), 409, "slug_exists", "Import xung đột slug đã tồn tại.");
             var root = new ContentRoot { Kind = item.Kind, Slug = item.Slug }; var version = MakeVersion(root.Id, 1, item.Content); version.Root = root; Validate(version);
@@ -108,6 +119,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
 
     public static void Validate(ContentVersion v)
     {
+        CheckKind(v.Root.Kind);
         DomainError.Require(!string.IsNullOrWhiteSpace(v.Title) && v.Title.Length <= 240 && !string.IsNullOrWhiteSpace(v.Attribution), 422, "invalid_content", "Cần tiêu đề và thông tin nguồn.");
         DomainError.Require(v.Minutes is >= 1 and <= 180 && v.DurationSeconds is >= 30 and <= 14400, 422, "invalid_duration", "Thời lượng không hợp lệ.");
         if (v.Root.Kind == ContentKind.Lesson) DomainError.Require(v.Body.Length >= 30, 422, "empty_lesson", "Bài học cần nội dung.");
@@ -126,6 +138,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     private static ContentVersion MakeVersion(Guid rootId, int number, ContentInput input)
     {
         DomainError.Require(input.Groups.Length <= 200 && input.Title.Length <= 240 && input.Body.Length <= 100000, 422, "content_too_large", "Nội dung vượt giới hạn.");
+        DomainError.Require(input.Summary.Length<=2000 && input.Skill.Length<=60 && input.Attribution.Length<=2000 && input.Groups.All(g => g is not null && g.Questions.Length<=6 && g.Stimulus.Length<=20000 && g.Questions.All(q => q is not null && q.Prompt.Length<=4000 && q.Explanation.Length<=8000 && q.Options.Length<=4 && q.Options.All(o => o is not null && o.Text.Length<=2000))),422,"invalid_content_shape","Cấu trúc câu hỏi hoặc giới hạn nội dung không hợp lệ.");
         return new ContentVersion
         {
             RootId = rootId,
@@ -156,5 +169,11 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         };
     }
 
+    /// <summary>VI: Báo lỗi tham chiếu trước khi chạm FK SQL. EN: Reject invalid media references as business errors before database foreign-key enforcement.</summary>
+    private async Task CheckMedia(Guid? id)
+    {
+        if(id is { } mediaId) DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id==mediaId && x.Purpose=="lesson_audio" && x.Status!=MediaStatus.Deleted && x.Status!=MediaStatus.DeletePending),422,"invalid_media_reference","Chỉ gắn lesson audio còn hiệu lực; không gắn recording riêng tư.");
+    }
+    private static void CheckKind(ContentKind kind) => DomainError.Require(kind is ContentKind.Lesson or ContentKind.Assessment,422,"invalid_content_kind","Loại nội dung không được hỗ trợ.");
     private void Audit(Guid actor, string action, Guid id) => db.AuditEntries.Add(new AuditEntry { ActorId = actor, Action = action, ResourceId = id, OccurredAt = clock.UtcNow });
 }

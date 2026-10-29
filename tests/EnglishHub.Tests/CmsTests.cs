@@ -6,6 +6,15 @@ using EnglishHub.Domain;
 
 public sealed class CmsTests(TestApp app) : IClassFixture<TestApp>
 {
+    [Fact]
+    public async Task Invalid_media_kind_and_null_children_return_validation_errors_instead_of_database_failures()
+    {
+        using var client=await app.Login("admin@englishhub.local");
+        var input=new CreateContentInput($"invalid-{Guid.NewGuid():N}",ContentKind.Lesson,Lesson() with { MediaAssetId=Guid.NewGuid() });
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,(await client.PostAsJsonAsync("/api/v1/admin/content",input)).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,(await client.PostAsJsonAsync("/api/v1/admin/content",input with { Kind=(ContentKind)999,Content=Lesson() })).StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity,(await client.PostAsJsonAsync("/api/v1/admin/content",input with { Content=Lesson() with { Groups=[null!] } })).StatusCode);
+    }
     private static ContentInput Lesson(string body = "Original lesson body with enough context for publication.") => new("Original lesson", "A lesson to test immutable versions.", body, "grammar", 10, 1200, false, "EnglishHub original · CC0", []);
     private static HttpRequestMessage Command(HttpMethod method, string route, string etag, object? body = null)
     {
