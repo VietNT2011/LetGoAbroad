@@ -65,6 +65,16 @@ public sealed class StudyActivityService(HubDbContext db, Transactions tx, ICloc
         return new(1, days, from, now, ticks / TimeSpan.TicksPerSecond);
     }
 
+    public async Task<StudyCalendarSnapshot> ReadCalendar(Guid user, int days = 7)
+    {
+        var zoneId = await db.Users.AsNoTracking().Where(x => x.Id == user).Select(x => x.TimeZoneId).SingleOrDefaultAsync()
+            ?? throw new DomainError(401, "unauthenticated", "Vui lòng đăng nhập.");
+        var window = StudyCalendarProjector.Window(TimeZoneInfo.FindSystemTimeZoneById(zoneId), clock.UtcNow, days);
+        var intervals = await db.ActivityIntervals.AsNoTracking().Where(x => x.UserId == user && x.EndAt > window.FromUtc && x.StartAt < window.ToUtc)
+            .Select(x => new { x.StartAt, x.EndAt }).ToArrayAsync();
+        return StudyCalendarProjector.Project(intervals.Select(x => new StudyRange(x.StartAt, x.EndAt)), window);
+    }
+
     private async Task<ActivitySession> Owned(Guid user, Guid id, bool tracking = true) => await (tracking ? db.ActivitySessions : db.ActivitySessions.AsNoTracking()).SingleOrDefaultAsync(x => x.Id == id && x.UserId == user)
         ?? throw new DomainError(404, "study_session_not_found", "Không tìm thấy phiên học của bạn.");
     private StudySessionView View(ActivitySession session) => new(session.Id, session.LastSequence, session.ExpiresAt, clock.UtcNow >= session.ExpiresAt);

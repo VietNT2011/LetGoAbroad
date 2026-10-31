@@ -1,6 +1,6 @@
 # Estimated study time / Thời gian học ước tính
 
-VI: Dashboard có số đo **ước tính** trong cửa sổ7×24 hoặc30×24 giờ UTC kết thúc tại thời điểm đọc. Đây là elapsed-time view, độc lập với ngày lịch/múi giờ đang dùng ở biểu đồ hoàn thành. Mở tab không tạo thành tích, completion, raw score, streak hay XP.
+VI: Dashboard có số đo **ước tính** trong cửa sổ7×24 hoặc30×24 giờ UTC kết thúc tại thời điểm đọc, cùng [biểu đồ theo ngày Hồ sơ](study-time-calendar.md). Hai chế độ có mốc bắt đầu khác nhau. Mở tab không tạo thành tích, completion, raw score, streak hay XP.
 
 ## Source policy v1 / Quy tắc nguồn
 
@@ -14,7 +14,7 @@ VI: Mỗi interval có FK tới đúng heartbeat/owner, unique session+sequence 
 
 ## Aggregation / Tổng hợp
 
-The read captures one UTC `now`, selects only the owner's intervals overlapping the requested rolling window, clips their boundaries and unions overlapping/adjacent ranges across all sessions before summing exact ticks. Whole seconds are rounded down once after union. Duplicate/nested intervals and two tabs covering the same moment contribute that moment once. Changing profile/path timezones does not re-bucket this UTC elapsed window. Local-day duration charts are separate future work.
+The read captures one UTC `now`, selects only the owner's intervals overlapping the requested rolling window, clips their boundaries and unions overlapping/adjacent ranges across all sessions before summing exact ticks. Whole seconds are rounded down once after union. Duplicate/nested intervals and two tabs covering the same moment contribute that moment once. Changing profile/path timezones does not re-bucket this UTC elapsed window. The separate [local-day calendar](study-time-calendar.md) reuses the same UTC sources and union policy, retains fractional seconds, and partitions by the current profile timezone.
 
 Existing completion/activity events, attempts, lessons, SRS ratings and plan revisions are not changed or backfilled. No historical study time is invented when this feature is deployed.
 
@@ -33,4 +33,4 @@ One request is in flight per hook and a failed heartbeat retains its exact pendi
 
 All endpoints require authentication; mutations use CSRF. Admin cannot inspect another owner's session. Fifteen policy/relational cases cover exact union/clipping/offset/tick behavior, start/upsert, bounded gaps and pause/resume, overlapping tabs, receipt ordering/collisions, concurrent sequences, expiry replay, backward clocks, rolling-window/timezone behavior, ownership/CSRF, unchanged learning evidence and database interval/FK guards.
 
-The frontend production build is checked; actual focus/visibility/media transitions remain a browser-acceptance gap after the user stopped native Computer Use with Escape. See [verification](verification.md) for completed full-suite and live API results. High-volume capacity, retention cleanup, local-date duration charts and offline reconstruction are not claimed by this initial implementation.
+The frontend production build is checked; actual focus/visibility/media transitions remain a browser-acceptance gap after the user stopped native Computer Use with Escape. See [verification](verification.md) for completed full-suite and live API results. High-volume capacity, retention cleanup and offline reconstruction remain open.

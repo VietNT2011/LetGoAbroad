@@ -40,17 +40,22 @@ public static class StudyIntervalUnion
 {
     /// <summary>VI: Cắt cửa sổ rồi hợp nhất các khoảng UTC; nhiều tab không nhân thời gian. EN: Clip and union elapsed UTC intervals before adding durations across tabs.</summary>
     public static long Ticks(IEnumerable<StudyRange> intervals, DateTimeOffset from, DateTimeOffset to)
+        => Merge(intervals, from, to).Sum(x => x.End.UtcTicks - x.Start.UtcTicks);
+
+    /// <summary>VI: Trả các khoảng UTC rời nhau để nhiều phép tổng hợp dùng chung một nguồn không đếm trùng. EN: Expose disjoint UTC ranges for consistent downstream aggregation.</summary>
+    public static StudyRange[] Merge(IEnumerable<StudyRange> intervals, DateTimeOffset from, DateTimeOffset to)
     {
         DomainError.Require(from <= to, 422, "invalid_activity_window", "Cửa sổ thời gian không hợp lệ.");
         var ranges = intervals.Select(x => new StudyRange(x.Start < from ? from : x.Start, x.End > to ? to : x.End))
             .Where(x => x.Start < x.End).OrderBy(x => x.Start).ThenBy(x => x.End);
-        DateTimeOffset? start = null; var end = from; long total = 0;
+        DateTimeOffset? start = null; var end = from; var merged = new List<StudyRange>();
         foreach (var range in ranges)
         {
             if (start is null) { start = range.Start; end = range.End; }
             else if (range.Start <= end) { if (range.End > end) end = range.End; }
-            else { total += end.UtcTicks - start.Value.UtcTicks; start = range.Start; end = range.End; }
+            else { merged.Add(new(start.Value, end)); start = range.Start; end = range.End; }
         }
-        return total + (start is null ? 0 : end.UtcTicks - start.Value.UtcTicks);
+        if (start is not null) merged.Add(new(start.Value, end));
+        return merged.ToArray();
     }
 }

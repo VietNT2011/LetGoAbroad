@@ -34,10 +34,12 @@ The [estimated study-time implementation](estimated-study-time.md) was checked o
 
 The live API probe reused the isolated technical account, opened two sessions and waited for actual server elapsed time. Overlapping intervals produced **2 estimated seconds versus4 seconds from summing the tabs**. Inactive boundaries closed both sessions; replaying an older accepted sequence returned the original ACK and added no time. A foreign-owner read returned404, and lesson/attempt statistics stayed zero. No browser automation resumed after Escape, so actual frontend focus/visibility/idle/media transitions and the new panel's visual/mobile acceptance remain unverified.
 
+The [profile-local study-duration calendar](study-time-calendar.md) adds fourteen cases on **18/11/2026** for precise daily sums after union, empty/invalid windows and read-only boundaries,23/25/47-hour days, skipped dates, a custom midnight gap and subminute date bounce, offset extremes, every installed timezone and profile re-bucketing without rewriting sources. The packaged read-only API returns2.3996138 seconds on both selected windows for the existing isolated QA account, with one active date and exact daily totals; anonymous/invalid requests return401/422. No new learning evidence is created. There is no schema migration. Frontend build passed; native browser acceptance remains unverified after Escape.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **246 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **240 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **260 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **254 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |
