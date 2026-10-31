@@ -34,6 +34,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("DeadlineAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<int>("EvidencePolicyVersion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("FirstDisclosedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateTimeOffset?>("ListeningDeadlineAt")
                         .HasColumnType("datetimeoffset");
 
@@ -60,6 +66,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ContentVersionId");
+
+                    b.HasIndex("UserId", "FirstDisclosedAt");
 
                     b.HasIndex("UserId", "StartedAt", "Id");
 

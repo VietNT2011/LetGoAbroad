@@ -47,6 +47,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
 2. Mở bài, đọc nội dung Anh–Việt, làm quiz cuối bài, quay lại dashboard và refresh. Tiến độ lấy từ bằng chứng đã lưu.
    Chọn đoạn để [tô sáng/ghi chú riêng](docs/lesson-notes.md); bàn phím có cách tìm nguyên văn đoạn trích. Ghi chú ghim đúng version bài, xuất hiện ở mục đã lưu và có hoàn tác xóa; sửa từ nhiều tab cần ETag hiện tại.
    Settings có [lịch sử mục tiêu/ngân sách](docs/goal-revisions.md): cấu hình mới được lưu ngay nhưng chỉ áp dụng khi lập lịch cho ngày học tiếp theo, giữ nguyên các nhiệm vụ đang có.
+   Dashboard hiển thị [dữ liệu kỹ năng gần đây](docs/skill-evidence.md): tối đa 50 câu khác nhau, luôn có số mẫu, dưới 5 câu ghi chưa đủ dữ liệu; tách bài luyện và full mock theo lịch sử mở lời giải.
 3. Chọn mini test hoặc practice theo Part/số câu. Preview hiển thị số câu thật vì nhóm câu được giữ nguyên.
 4. Chọn đáp án, xem trạng thái autosave, nộp bài và đọc lời giải. Mở hai tab có thể thử ETag conflict; submit lặp không tạo kết quả thứ hai.
    Đánh dấu câu khi làm bài, viết ghi chú riêng ở trang chữa bài và tìm lại tại **Câu đã lưu & ghi chú**. Note/bookmark gắn đúng version câu hỏi; xóa note giữ nguyên kết quả và bookmark. Xem [quy tắc ghi chú](docs/annotations.md).

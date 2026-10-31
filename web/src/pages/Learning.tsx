@@ -13,6 +13,7 @@ import { api, post, type Content } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAuth } from "../Auth";
 import "./learning.css";
+import { SkillEvidence } from "./SkillEvidence";
 import {
   PathTimeline,
   type PathPlan,
@@ -79,6 +80,7 @@ export function TodayPanel() {
           <span>Câu đúng / câu quan sát</span>
         </div>
       </div>
+      <SkillEvidence />
       <div className="section-heading">
         <div>
           <span className="eyebrow">A LITTLE PLAN, A LOT OF POSSIBILITY</span>

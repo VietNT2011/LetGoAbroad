@@ -15,6 +15,7 @@ public sealed partial class HubDbContext
         b.Entity<Attempt>().HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId);
         b.Entity<Attempt>().HasOne(x => x.ContentVersion).WithMany().HasForeignKey(x => x.ContentVersionId);
         b.Entity<Attempt>().HasIndex(x => new { x.UserId, x.StartedAt, x.Id });
+        b.Entity<Attempt>().HasIndex(x => new { x.UserId, x.FirstDisclosedAt });
         b.Entity<AttemptItem>().HasOne(x => x.Attempt).WithMany(x => x.Items).HasForeignKey(x => x.AttemptId);
         b.Entity<AttemptItem>().HasOne(x => x.Question).WithMany().HasForeignKey(x => x.QuestionId);
         b.Entity<AttemptItem>().HasIndex(x => new { x.AttemptId, x.QuestionId }).IsUnique();

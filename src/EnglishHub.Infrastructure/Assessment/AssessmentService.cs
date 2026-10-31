@@ -132,12 +132,14 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
     });
 
     /// <summary>VI: Chỉ mở đáp án sau khi kết quả được lưu. EN: Disclose explanations only after a durable result exists.</summary>
-    public async Task<object> Result(Guid user, Guid id)
+    public Task<object> Result(Guid user, Guid id) => tx.Run<object>($"attempt:{id}", async () =>
     {
-        var a = await Full.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.UserId == user) ?? throw new DomainError(404, "attempt_not_found", "Không tìm thấy lần làm bài.");
+        var a = await Owned(user, id);
         DomainError.Require(a.Result is not null, 409, "result_not_ready", "Bạn chưa nộp bài.");
+        // VI: Lưu mốc mở lời giải đầu tiên để loại câu đã thấy khỏi full-mock chưa lộ đáp án. EN: Persist first disclosure so later full-mock evidence can exclude previously reviewed questions.
+        a.FirstDisclosedAt ??= clock.UtcNow;
         return new { a.Id, a.ContentVersionId, a.ContentVersion.Title, a.ContentVersion.IsFixture, a.Mode, result = a.Result, items = a.Items.OrderBy(x => x.Order).Select(x => new { x.Id, x.Order, x.QuestionId, x.Prompt, x.Stimulus, x.Type, x.AnswerText, options = JsonSerializer.Deserialize<PublicOption[]>(x.OptionsJson), x.SelectedOptionId, x.GradingKey.CorrectOptionId, acceptedAnswerVariants = JsonSerializer.Deserialize<string[]>(x.GradingKey.AcceptedAnswerVariantsJson), x.GradingKey.NormalizationPolicyVersion, x.GradingKey.IgnoreTerminalPunctuation, x.GradingKey.Explanation, x.GradingKey.Skill, x.GradingKey.Part, isCorrect = IsCorrect(x) }) };
-    }
+    });
 
     private async Task<Attempt> Owned(Guid user, Guid id) => await Full.SingleOrDefaultAsync(x => x.Id == id && x.UserId == user) ?? throw new DomainError(404, "attempt_not_found", "Không tìm thấy lần làm bài.");
     private static bool IsCorrect(AttemptItem item) => item.Type == QuestionType.FillBlank

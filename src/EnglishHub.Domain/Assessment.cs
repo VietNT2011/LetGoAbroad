@@ -12,6 +12,8 @@ public sealed class Attempt : VersionedEntity
     public DateTimeOffset DeadlineAt { get; set; }
     public DateTimeOffset? ListeningDeadlineAt { get; set; }
     public AttemptStatus Status { get; set; }
+    public DateTimeOffset? FirstDisclosedAt { get; set; }
+    public int EvidencePolicyVersion { get; set; } = 1;
     public List<AttemptItem> Items { get; set; } = [];
     public AttemptResult? Result { get; set; }
 }
