@@ -1,0 +1,199 @@
+.cards-page {
+  max-width: 960px;
+  margin: auto;
+}
+.cards-heading h1 {
+  max-width: 700px;
+  font-size: clamp(28px, 4vw, 42px);
+  line-height: 1.15;
+}
+.cards-heading p {
+  max-width: 650px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+.card-create,
+.card-study,
+.card-policy {
+  margin: 24px 0;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+.card-create summary,
+.card-history summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 700;
+}
+.card-create form {
+  display: grid;
+  gap: 16px;
+  padding-top: 16px;
+}
+.card-create label {
+  display: grid;
+  gap: 8px;
+}
+.card-create textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid var(--control-line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+.card-filters,
+.card-pagination,
+.card-ratings {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.card-filters button,
+.card-pagination button,
+.card-ratings button,
+.card-study .notice button {
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--control-line);
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  cursor: pointer;
+}
+.card-filters [aria-pressed="true"],
+.personal-cards [aria-pressed="true"] {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.personal-cards {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.personal-cards button {
+  padding: 18px;
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.personal-cards b {
+  display: block;
+  font-size: 19px;
+  margin-bottom: 10px;
+}
+.personal-cards span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.card-empty {
+  border-left: 4px solid var(--success);
+  padding: 16px;
+  background: var(--surface);
+}
+.card-study h2 {
+  font-size: 22px;
+}
+.recall-card {
+  padding: clamp(16px, 4vw, 36px);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  background: var(--primary-soft);
+  overflow-wrap: anywhere;
+}
+.card-front {
+  font-size: clamp(25px, 4vw, 38px);
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 14px 0 24px;
+  white-space: pre-wrap;
+}
+.card-face-label {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  color: var(--primary-dark);
+}
+.card-answer {
+  border-top: 2px solid var(--primary);
+  padding-top: 18px;
+  white-space: pre-wrap;
+}
+.card-answer > p:not(.card-face-label) {
+  font-size: 22px;
+  line-height: 1.6;
+}
+.card-answer h3 {
+  font-size: 15px;
+}
+.card-answer li,
+.card-history li {
+  line-height: 1.7;
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+.card-ratings {
+  margin: 20px 0;
+}
+.card-ratings button {
+  border-bottom: 4px solid var(--primary);
+  font-weight: 700;
+}
+.card-ratings button:first-child {
+  border-color: var(--warning);
+}
+.card-ratings button:last-child {
+  border-color: var(--success);
+}
+.card-history {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 10px;
+}
+.card-pagination {
+  justify-content: space-between;
+  margin: 16px 0;
+}
+.card-pagination button:disabled,
+.card-ratings button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.card-policy {
+  line-height: 1.8;
+  font-size: 14px;
+}
+.card-policy h2 {
+  font-size: 19px;
+}
+@media (max-width: 550px) {
+  .personal-cards {
+    grid-template-columns: 1fr;
+  }
+  .card-create,
+  .card-study,
+  .card-policy {
+    padding: 16px;
+  }
+  .card-ratings button {
+    flex: 1 1 40%;
+  }
+}

@@ -1,5 +1,7 @@
 # EnglishHub · LetGoAbroad
 
+Thẻ riêng và lịch ôn SRS: [quy tắc, quyền riêng tư và API](docs/personal-cards.md).
+
 Nền tảng tự học tiếng Anh bằng ASP.NET Core 10, EF Core 10, SQL Server 2022 và React + TypeScript. Có một hành trình học/luyện chạy được cục bộ, với dữ liệu bền vững và integration test trên database/blob/FFmpeg thật.
 
 **Trạng thái:** learning core đang triển khai. Chưa tuyên bố hoàn thành toàn bộ P0–P3. Xem [checklist nghiệm thu](docs/status.md) và [đặc tả gốc](docs/spec.md) để phân biệt phần đã chạy với phần còn thiếu.

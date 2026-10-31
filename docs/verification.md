@@ -24,8 +24,14 @@ Packaged activity UI checks switched 7→30→7→30 and refreshed without mixin
 
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **197 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **191 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+The [personal-card/SRS foundation](personal-cards.md) was verified on **18/11/2026** with 22 new cases: schedule steps/rounding/cap, canonical creation/context merging, exact due ticks, later-state replay, concurrent events/ETags, owner/Admin/CSRF isolation, archive/restore, bounded pages and unchanged learning evidence. Initial compilation flagged an xUnit analyzer rule; its predicate overload was used before the successful runs. A Docker engine interruption aborted an earlier full run; after startup, the local SQL process stopped responding to logins, so the SQL suite was interrupted before completion. Restarting only the EnglishHub SQL container restored queries; no fixture databases remained. The final completed runs are below.
+
+The packaged API created one explicitly marked technical card for the secondary demo learner, rated Good once, retried the same event, rejected a competing stale rating with412 and a foreign-owner read with404, checked one history row, and archived/restored/re-archived the card without changing its schedule or lesson/attempt statistics. The migration was confirmed in the existing local SQL database; no cards/reviews are seeded. The frontend TypeScript/Vite and Docker builds passed. Native browser verification was stopped by the user's Escape key before navigating to the card page; no visual, keyboard or responsive acceptance for the new card screen is claimed in this checkpoint.
+
+| Check | Observed result |
+|---|---|
+| `scripts/test.ps1 -SqlServer -Storage` | **219 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **213 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

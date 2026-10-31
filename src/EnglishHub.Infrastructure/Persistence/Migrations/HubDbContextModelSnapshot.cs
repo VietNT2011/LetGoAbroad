@@ -248,6 +248,88 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("BackgroundJobs");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.CardReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("AfterDueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("AfterIntervalDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AfterSuccessStep")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("BeforeDueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("BeforeIntervalDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BeforeSuccessStep")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ReviewEventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ReviewedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("SchedulerVersion")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserCardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserCardId", "ReviewEventId")
+                        .IsUnique();
+
+                    b.HasIndex("UserCardId", "ReviewedAt", "Id");
+
+                    b.ToTable("CardReviews", t =>
+                        {
+                            t.HasCheckConstraint("CK_CardReview_Schedule", "[BeforeIntervalDays] >= 0 AND [BeforeIntervalDays] <= 180 AND [AfterIntervalDays] >= 0 AND [AfterIntervalDays] <= 180 AND [BeforeSuccessStep] >= 0 AND [AfterSuccessStep] >= 0 AND [Rating] >= 0 AND [Rating] <= 3 AND [SchedulerVersion] = 1");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.CardSourceContext", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContextKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("UserCardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserCardId", "ContextKey")
+                        .IsUnique();
+
+                    b.ToTable("CardSourceContexts");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.CommandReceipt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1346,6 +1428,70 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.UserCard", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Back")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("CustomKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTimeOffset>("DueAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Front")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("IntervalDays")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SchedulerVersion")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SuccessStep")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CustomKey")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "ArchivedAt", "DueAt", "Id");
+
+                    b.ToTable("UserCards", t =>
+                        {
+                            t.HasCheckConstraint("CK_UserCard_Schedule", "[IntervalDays] >= 0 AND [IntervalDays] <= 180 AND [SuccessStep] >= 0 AND [SchedulerVersion] = 1");
+                        });
+                });
+
             modelBuilder.Entity("EnglishHub.Infrastructure.Identity.DevMail", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1639,6 +1785,26 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasOne("EnglishHub.Domain.Attempt", null)
                         .WithOne("Result")
                         .HasForeignKey("EnglishHub.Domain.AttemptResult", "AttemptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.CardReview", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.UserCard", "Card")
+                        .WithMany()
+                        .HasForeignKey("UserCardId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Card");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.CardSourceContext", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.UserCard", null)
+                        .WithMany("Contexts")
+                        .HasForeignKey("UserCardId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
@@ -1978,6 +2144,15 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Navigation("DailyTask");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.UserCard", b =>
+                {
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -2080,6 +2255,11 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("EnglishHub.Domain.QuestionGroup", b =>
                 {
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.UserCard", b =>
+                {
+                    b.Navigation("Contexts");
                 });
 #pragma warning restore 612, 618
         }

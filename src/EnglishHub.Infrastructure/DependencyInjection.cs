@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<PathChoiceService>();
         services.AddScoped<SkillEvidenceService>();
         services.AddScoped<LearningActivityService>();
+        services.AddScoped<CardService>();
         services.AddSingleton<IObjectStorage, AzureObjectStorage>();
         services.AddSingleton<IMediaProcessor, FfmpegProcessor>();
         services.AddScoped<MediaService>();

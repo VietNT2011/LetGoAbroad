@@ -119,7 +119,7 @@ export function Layout() {
             <div className="workspace-label">KHÔNG GIAN HỌC TẬP</div>
             <nav aria-label="Điều hướng học tập">
               {links.map(({ to, title, icon: Icon }) =>
-                ["/vocabulary", "/groups"].includes(to) ? (
+                to === "/groups" ? (
                   <span className="nav-soon" aria-disabled="true" key={to}>
                     <Icon size={19} aria-hidden="true" />
                     {title}

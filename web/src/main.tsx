@@ -21,6 +21,7 @@ const ResultPage = lazy(() =>
 );
 const AdminPage = lazy(() => import("./pages/Admin"));
 const SavedQuestionsPage = lazy(() => import("./pages/Annotations"));
+const CardsPage = lazy(() => import("./pages/Cards"));
 // VI: Không giả chức năng chưa triển khai. EN: Pending screens explicitly describe their implementation status.
 function Pending() {
   return (
@@ -62,6 +63,7 @@ function App() {
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/tests" element={<Catalog tests />} />
             <Route path="/saved" element={<SavedQuestionsPage />} />
+            <Route path="/vocabulary" element={<CardsPage />} />
             <Route path="/learn/:id" element={<Lesson />} />
             <Route path="/tests/:id" element={<TestIntro />} />
             <Route path="/attempts/:id" element={<AttemptPage />} />
@@ -69,7 +71,7 @@ function App() {
             <Route path="/paths" element={<PathsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            {["vocabulary", "groups"].map((path) => (
+            {["groups"].map((path) => (
               <Route key={path} path={path} element={<Pending />} />
             ))}
           </Route>
