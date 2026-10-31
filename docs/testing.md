@@ -9,3 +9,9 @@ VI: Tối đa hai test collections tạo schema đồng thời. Các test concur
 EN: Repeated local runs previously left 115 fixture databases in the SQL container. SQL eventually reported insufficient resource-pool memory and stopped. Those verified fixture databases were removed on 10/11/2026; the fixture lifecycle now prevents that accumulation. The local application database and existing learning data remain available.
 
 Kết quả được ghi ở `artifacts/TestResults/results.trx`; workflow SQL/media upload file này làm artifact. Khi test fail, đọc lỗi gốc và TRX; fixture database không phải nơi lưu bằng chứng lâu dài.
+
+## Local SQL memory / Bộ nhớ SQL cục bộ
+
+Compose caps the SQL container at 3 GiB and sets `MSSQL_MEMORY_LIMIT_MB=2048` to leave headroom for components outside the engine. This follows Microsoft's [SQL Server on Linux memory guidance](https://learn.microsoft.com/en-us/sql/linux/configure/performance-best-practices-sql-server-memory?view=sql-server-ver17). It is a local development setting, not a measured production capacity recommendation.
+
+On 16/11/2026, a repeated run exposed `RESOURCE_SEMAPHORE` waits and an API test timeout. The skill query now ranks IDs/skills before joining answer/variant text, reducing the width of its window-sort input. The internal memory limit was also made explicit. The failed run was interrupted with SIGINT; its two remaining databases were identified by exact generated names and removed before the rerun. Ordinary fixture disposal still handles completed/failed assertions; abrupt process termination can bypass that disposal. Never remove a database based on an unverified name or touch the application's `EnglishHub` database.

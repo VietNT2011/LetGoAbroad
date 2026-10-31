@@ -25,12 +25,11 @@ public sealed class SkillEvidenceService(HubDbContext db)
 {
     public async Task<object> Read(Guid user)
     {
-        // VI: ROW_NUMBER giới hạn trên DB trước khi đọc grading snapshot; cùng SQL chạy trên SQL Server và SQLite. EN: Window functions bound materialized grading data on both relational providers.
+        // VI: Chỉ sort ID/skill; join text đáp án sau window để tránh memory grant lớn cho LOB. EN: Rank narrow IDs/skills before joining answer text to avoid wide LOB sort grants on both providers.
         var rows = await db.Database.SqlQuery<SkillEvidenceRow>($"""
             WITH eligible AS (
-                SELECT CASE WHEN a.[Mode] = 'full_mock' THEN 'full_mock_unseen' ELSE 'practice' END AS [Track],
-                    k.[Skill], k.[Part], i.[Type], i.[SelectedOptionId], k.[CorrectOptionId], i.[AnswerText],
-                    k.[AcceptedAnswerVariantsJson], k.[NormalizationPolicyVersion], k.[IgnoreTerminalPunctuation],
+                SELECT i.[Id] AS [AttemptItemId], CASE WHEN a.[Mode] = 'full_mock' THEN 'full_mock_unseen' ELSE 'practice' END AS [Track],
+                    k.[Skill],
                     i.[QuestionId], i.[Order] AS [ItemOrder], a.[Id] AS [AttemptId], r.[FinalizedAt],
                     ROW_NUMBER() OVER (PARTITION BY CASE WHEN a.[Mode] = 'full_mock' THEN 'full_mock_unseen' ELSE 'practice' END, k.[Skill], i.[QuestionId] ORDER BY r.[FinalizedAt] DESC, a.[Id] DESC) AS [QuestionRank]
                 FROM [AttemptItems] i
@@ -51,9 +50,12 @@ public sealed class SkillEvidenceService(HubDbContext db)
                 SELECT *, ROW_NUMBER() OVER (PARTITION BY [Track],[Skill] ORDER BY [FinalizedAt] DESC,[AttemptId] DESC,[ItemOrder] DESC) AS [SkillRank]
                 FROM eligible WHERE [QuestionRank] = 1
             )
-            SELECT [Track],[Skill],[Part],[Type],[SelectedOptionId],[CorrectOptionId],[AnswerText],
-                [AcceptedAnswerVariantsJson],[NormalizationPolicyVersion],[IgnoreTerminalPunctuation]
-            FROM recent WHERE [SkillRank] <= 50
+            SELECT recent.[Track],recent.[Skill],k.[Part],i.[Type],i.[SelectedOptionId],k.[CorrectOptionId],i.[AnswerText],
+                k.[AcceptedAnswerVariantsJson],k.[NormalizationPolicyVersion],k.[IgnoreTerminalPunctuation]
+            FROM recent
+            JOIN [AttemptItems] i ON i.[Id] = recent.[AttemptItemId]
+            JOIN [GradingKey] k ON k.[AttemptItemId] = recent.[AttemptItemId]
+            WHERE recent.[SkillRank] <= 50
             """).ToListAsync();
         var groups = rows.GroupBy(x => new { x.Track, x.Skill }).OrderBy(x => x.Key.Track).ThenBy(x => x.Key.Skill).Select(group => new
         {

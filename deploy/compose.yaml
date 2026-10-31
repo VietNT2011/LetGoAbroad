@@ -6,6 +6,8 @@ services:
       ACCEPT_EULA: 'Y'
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Run scripts/start-infra.ps1 first}
       MSSQL_PID: Developer
+      # VI: Chừa RAM cho SQLPAL ngoài engine trong giới hạn container 3 GiB. EN: Leave SQLPAL headroom inside the 3 GiB container cap.
+      MSSQL_MEMORY_LIMIT_MB: '2048'
     ports: ['127.0.0.1:14333:1433']
     volumes: [sql-data:/var/opt/mssql]
     healthcheck:

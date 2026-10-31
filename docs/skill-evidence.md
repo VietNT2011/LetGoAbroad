@@ -5,7 +5,7 @@
 ## Window and correctness
 
 - Each track/skill uses at most **50 distinct question versions** from durable graded attempts. Repeating the same version replaces its older eligible answer; it does not add another observation.
-- Order is result finalization time, attempt ID, then item order, descending. A SQL window query selects the bounded rows before grading snapshots are materialized; the learner ID is parameterized from the authenticated session.
+- Order is result finalization time, attempt ID, then item order, descending. A SQL window query ranks narrow item IDs and skill labels first, then joins answer/variant text only for the selected rows; it does not sort the full answer payload. The learner ID is parameterized from the authenticated session.
 - Fewer than **5 observations** returns `insufficient_data` and `accuracyPercent: null`. Counts remain visible. Otherwise, percentage is correct/observed rounded to the nearest integer, with halves rounded away from zero.
 - Blank answers remain in the denominator. Part counts describe that same bounded sample. Multiple-choice correctness and FillBlank normalization use the attempt's pinned private grading policy.
 - The response exposes counts, skill, Part and percentage only. It contains no question text, submitted answers, accepted variants or correct option IDs.
