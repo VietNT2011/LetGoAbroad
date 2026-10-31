@@ -7,12 +7,12 @@ using Microsoft.EntityFrameworkCore;
 namespace EnglishHub.Infrastructure.Assessment;
 
 public sealed record StartAttempt(Guid ContentVersionId, Guid ClientRequestId, string Mode = "mini", int? Part = null, int? QuestionCount = null);
-public sealed record AnswerChange(Guid AttemptItemId, Guid? SelectedOptionId, string ExpectedEtag);
+public sealed record AnswerChange(Guid AttemptItemId, Guid? SelectedOptionId, string ExpectedEtag, string? AnswerText = null);
 public sealed record SaveAnswers(Guid ClientRequestId, AnswerChange[] Answers);
 public sealed record PublicOption(Guid Id, string Text);
-public sealed record AnswerAck(Guid AttemptItemId, Guid? SelectedOptionId, string Etag);
+public sealed record AnswerAck(Guid AttemptItemId, Guid? SelectedOptionId, string Etag, string? AnswerText = null);
 public sealed record BatchAck(Guid ClientRequestId, DateTimeOffset ServerNow, AnswerAck[] Answers);
-public sealed record ActiveItem(Guid Id, int Order, string Prompt, string Stimulus, PublicOption[] Options, Guid? SelectedOptionId, string Etag, int Part);
+public sealed record ActiveItem(Guid Id, int Order, string Prompt, string Stimulus, PublicOption[] Options, Guid? SelectedOptionId, string Etag, int Part, string Type = "single_choice", string? AnswerText = null);
 public sealed record AttemptView(Guid Id, Guid ContentVersionId, string Title, string Mode, bool IsFixture, string Status, DateTimeOffset StartedAt, DateTimeOffset DeadlineAt, DateTimeOffset ServerNow, ActiveItem[] Items, DateTimeOffset? ListeningDeadlineAt, string Section);
 
 /// <summary>VI: Autosave, submit và expiry dùng cùng khóa attempt. EN: Autosave, manual submission and expiry serialize on the same attempt lock.</summary>
@@ -46,8 +46,9 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
                         Order = attempt.Items.Count,
                         Prompt = q.Prompt,
                         Stimulus = group.Stimulus,
+                        Type = q.Type,
                         OptionsJson = JsonSerializer.Serialize(q.Options.OrderBy(_ => random.Next()).Select(o => new PublicOption(o.Id, o.Text))),
-                        GradingKey = new GradingKey { CorrectOptionId = q.Options.Single(o => o.IsCorrect).Id, Explanation = q.Explanation, Skill = q.Skill, Part = group.Part }
+                        GradingKey = new GradingKey { CorrectOptionId = q.Type == QuestionType.SingleChoice ? q.Options.Single(o => o.IsCorrect).Id : null, AcceptedAnswerVariantsJson = q.AcceptedAnswerVariantsJson, NormalizationPolicyVersion = q.NormalizationPolicyVersion, IgnoreTerminalPunctuation = q.IgnoreTerminalPunctuation, Explanation = q.Explanation, Skill = q.Skill, Part = group.Part }
                     });
             }
             db.Attempts.Add(attempt);
@@ -63,7 +64,7 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
         var a = await Full.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.UserId == user) ?? throw new DomainError(404, "attempt_not_found", "Không tìm thấy lần làm bài.");
         // VI: Chọn DTO rõ ràng; không bao giờ trả GradingKey. EN: Explicit projection prevents accidental grading-key disclosure.
         return new(a.Id, a.ContentVersionId, a.ContentVersion.Title, a.Mode, a.ContentVersion.IsFixture, a.Status.ToString().ToLowerInvariant(), a.StartedAt, a.DeadlineAt, clock.UtcNow,
-            a.Items.OrderBy(x => x.Order).Select(x => new ActiveItem(x.Id, x.Order, x.Prompt, x.Stimulus, JsonSerializer.Deserialize<PublicOption[]>(x.OptionsJson)!, x.SelectedOptionId, Etags.Of(x), x.GradingKey.Part)).ToArray(), a.ListeningDeadlineAt, a.ListeningDeadlineAt is null ? "all" : clock.UtcNow < a.ListeningDeadlineAt ? "listening" : "reading");
+            a.Items.OrderBy(x => x.Order).Select(x => new ActiveItem(x.Id, x.Order, x.Prompt, x.Stimulus, JsonSerializer.Deserialize<PublicOption[]>(x.OptionsJson)!, x.SelectedOptionId, Etags.Of(x), x.GradingKey.Part, x.Type == QuestionType.FillBlank ? "fill_blank" : "single_choice", x.AnswerText)).ToArray(), a.ListeningDeadlineAt, a.ListeningDeadlineAt is null ? "all" : clock.UtcNow < a.ListeningDeadlineAt ? "listening" : "reading");
     }
 
     /// <summary>VI: Xem số câu thật trước khi khởi động đồng hồ. EN: Preview the seeded whole-group selection before starting the timer.</summary>
@@ -97,7 +98,7 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
         DomainError.Require(a.Status == AttemptStatus.InProgress && now < a.DeadlineAt, 409, "attempt_closed", "Đã nộp bài hoặc hết thời gian.");
         Apply(a, input.Answers, now);
         await db.SaveChangesAsync();
-        var ack = new BatchAck(input.ClientRequestId, now, input.Answers.Select(c => { var item = a.Items.Single(x => x.Id == c.AttemptItemId); return new AnswerAck(item.Id, item.SelectedOptionId, Etags.Of(item)); }).ToArray());
+        var ack = new BatchAck(input.ClientRequestId, now, input.Answers.Select(c => { var item = a.Items.Single(x => x.Id == c.AttemptItemId); return new AnswerAck(item.Id, item.SelectedOptionId, Etags.Of(item), item.AnswerText); }).ToArray());
         receipts.Save(user, scope, input.ClientRequestId, hash, id, ack);
         return ack;
     });
@@ -117,7 +118,7 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
         {
             AttemptId = id,
             TotalCount = a.Items.Count,
-            BlankCount = a.Items.Count(x => x.SelectedOptionId is null),
+            BlankCount = a.Items.Count(x => x.Type == QuestionType.FillBlank ? string.IsNullOrWhiteSpace(x.AnswerText) : x.SelectedOptionId is null),
             CorrectCount = a.Items.Count(IsCorrect),
             ListeningRaw = a.Items.Count(x => x.GradingKey.Part <= 4 && IsCorrect(x)),
             ReadingRaw = a.Items.Count(x => x.GradingKey.Part >= 5 && IsCorrect(x)),
@@ -135,11 +136,13 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
     {
         var a = await Full.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id && x.UserId == user) ?? throw new DomainError(404, "attempt_not_found", "Không tìm thấy lần làm bài.");
         DomainError.Require(a.Result is not null, 409, "result_not_ready", "Bạn chưa nộp bài.");
-        return new { a.Id, a.ContentVersionId, a.ContentVersion.Title, a.ContentVersion.IsFixture, a.Mode, result = a.Result, items = a.Items.OrderBy(x => x.Order).Select(x => new { x.Id, x.QuestionId, x.Prompt, x.Stimulus, options = JsonSerializer.Deserialize<PublicOption[]>(x.OptionsJson), x.SelectedOptionId, x.GradingKey.CorrectOptionId, x.GradingKey.Explanation, x.GradingKey.Skill, x.GradingKey.Part, isCorrect = IsCorrect(x) }) };
+        return new { a.Id, a.ContentVersionId, a.ContentVersion.Title, a.ContentVersion.IsFixture, a.Mode, result = a.Result, items = a.Items.OrderBy(x => x.Order).Select(x => new { x.Id, x.Order, x.QuestionId, x.Prompt, x.Stimulus, x.Type, x.AnswerText, options = JsonSerializer.Deserialize<PublicOption[]>(x.OptionsJson), x.SelectedOptionId, x.GradingKey.CorrectOptionId, acceptedAnswerVariants = JsonSerializer.Deserialize<string[]>(x.GradingKey.AcceptedAnswerVariantsJson), x.GradingKey.NormalizationPolicyVersion, x.GradingKey.IgnoreTerminalPunctuation, x.GradingKey.Explanation, x.GradingKey.Skill, x.GradingKey.Part, isCorrect = IsCorrect(x) }) };
     }
 
     private async Task<Attempt> Owned(Guid user, Guid id) => await Full.SingleOrDefaultAsync(x => x.Id == id && x.UserId == user) ?? throw new DomainError(404, "attempt_not_found", "Không tìm thấy lần làm bài.");
-    private static bool IsCorrect(AttemptItem item) => item.SelectedOptionId == item.GradingKey.CorrectOptionId;
+    private static bool IsCorrect(AttemptItem item) => item.Type == QuestionType.FillBlank
+        ? AnswerNormalization.Matches(item.AnswerText, JsonSerializer.Deserialize<string[]>(item.GradingKey.AcceptedAnswerVariantsJson)!, item.GradingKey.NormalizationPolicyVersion, item.GradingKey.IgnoreTerminalPunctuation)
+        : item.SelectedOptionId is not null && item.SelectedOptionId == item.GradingKey.CorrectOptionId;
     private static void Apply(Attempt attempt, AnswerChange[] changes, DateTimeOffset now)
     {
         DomainError.Require(changes.Length <= 20 && changes.Select(x => x.AttemptItemId).Distinct().Count() == changes.Length, 422, "invalid_batch", "Batch tối đa 20 câu duy nhất.");
@@ -149,8 +152,14 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
             var item = attempt.Items.SingleOrDefault(x => x.Id == change.AttemptItemId) ?? throw new DomainError(422, "invalid_attempt_item", "Câu không thuộc snapshot.");
             Etags.Check(item, change.ExpectedEtag);
             if (attempt.ListeningDeadlineAt is { } boundary) DomainError.Require(now < boundary ? item.GradingKey.Part <= 4 : item.GradingKey.Part >= 5, 409, "section_closed", "Câu hỏi không thuộc section đang mở.");
-            DomainError.Require(change.SelectedOptionId is null || JsonSerializer.Deserialize<PublicOption[]>(item.OptionsJson)!.Any(x => x.Id == change.SelectedOptionId), 422, "invalid_option", "Option không thuộc câu hỏi.");
+            if (item.Type == QuestionType.FillBlank)
+                DomainError.Require(change.SelectedOptionId is null && (change.AnswerText is null || change.AnswerText.Length <= AnswerNormalization.MaxAnswerLength), 422, "invalid_answer_type", "Câu điền đáp án chỉ nhận văn bản tối đa 2000 ký tự.");
+            else
+            {
+                DomainError.Require(change.AnswerText is null, 422, "invalid_answer_type", "Câu trắc nghiệm chỉ nhận option.");
+                DomainError.Require(change.SelectedOptionId is null || JsonSerializer.Deserialize<PublicOption[]>(item.OptionsJson)!.Any(x => x.Id == change.SelectedOptionId), 422, "invalid_option", "Option không thuộc câu hỏi.");
+            }
         }
-        foreach (var change in changes) { var item = attempt.Items.Single(x => x.Id == change.AttemptItemId); item.SelectedOptionId = change.SelectedOptionId; item.AcceptedAt = now; }
+        foreach (var change in changes) { var item = attempt.Items.Single(x => x.Id == change.AttemptItemId); item.SelectedOptionId = change.SelectedOptionId; item.AnswerText = change.AnswerText; item.AcceptedAt = now; }
     }
 }

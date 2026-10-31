@@ -18,6 +18,7 @@ type LessonData = {
   quiz: {
     id: string;
     prompt: string;
+    type: "single_choice" | "fill_blank";
     options: { id: string; text: string }[];
   }[];
 };
@@ -39,12 +40,16 @@ function LessonQuiz({ lesson }: { lesson: LessonData }) {
       setResult(
         await post<QuizResult>(`/lessons/${lesson.id}/complete`, {
           clientRequestId: command.current,
-          answers: Object.entries(answers).map(
-            ([questionId, selectedOptionId]) => ({
+          answers: Object.entries(answers).map(([questionId, value]) => {
+            const fillBlank =
+              lesson.quiz.find((q) => q.id === questionId)!.type ===
+              "fill_blank";
+            return {
               questionId,
-              selectedOptionId,
-            }),
-          ),
+              selectedOptionId: fillBlank ? null : value,
+              answerText: fillBlank ? value : null,
+            };
+          }),
         }),
       );
       command.current = crypto.randomUUID();
@@ -63,23 +68,40 @@ function LessonQuiz({ lesson }: { lesson: LessonData }) {
       {lesson.quiz.map((q) => (
         <fieldset key={q.id}>
           <legend>{q.prompt}</legend>
-          <div className="quiz-options">
-            {q.options.map((o) => (
-              <label key={o.id}>
-                <input
-                  type="radio"
-                  name={q.id}
-                  checked={answers[q.id] === o.id}
-                  disabled={result?.completed || busy}
-                  onChange={() => {
-                    command.current = crypto.randomUUID();
-                    setAnswers((a) => ({ ...a, [q.id]: o.id }));
-                  }}
-                />
-                {o.text}
-              </label>
-            ))}
-          </div>
+          {q.type === "fill_blank" ? (
+            <label className="fill-blank">
+              Đáp án của bạn
+              <input
+                value={answers[q.id] ?? ""}
+                maxLength={2000}
+                autoComplete="off"
+                spellCheck={false}
+                disabled={result?.completed || busy}
+                onChange={(e) => {
+                  command.current = crypto.randomUUID();
+                  setAnswers((a) => ({ ...a, [q.id]: e.target.value }));
+                }}
+              />
+            </label>
+          ) : (
+            <div className="quiz-options">
+              {q.options.map((o) => (
+                <label key={o.id}>
+                  <input
+                    type="radio"
+                    name={q.id}
+                    checked={answers[q.id] === o.id}
+                    disabled={result?.completed || busy}
+                    onChange={() => {
+                      command.current = crypto.randomUUID();
+                      setAnswers((a) => ({ ...a, [q.id]: o.id }));
+                    }}
+                  />
+                  {o.text}
+                </label>
+              ))}
+            </div>
+          )}
           {result?.feedback.find((x) => x.questionId === q.id) ? (
             <p className="quiz-feedback">
               {result.feedback.find((x) => x.questionId === q.id)!.explanation}

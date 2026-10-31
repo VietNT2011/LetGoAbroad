@@ -19,6 +19,7 @@ public sealed partial class HubDbContext
         b.Entity<AttemptItem>().HasOne(x => x.Question).WithMany().HasForeignKey(x => x.QuestionId);
         b.Entity<AttemptItem>().HasIndex(x => new { x.AttemptId, x.QuestionId }).IsUnique();
         b.Entity<AttemptItem>().HasIndex(x => new { x.AttemptId, x.Order }).IsUnique();
+        b.Entity<AttemptItem>().Property(x => x.AnswerText).HasMaxLength(AnswerNormalization.MaxAnswerLength);
         b.Entity<QuestionOption>().HasAlternateKey(x => new { x.QuestionId, x.Id });
         // VI: Option được chọn phải thuộc đúng câu. EN: A selected option cannot belong to a different question.
         b.Entity<AttemptItem>().HasOne<QuestionOption>().WithMany().HasForeignKey(x => new { x.QuestionId, x.SelectedOptionId }).HasPrincipalKey(x => new { x.QuestionId, x.Id });

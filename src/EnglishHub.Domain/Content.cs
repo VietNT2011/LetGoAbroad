@@ -10,6 +10,7 @@ public abstract class VersionedEntity
 }
 public enum ContentKind { Lesson = 0, Assessment = 1 }
 public enum PublicationStatus { Draft = 0, Published = 1, Archived = 2 }
+public enum QuestionType { SingleChoice = 0, FillBlank = 1 }
 
 /// <summary>VI: Gốc nội dung ổn định xuyên các bản phát hành. EN: A stable identity survives publication of new versions.</summary>
 public sealed class ContentRoot : VersionedEntity
@@ -63,6 +64,11 @@ public sealed class Question
     public string Prompt { get; set; } = "";
     public string Skill { get; set; } = "grammar";
     public string Explanation { get; set; } = "";
+    public QuestionType Type { get; set; }
+    // VI: Chỉ CMS/result thấy các biến thể; snapshot giữ nguyên policy. EN: Variants are private until review; attempts pin the authored policy.
+    public string AcceptedAnswerVariantsJson { get; set; } = "[]";
+    public int NormalizationPolicyVersion { get; set; } = AnswerNormalization.CurrentVersion;
+    public bool IgnoreTerminalPunctuation { get; set; }
     public List<QuestionOption> Options { get; set; } = [];
 }
 

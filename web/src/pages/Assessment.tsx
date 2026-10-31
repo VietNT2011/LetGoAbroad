@@ -15,6 +15,8 @@ import { useResource, Loading, ErrorNotice } from "../hooks";
 import { useAuth } from "../Auth";
 import "./assessment.css";
 type Item = {
+  type: "single_choice" | "fill_blank";
+  answerText: string | null;
   part: number;
   id: string;
   order: number;
@@ -40,6 +42,7 @@ type Change = {
   attemptItemId: string;
   selectedOptionId: string | null;
   expectedEtag: string;
+  answerText: string | null;
 };
 type Batch = { clientRequestId: string; answers: Change[] };
 type Ack = {
@@ -47,6 +50,7 @@ type Ack = {
     attemptItemId: string;
     selectedOptionId: string | null;
     etag: string;
+    answerText: string | null;
   }[];
 };
 
@@ -269,7 +273,10 @@ export function AttemptPage() {
         setAttempt(a);
         offset.current = new Date(a.serverNow).getTime() - Date.now();
         const initial = Object.fromEntries(
-          a.items.map((x) => [x.id, x.selectedOptionId]),
+          a.items.map((x) => [
+            x.id,
+            x.type === "fill_blank" ? (x.answerText ?? "") : x.selectedOptionId,
+          ]),
         );
         try {
           const draft = JSON.parse(localStorage.getItem(storageKey) ?? "{}");
@@ -278,7 +285,9 @@ export function AttemptPage() {
               a.items.some(
                 (x) =>
                   x.id === key &&
-                  (value === null || x.options.some((o) => o.id === value)),
+                  (x.type === "fill_blank"
+                    ? typeof value === "string" && value.length <= 2000
+                    : value === null || x.options.some((o) => o.id === value)),
               ),
             ),
           ) as Record<string, string | null>;
@@ -307,13 +316,17 @@ export function AttemptPage() {
             clientRequestId: crypto.randomUUID(),
             answers: Object.entries(pending.current)
               .slice(0, 20)
-              .map(([itemId, option]) => ({
-                attemptItemId: itemId,
-                selectedOptionId: option,
-                expectedEtag: current.current!.items.find(
+              .map(([itemId, value]) => {
+                const item = current.current!.items.find(
                   (x) => x.id === itemId,
-                )!.etag,
-              })),
+                )!;
+                return {
+                  attemptItemId: itemId,
+                  selectedOptionId: item.type === "fill_blank" ? null : value,
+                  answerText: item.type === "fill_blank" ? value : null,
+                  expectedEtag: item.etag,
+                };
+              }),
           };
           persist();
           const sent = request.current;
@@ -327,7 +340,12 @@ export function AttemptPage() {
             )!;
             item.etag = answer.etag;
             item.selectedOptionId = answer.selectedOptionId;
-            if (pending.current[item.id] === answer.selectedOptionId)
+            item.answerText = answer.answerText;
+            const acknowledgedValue =
+              item.type === "fill_blank"
+                ? (answer.answerText ?? "")
+                : answer.selectedOptionId;
+            if (pending.current[item.id] === acknowledgedValue)
               delete pending.current[item.id];
           }
           request.current = undefined;
@@ -348,7 +366,12 @@ export function AttemptPage() {
                 delete pending.current[key];
             setChoices({
               ...Object.fromEntries(
-                fresh.items.map((q) => [q.id, q.selectedOptionId]),
+                fresh.items.map((q) => [
+                  q.id,
+                  q.type === "fill_blank"
+                    ? (q.answerText ?? "")
+                    : q.selectedOptionId,
+                ]),
               ),
               ...pending.current,
             });
@@ -523,24 +546,39 @@ export function AttemptPage() {
                 <>
                   <p className="stimulus">{item.stimulus}</p>
                   <h2>{item.prompt}</h2>
-                  <div className="answer-options">
-                    {item.options.map((o, i) => (
-                      <button
-                        key={o.id}
+                  {item.type === "fill_blank" ? (
+                    <label className="fill-blank">
+                      Đáp án của bạn
+                      <input
+                        value={choices[item.id] ?? ""}
+                        onChange={(e) => choose(item, e.target.value)}
                         disabled={remaining === 0 || busy || blocked(item)}
-                        className={choices[item.id] === o.id ? "chosen" : ""}
-                        onClick={() => choose(item, o.id)}
-                      >
-                        <span>{String.fromCharCode(65 + i)}</span>
-                        {o.text}
-                        {choices[item.id] === o.id ? (
-                          <CheckCircle2 size={18} />
-                        ) : (
-                          <Circle size={18} />
-                        )}
-                      </button>
-                    ))}
-                  </div>
+                        maxLength={2000}
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      <small>Gõ đáp án rồi chờ trạng thái “Đã lưu”.</small>
+                    </label>
+                  ) : (
+                    <div className="answer-options">
+                      {item.options.map((o, i) => (
+                        <button
+                          key={o.id}
+                          disabled={remaining === 0 || busy || blocked(item)}
+                          className={choices[item.id] === o.id ? "chosen" : ""}
+                          onClick={() => choose(item, o.id)}
+                        >
+                          <span>{String.fromCharCode(65 + i)}</span>
+                          {o.text}
+                          {choices[item.id] === o.id ? (
+                            <CheckCircle2 size={18} />
+                          ) : (
+                            <Circle size={18} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : null}
               <div className="question-navigation">
@@ -571,15 +609,15 @@ export function AttemptPage() {
             <aside className="question-map">
               <h3>Hành trình làm bài</h3>
               <p>
-                {Object.values(choices).filter(Boolean).length}/
-                {attempt.items.length} câu đã chọn
+                {Object.values(choices).filter((value) => value?.trim()).length}
+                /{attempt.items.length} câu đã trả lời
               </p>
               <div>
                 {attempt.items.map((q, i) => (
                   <button
                     key={q.id}
                     disabled={blocked(q)}
-                    className={`${choices[q.id] ? "answered" : ""} ${i === index ? "current" : ""}`}
+                    className={`${choices[q.id]?.trim() ? "answered" : ""} ${i === index ? "current" : ""}`}
                     onClick={() => setIndex(i)}
                     aria-label={`Đến câu ${i + 1}`}
                   >
@@ -619,7 +657,10 @@ type ResultData = {
   };
   items: (Item & {
     questionId: string;
-    correctOptionId: string;
+    correctOptionId: string | null;
+    acceptedAnswerVariants: string[];
+    normalizationPolicyVersion: number;
+    ignoreTerminalPunctuation: boolean;
     explanation: string;
     skill: string;
     isCorrect: boolean;
@@ -679,39 +720,61 @@ export function ResultPage() {
           <div className="result-list">
             {data.items
               .filter((x) => !onlyWrong || !x.isCorrect)
-              .map((q, i) => (
+              .map((q) => (
                 <article key={q.id} className="result-item">
                   <span
                     className={`result-tag ${q.isCorrect ? "correct" : "wrong"}`}
                   >
                     {q.isCorrect
                       ? "ĐÚNG"
-                      : q.selectedOptionId
+                      : q.selectedOptionId || q.answerText?.trim()
                         ? "CHƯA ĐÚNG"
                         : "CHƯA TRẢ LỜI"}
                   </span>
                   <h3>
-                    {i + 1}. {q.prompt}
+                    {q.order + 1}. {q.prompt}
                   </h3>
-                  <div className="answer-options result-options">
-                    {q.options.map((o) => (
-                      <div
-                        className={
-                          o.id === q.correctOptionId
-                            ? "correct-answer"
-                            : o.id === q.selectedOptionId
-                              ? "wrong-answer"
-                              : ""
-                        }
-                        key={o.id}
-                      >
-                        {o.text}
-                        {o.id === q.correctOptionId ? (
-                          <CheckCircle2 size={15} />
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
+                  {q.type === "fill_blank" ? (
+                    <div className="fill-blank-review">
+                      <p>
+                        <b>Bạn đã viết:</b>{" "}
+                        <span>
+                          {q.answerText?.trim() ? q.answerText : "(Bỏ trống)"}
+                        </span>
+                      </p>
+                      <p>
+                        <b>Đáp án được chấp nhận:</b>{" "}
+                        {q.acceptedAnswerVariants.join(" · ")}
+                      </p>
+                      <small>
+                        Policy v{q.normalizationPolicyVersion}: không phân biệt
+                        hoa/thường; gộp khoảng trắng và chuẩn hóa dấu nháy.
+                        {q.ignoreTerminalPunctuation
+                          ? " Bỏ qua dấu chấm, chấm hỏi, chấm than cuối câu."
+                          : " Giữ nguyên dấu câu."}
+                      </small>
+                    </div>
+                  ) : (
+                    <div className="answer-options result-options">
+                      {q.options.map((o) => (
+                        <div
+                          className={
+                            o.id === q.correctOptionId
+                              ? "correct-answer"
+                              : o.id === q.selectedOptionId
+                                ? "wrong-answer"
+                                : ""
+                          }
+                          key={o.id}
+                        >
+                          {o.text}
+                          {o.id === q.correctOptionId ? (
+                            <CheckCircle2 size={15} />
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <p className="explanation">
                     <b>Vì sao?</b> {q.explanation}
                   </p>

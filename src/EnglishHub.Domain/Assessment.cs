@@ -25,7 +25,9 @@ public sealed class AttemptItem : VersionedEntity
     public string Prompt { get; set; } = "";
     public string Stimulus { get; set; } = "";
     public string OptionsJson { get; set; } = "[]";
+    public QuestionType Type { get; set; }
     public Guid? SelectedOptionId { get; set; }
+    public string? AnswerText { get; set; }
     public DateTimeOffset? AcceptedAt { get; set; }
     public GradingKey GradingKey { get; set; } = null!;
 }
@@ -33,7 +35,10 @@ public sealed class AttemptItem : VersionedEntity
 public sealed class GradingKey
 {
     public Guid AttemptItemId { get; set; }
-    public Guid CorrectOptionId { get; set; }
+    public Guid? CorrectOptionId { get; set; }
+    public string AcceptedAnswerVariantsJson { get; set; } = "[]";
+    public int NormalizationPolicyVersion { get; set; } = AnswerNormalization.CurrentVersion;
+    public bool IgnoreTerminalPunctuation { get; set; }
     public string Explanation { get; set; } = "";
     public string Skill { get; set; } = "";
     public int Part { get; set; }

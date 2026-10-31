@@ -75,6 +75,10 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("AcceptedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("AnswerText")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<Guid>("AttemptId")
                         .HasColumnType("uniqueidentifier");
 
@@ -104,6 +108,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<string>("Stimulus")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -490,7 +497,11 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("AttemptItemId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CorrectOptionId")
+                    b.Property<string>("AcceptedAnswerVariantsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CorrectOptionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Explanation")
@@ -498,6 +509,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("GradingPolicyVersion")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IgnoreTerminalPunctuation")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NormalizationPolicyVersion")
                         .HasColumnType("int");
 
                     b.Property<int>("Part")
@@ -673,12 +690,22 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("AcceptedAnswerVariantsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Explanation")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IgnoreTerminalPunctuation")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("NormalizationPolicyVersion")
+                        .HasColumnType("int");
 
                     b.Property<int>("Order")
                         .HasColumnType("int");
@@ -690,6 +717,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<string>("Skill")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

@@ -2,11 +2,12 @@ using EnglishHub.Application;
 using EnglishHub.Domain;
 using EnglishHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace EnglishHub.Infrastructure.Content;
 
 public sealed record OptionInput(string Text, bool IsCorrect);
-public sealed record QuestionInput(string Prompt, string Skill, string Explanation, OptionInput[] Options);
+public sealed record QuestionInput(string Prompt, string Skill, string Explanation, OptionInput[] Options, QuestionType Type = QuestionType.SingleChoice, string[]? AcceptedAnswerVariants = null, int NormalizationPolicyVersion = AnswerNormalization.CurrentVersion, bool IgnoreTerminalPunctuation = false);
 public sealed record GroupInput(int Part, string Stimulus, QuestionInput[] Questions);
 public sealed record ContentInput(string Title, string Summary, string Body, string Skill, int Minutes, int DurationSeconds, bool IsFixture, string Attribution, GroupInput[] Groups, Guid? MediaAssetId = null);
 public sealed record CreateContentInput(string Slug, ContentKind Kind, ContentInput Content);
@@ -68,18 +69,18 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     public async Task<object> DryRun(CreateContentInput[] items)
     {
         DomainError.Require(items.Length is >= 1 and <= 20 && items.All(x => x is not null), 422, "invalid_import_size", "Một import gồm 1–20 nội dung hợp lệ.");
-        var rows=new List<object>();
-        foreach(var (item,index) in items.Select((item,index)=>(item,index)))
+        var rows = new List<object>();
+        foreach (var (item, index) in items.Select((item, index) => (item, index)))
         {
             try
             {
                 CheckKind(item.Kind); await CheckMedia(item.Content.MediaAssetId);
-                DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug,"^[a-z0-9-]{3,120}$"),422,"invalid_slug","Slug không hợp lệ.");
-                DomainError.Require(items.Count(x => x.Slug==item.Slug)==1 && !await db.ContentRoots.AnyAsync(x => x.Slug==item.Slug),409,"slug_exists","Slug đã tồn tại hoặc bị lặp trong lô.");
-                var version=MakeVersion(Guid.NewGuid(),1,item.Content); version.Root=new ContentRoot { Kind=item.Kind }; Validate(version);
-                rows.Add(new { index,valid=true,code=(string?)null,message=(string?)null });
+                DomainError.Require(System.Text.RegularExpressions.Regex.IsMatch(item.Slug, "^[a-z0-9-]{3,120}$"), 422, "invalid_slug", "Slug không hợp lệ.");
+                DomainError.Require(items.Count(x => x.Slug == item.Slug) == 1 && !await db.ContentRoots.AnyAsync(x => x.Slug == item.Slug), 409, "slug_exists", "Slug đã tồn tại hoặc bị lặp trong lô.");
+                var version = MakeVersion(Guid.NewGuid(), 1, item.Content); version.Root = new ContentRoot { Kind = item.Kind }; Validate(version);
+                rows.Add(new { index, valid = true, code = (string?)null, message = (string?)null });
             }
-            catch(DomainError error) { rows.Add(new { index,valid=false,code=error.Code,message=error.Message }); }
+            catch (DomainError error) { rows.Add(new { index, valid = false, code = error.Code, message = error.Message }); }
         }
         return new { rows };
     }
@@ -126,11 +127,23 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         else
         {
             DomainError.Require(v.Groups.Count is > 0 and <= 200, 422, "invalid_groups", "Đề cần 1–200 nhóm câu.");
-            foreach (var group in v.Groups)
+        }
+        foreach (var group in v.Groups)
+        {
+            DomainError.Require(group.Part is >= 1 and <= 7 && group.Questions.Count is > 0 and <= 6, 422, "invalid_group", "Part hoặc kích thước nhóm không hợp lệ.");
+            foreach (var q in group.Questions)
             {
-                DomainError.Require(group.Part is >= 1 and <= 7 && group.Questions.Count is > 0 and <= 6, 422, "invalid_group", "Part hoặc kích thước nhóm không hợp lệ.");
-                foreach (var q in group.Questions)
-                    DomainError.Require(!string.IsNullOrWhiteSpace(q.Prompt) && !string.IsNullOrWhiteSpace(q.Explanation) && q.Options.Count == (group.Part == 2 ? 3 : 4) && q.Options.Count(x => x.IsCorrect) == 1 && q.Options.All(x => !string.IsNullOrWhiteSpace(x.Text)), 422, "invalid_question", "Câu hỏi cần lời giải và đúng một đáp án đúng.");
+                DomainError.Require(!string.IsNullOrWhiteSpace(q.Prompt) && !string.IsNullOrWhiteSpace(q.Explanation), 422, "invalid_question", "Câu hỏi cần đề bài và lời giải.");
+                if (q.Type == QuestionType.SingleChoice)
+                    DomainError.Require(q.Options.Count == (group.Part == 2 ? 3 : 4) && q.Options.Count(x => x.IsCorrect) == 1 && q.Options.All(x => !string.IsNullOrWhiteSpace(x.Text)) && q.AcceptedAnswerVariantsJson == "[]" && !q.IgnoreTerminalPunctuation, 422, "invalid_question", "Trắc nghiệm cần đúng một option đúng và không dùng đáp án văn bản.");
+                else
+                {
+                    DomainError.Require(q.Type == QuestionType.FillBlank && q.Options.Count == 0 && q.NormalizationPolicyVersion == AnswerNormalization.CurrentVersion, 422, "invalid_fill_blank", "Điền đáp án không có options và phải dùng policy được hỗ trợ.");
+                    var variants = JsonSerializer.Deserialize<string[]>(q.AcceptedAnswerVariantsJson)!;
+                    DomainError.Require(variants.Length is >= 1 and <= 20 && variants.All(x => !string.IsNullOrWhiteSpace(x) && x.Length <= AnswerNormalization.MaxAnswerLength), 422, "invalid_answer_variants", "Cần 1–20 đáp án biên soạn, mỗi đáp án tối đa 2000 ký tự.");
+                    var normalized = variants.Select(x => AnswerNormalization.Normalize(x, q.NormalizationPolicyVersion, q.IgnoreTerminalPunctuation)).ToArray();
+                    DomainError.Require(normalized.All(x => x.Length > 0) && normalized.Distinct().Count() == normalized.Length, 422, "invalid_answer_variants", "Đáp án không được rỗng hoặc trùng nhau sau chuẩn hóa.");
+                }
             }
         }
     }
@@ -138,7 +151,8 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     private static ContentVersion MakeVersion(Guid rootId, int number, ContentInput input)
     {
         DomainError.Require(input.Groups.Length <= 200 && input.Title.Length <= 240 && input.Body.Length <= 100000, 422, "content_too_large", "Nội dung vượt giới hạn.");
-        DomainError.Require(input.Summary.Length<=2000 && input.Skill.Length<=60 && input.Attribution.Length<=2000 && input.Groups.All(g => g is not null && g.Questions.Length<=6 && g.Stimulus.Length<=20000 && g.Questions.All(q => q is not null && q.Prompt.Length<=4000 && q.Explanation.Length<=8000 && q.Options.Length<=4 && q.Options.All(o => o is not null && o.Text.Length<=2000))),422,"invalid_content_shape","Cấu trúc câu hỏi hoặc giới hạn nội dung không hợp lệ.");
+        DomainError.Require(input.Summary.Length <= 2000 && input.Skill.Length <= 60 && input.Attribution.Length <= 2000 && input.Groups.All(g => g is not null && g.Questions.Length <= 6 && g.Stimulus.Length <= 20000 && g.Questions.All(q => q is not null && q.Prompt.Length <= 4000 && q.Explanation.Length <= 8000 && q.Options.Length <= 4 && q.Options.All(o => o is not null && o.Text.Length <= 2000))), 422, "invalid_content_shape", "Cấu trúc câu hỏi hoặc giới hạn nội dung không hợp lệ.");
+        DomainError.Require(input.Groups.SelectMany(g => g.Questions).All(q => q.Type is QuestionType.SingleChoice or QuestionType.FillBlank && q.NormalizationPolicyVersion == AnswerNormalization.CurrentVersion && (q.AcceptedAnswerVariants is null || q.AcceptedAnswerVariants.Length <= 20 && q.AcceptedAnswerVariants.All(x => x is not null && x.Length <= AnswerNormalization.MaxAnswerLength))), 422, "invalid_answer_policy", "Loại câu hỏi, biến thể hoặc policy chuẩn hóa không hợp lệ.");
         return new ContentVersion
         {
             RootId = rootId,
@@ -163,6 +177,10 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
                     Prompt = q.Prompt,
                     Skill = q.Skill,
                     Explanation = q.Explanation,
+                    Type = q.Type,
+                    AcceptedAnswerVariantsJson = JsonSerializer.Serialize(q.AcceptedAnswerVariants ?? []),
+                    NormalizationPolicyVersion = q.NormalizationPolicyVersion,
+                    IgnoreTerminalPunctuation = q.IgnoreTerminalPunctuation,
                     Options = q.Options.Select(o => new QuestionOption { Text = o.Text, IsCorrect = o.IsCorrect }).ToList()
                 }).ToList()
             }).ToList()
@@ -172,8 +190,8 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     /// <summary>VI: Báo lỗi tham chiếu trước khi chạm FK SQL. EN: Reject invalid media references as business errors before database foreign-key enforcement.</summary>
     private async Task CheckMedia(Guid? id)
     {
-        if(id is { } mediaId) DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id==mediaId && x.Purpose=="lesson_audio" && x.Status!=MediaStatus.Deleted && x.Status!=MediaStatus.DeletePending),422,"invalid_media_reference","Chỉ gắn lesson audio còn hiệu lực; không gắn recording riêng tư.");
+        if (id is { } mediaId) DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id == mediaId && x.Purpose == "lesson_audio" && x.Status != MediaStatus.Deleted && x.Status != MediaStatus.DeletePending), 422, "invalid_media_reference", "Chỉ gắn lesson audio còn hiệu lực; không gắn recording riêng tư.");
     }
-    private static void CheckKind(ContentKind kind) => DomainError.Require(kind is ContentKind.Lesson or ContentKind.Assessment,422,"invalid_content_kind","Loại nội dung không được hỗ trợ.");
+    private static void CheckKind(ContentKind kind) => DomainError.Require(kind is ContentKind.Lesson or ContentKind.Assessment, 422, "invalid_content_kind", "Loại nội dung không được hỗ trợ.");
     private void Audit(Guid actor, string action, Guid id) => db.AuditEntries.Add(new AuditEntry { ActorId = actor, Action = action, ResourceId = id, OccurredAt = clock.UtcNow });
 }

@@ -8,9 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace EnglishHub.Infrastructure.Learning;
 
 public sealed record EnrollInput(bool StartFromBasics, Guid? PlacementAttemptId = null);
-public sealed record LessonAnswer(Guid QuestionId, Guid SelectedOptionId);
+public sealed record LessonAnswer(Guid QuestionId, Guid? SelectedOptionId, string? AnswerText = null);
 public sealed record CompleteLessonInput(Guid ClientRequestId, LessonAnswer[] Answers);
-public sealed record LessonFeedback(Guid QuestionId, bool IsCorrect, Guid CorrectOptionId, string Explanation);
+public sealed record LessonFeedback(Guid QuestionId, bool IsCorrect, Guid? CorrectOptionId, string Explanation);
 public sealed record LessonCheck(bool Completed, LessonFeedback[] Feedback);
 
 /// <summary>VI: Tiến độ dựa trên quiz/kết quả đã lưu. EN: Completion comes from persisted quiz evidence, never from simply opening a page.</summary>
@@ -88,8 +88,15 @@ public sealed class LearningService(HubDbContext db, Transactions tx, Receipts r
         if (duplicate is not null) return JsonSerializer.Deserialize<LessonCheck>(duplicate.ResponseJson)!;
         var lesson = await content.FullVersions.SingleOrDefaultAsync(x => x.Id == versionId && x.Root.Kind == ContentKind.Lesson && x.Status == PublicationStatus.Published) ?? throw new DomainError(404, "lesson_not_found", "Không tìm thấy bài học.");
         var questions = lesson.Groups.SelectMany(x => x.Questions).ToArray();
-        DomainError.Require(questions.Length > 0 && input.Answers.Length == questions.Length && input.Answers.Select(x => x.QuestionId).Distinct().Count() == questions.Length && input.Answers.All(a => questions.Any(q => q.Id == a.QuestionId && q.Options.Any(o => o.Id == a.SelectedOptionId))), 422, "invalid_lesson_answers", "Hãy trả lời đầy đủ quiz của bài học.");
-        var feedback = questions.Select(q => new LessonFeedback(q.Id, input.Answers.Single(a => a.QuestionId == q.Id).SelectedOptionId == q.Options.Single(o => o.IsCorrect).Id, q.Options.Single(o => o.IsCorrect).Id, q.Explanation)).ToArray();
+        DomainError.Require(questions.Length > 0 && input.Answers.Length == questions.Length && input.Answers.Select(x => x.QuestionId).Distinct().Count() == questions.Length && input.Answers.All(a => questions.Any(q => q.Id == a.QuestionId && (q.Type == QuestionType.FillBlank ? a.SelectedOptionId is null && !string.IsNullOrWhiteSpace(a.AnswerText) && a.AnswerText.Length <= AnswerNormalization.MaxAnswerLength : a.AnswerText is null && q.Options.Any(o => o.Id == a.SelectedOptionId)))), 422, "invalid_lesson_answers", "Hãy trả lời đầy đủ quiz bằng đúng loại đáp án.");
+        // VI: Quiz dùng cùng policy với attempt, không chấm theo text phía client. EN: Lesson quizzes use the same server-side normalization policy as assessments.
+        var feedback = questions.Select(q =>
+        {
+            var answer = input.Answers.Single(a => a.QuestionId == q.Id);
+            var correctOption = q.Type == QuestionType.SingleChoice ? q.Options.Single(o => o.IsCorrect).Id : (Guid?)null;
+            var correct = q.Type == QuestionType.FillBlank ? AnswerNormalization.Matches(answer.AnswerText, JsonSerializer.Deserialize<string[]>(q.AcceptedAnswerVariantsJson)!, q.NormalizationPolicyVersion, q.IgnoreTerminalPunctuation) : answer.SelectedOptionId == correctOption;
+            return new LessonFeedback(q.Id, correct, correctOption, q.Explanation);
+        }).ToArray();
         var passed = feedback.All(x => x.IsCorrect);
         if (passed && !await db.LessonProgress.AnyAsync(x => x.UserId == user && x.ContentVersionId == versionId))
         {

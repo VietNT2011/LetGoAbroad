@@ -31,7 +31,7 @@ public static class ContentEndpoints
                 x.Attribution,
                 x.Version,
                 x.MediaAssetId,
-                quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, options = q.Options.Select(o => new { o.Id, o.Text }) })
+                quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, q.Type, options = q.Options.Select(o => new { o.Id, o.Text }) })
             }).SingleOrDefaultAsync();
             return lesson is null ? Results.NotFound() : Results.Ok(lesson);
         }).RequireAuthorization().WithTags("Content");
@@ -40,7 +40,7 @@ public static class ContentEndpoints
         admin.MapGet("/versions/{id:guid}", async (Guid id, ContentService service) =>
         {
             var v = await service.FullVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
-            return new { v.Id, v.RootId, v.Title, v.Summary, v.Body, v.Skill, v.Minutes, v.DurationSeconds, v.IsFixture, v.Attribution, v.MediaAssetId, v.Version, v.Status, etag = Etags.Of(v), groups = v.Groups.OrderBy(x => x.Order).Select(g => new { g.Part, g.Stimulus, questions = g.Questions.OrderBy(x => x.Order).Select(q => new { q.Prompt, q.Skill, q.Explanation, options = q.Options.Select(o => new { o.Text, o.IsCorrect }) }) }) };
+            return new { v.Id, v.RootId, v.Title, v.Summary, v.Body, v.Skill, v.Minutes, v.DurationSeconds, v.IsFixture, v.Attribution, v.MediaAssetId, v.Version, v.Status, etag = Etags.Of(v), groups = v.Groups.OrderBy(x => x.Order).Select(g => new { g.Part, g.Stimulus, questions = g.Questions.OrderBy(x => x.Order).Select(q => new { q.Prompt, q.Skill, q.Explanation, q.Type, acceptedAnswerVariants = System.Text.Json.JsonSerializer.Deserialize<string[]>(q.AcceptedAnswerVariantsJson), q.NormalizationPolicyVersion, q.IgnoreTerminalPunctuation, options = q.Options.Select(o => new { o.Text, o.IsCorrect }) }) }) };
         });
         admin.MapPost("/content", async (CreateContentInput input, ClaimsPrincipal user, ContentService service) =>
         {
@@ -56,7 +56,7 @@ public static class ContentEndpoints
         }).RequireAuthorization(p => p.RequireRole("Admin"));
         admin.MapPut("/versions/{id:guid}", async (Guid id, ContentInput input, HttpContext ctx, ContentService service) => { var v = await service.UpdateDraft(id, input, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return new { v.Id, etag = Etags.Of(v) }; });
         admin.MapPost("/versions/{id:guid}/archive", async (Guid id, HttpContext ctx, ContentService service) => { await service.Archive(id, ctx.Request.Headers.IfMatch, ctx.User.UserId()); return Results.NoContent(); }).RequireAuthorization(p => p.RequireRole("Admin"));
-        admin.MapPost("/imports/dry-run", (CreateContentInput[] input,ContentService service) => service.DryRun(input));
+        admin.MapPost("/imports/dry-run", (CreateContentInput[] input, ContentService service) => service.DryRun(input));
         admin.MapPost("/imports", (ImportInput input, ClaimsPrincipal user, ContentService service) => service.Import(input, user.UserId()));
     }
 }

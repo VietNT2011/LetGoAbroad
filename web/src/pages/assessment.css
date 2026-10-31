@@ -319,6 +319,30 @@
 .checkbox input {
   width: auto;
 }
+.fill-blank {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0;
+  font-size: 14px;
+}
+.fill-blank small,
+.fill-blank-review small {
+  color: #62705b;
+  line-height: 1.7;
+}
+.fill-blank input {
+  width: 100%;
+  font-size: 18px;
+}
+.fill-blank-review {
+  padding: 12px 16px;
+  background: #f8faf4;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.fill-blank-review span {
+  white-space: pre-wrap;
+}
 @media (max-width: 1100px) {
   .attempt-layout {
     grid-template-columns: minmax(0, 1fr) 195px;

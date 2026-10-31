@@ -4,9 +4,9 @@ This is a working local learning-core implementation, not a claim that the full 
 
 | Milestone | Implemented and checked | Remaining acceptance |
 |---|---|---|
-| M00 | Modular .NET solution, React, pinned core image digests, Compose, API/worker processes, health, SQL migrations, lockfiles, CI workflows | Remote CI result must be inspected after a push; no load benchmark claimed |
+| M00 | Modular .NET solution, React, pinned core image digests, Compose, API/worker processes, health, SQL migrations, lockfiles, CI workflows; both remote jobs passed for `8f7a642` | Each later push needs its own CI result; no load benchmark claimed |
 | M01 | Identity cookie, CSRF, role checks, verification/reset, local mailbox/SMTP adapter, profile, version registry, drafts/edit/preview/publish/archive, atomic JSON import and dry-run | Broader CMS authoring UX, detailed taxonomy and complete source metadata schema |
-| M02 | Pinned public/private snapshots, atomic autosave, payload-bound receipts, exact owner/option checks, deadline and section boundaries, single result/outbox, practice whole-group preview, result explanations | FillBlank normalization/variants, bookmark/notes, broad multi-tab/offline browser automation and a reviewed full LR content bank |
+| M02 | Pinned public/private snapshots, atomic autosave, payload-bound receipts, exact owner/option checks, deadline and section boundaries, single result/outbox, practice whole-group preview, result explanations; FillBlank variants and versioned normalization in assessments/lesson quizzes | Bookmark/notes, broad multi-tab/offline browser automation and a reviewed full LR content bank |
 | M03 | Enrollment, deterministic budget planner, local dates, reason codes, quiz-backed lesson progress, source-backed daily completion and statistics | Versioned path-template graph, prerequisites/cycle validation, authored 14-day task schedule, missed-task carryover, last-50 skill evidence and goal revisions |
 | M04 | Azurite/private blob, quota reservation, scoped staging grants, ETag freeze, ffprobe/FFmpeg, fenced leases, retry history, HTTP range playback, durable deletion and age-buffer cleanup | Resumable block uploads, a full authored listening corpus, broader crash/fault injection, operational reconciliation reports |
 | P0 gate | Login → path → lesson quiz → persisted progress; practice → autosave → grade → explanations; real media integration tested | **Open** until every remaining P0 criterion is satisfied |
@@ -19,7 +19,7 @@ The vocabulary/community navigation is marked “Sắp có”. Infrastructure pr
 
 ## Next implementation order
 
-1. Close the remaining P0 acceptance gaps, especially path templates, FillBlank, notes/bookmarks and listening content.
+1. Close the remaining P0 acceptance gaps, especially path templates, notes/bookmarks and listening content. Typed-answer rules are documented in [answer-policy.md](answer-policy.md).
 2. Complete the P0 gate with repeatable browser/offline scenarios, then implement M05/M06.
 3. Implement M07/M08 and verify membership revocation/catch-up before enabling Community.
 4. Implement M09 and real two-network calls before enabling Calls.

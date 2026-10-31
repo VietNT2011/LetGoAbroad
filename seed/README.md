@@ -4,6 +4,8 @@
 
 DemoAssessmentSeed bổ sung 20 câu grammar khác nhau; mini reading có 5 email/ngữ cảnh × 4 câu. Placement dùng pool câu hỏi demo và quy tắc phân tầng v1, chưa là bài đánh giá trình độ đã được kiểm định.
 
+DemoFillBlankSeed bổ sung 5 câu gõ đáp án công sở theo CC0, có biến thể được biên soạn và policy v1. Đây là bài luyện riêng, không phải một Part thuộc blueprint TOEIC LR.
+
 Full mock 200 câu là **fixture kỹ thuật** có counts 6/25/39/30/30/16/54 và nhóm câu nguyên vẹn. Nó kiểm thử blueprint, timer section, autosave và grading; các câu grammar được dùng lại để kiểm tra kỹ thuật, không phải bản mô phỏng nội dung TOEIC LR. `IsFixture=true` loại kết quả khỏi thống kê thành tích.
 
 Synthetic WAV tones in integration tests are technical fixtures only. No tone is shipped as learning speech. Audio/video with authored transcripts and source/redistribution rights still need to be added for the rich listening curriculum.
