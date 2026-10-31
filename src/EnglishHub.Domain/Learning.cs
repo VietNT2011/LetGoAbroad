@@ -33,6 +33,8 @@ public sealed class DailyTask : VersionedEntity
     public string ReasonText { get; set; } = "";
     public string Status { get; set; } = "pending";
     public DateTimeOffset CreatedAt { get; set; }
+    // VI: Chỉ ghi nhận bắt đầu, không phải bằng chứng hoàn thành. EN: Starting is distinct from quiz/result-backed completion.
+    public DateTimeOffset? StartedAt { get; set; }
     public Guid? PathVersionId { get; set; }
     public Guid? PathNodeId { get; set; }
     public PathNode? PathNode { get; set; }

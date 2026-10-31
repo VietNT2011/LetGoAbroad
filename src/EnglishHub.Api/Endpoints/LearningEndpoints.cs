@@ -12,6 +12,8 @@ public static class LearningEndpoints
         var group = app.MapGroup("/api/v1/learning").RequireAuthorization().WithTags("Learning");
         group.MapPost("/enrollment", async (EnrollInput input, ClaimsPrincipal user, LearningService service) => { var e = await service.Enroll(user.UserId(), input); return new { e.Id, e.Level, e.RuleVersion, e.PathVersionId, e.SelectionReason, e.PathStartedOn }; });
         group.MapGet("/dashboard", (ClaimsPrincipal user, LearningService service) => service.Dashboard(user.UserId()));
+        group.MapPost("/tasks/{id:guid}/start", (Guid id, ClaimsPrincipal user, LearningService service) => service.StartTask(user.UserId(), id));
+        group.MapPost("/plan/regenerate", (RegeneratePlanInput input, ClaimsPrincipal user, LearningService service) => service.Regenerate(user.UserId(), input));
         group.MapGet("/plan-revisions", (ClaimsPrincipal user, LearningService service) => service.GoalHistory(user.UserId()));
         group.MapGet("/skill-evidence", (ClaimsPrincipal user, SkillEvidenceService service) => service.Read(user.UserId()));
         group.MapGet("/path", async (ClaimsPrincipal user, HubDbContext db) =>

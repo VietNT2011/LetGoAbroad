@@ -42,13 +42,13 @@ VI: Task quá ngày chưa có bằng chứng được chuyển `missed`. Lần c
 
 EN: A live attempt spanning midnight stays attached to its original task, appears on the next dashboard with a resume link and keeps its original server deadline. Reconciliation also handles a result committed during rollover: it credits the original eligible source, supersedes an unnecessary pending successor, and does not reuse that result for the next practice node. Completion timestamps/local dates come from the actual result/quiz evidence, using the task's pinned timezone.
 
-VI: Refresh không thêm các task mới sau khi ngày đó đã có lịch; node vừa mở khóa xuất hiện ở lần lập lịch ngày sau. Cần workflow regenerate riêng để bổ sung/chỉnh task chưa bắt đầu. Task legacy giữ logic danh mục cũ cho tới khi người học chủ động ghim mẫu.
+VI: Refresh không thêm các task mới sau khi ngày đó đã có lịch. Người học có thể chủ động [lập lại bài chưa bắt đầu](regeneration.md) để đưa node vừa mở khóa vào ngân sách/slot còn lại; nhiệm vụ đã bắt đầu hoặc xong được giữ nguyên. Task legacy dùng cùng bảo vệ, với logic chọn từ danh mục cho tới khi người học chủ động ghim mẫu.
 
 ## API and limits / API và giới hạn
 
 - Learner: `GET /learning/templates`, `GET /learning/path-plan`, `POST /learning/enrollment` với `pathVersionId` tùy chọn, `POST /learning/enrollment/adopt-path`.
 - CMS: `GET/POST /admin/paths`, `GET/PUT /admin/path-versions/{id}`, `POST /admin/paths/{templateId}/versions`, `POST /admin/path-versions/{id}/validate` và `/publish`. Các route đều có prefix `/api/v1`; ghi browser cần CSRF; publish chỉ Admin.
 - Draft limits: 20 stages, 200 nodes, 20 prerequisites/node, suggested study days 1–365. Each node points at an existing content version and a supported completion rule.
-- Foundation is authored. [Goal/minute revisions](goal-revisions.md) apply to future plans and are pinned on tasks. Additional Core/Exam Practice schedules, due-review/SRS budgeting, last-50 skill evidence, effective-date calendar history, switching an already pinned template, regeneration and archive/withdrawal policy for paths remain open. Calendar changes do not rewrite the originally pinned path calendar in this release.
+- Foundation is authored. [Goal/minute revisions](goal-revisions.md) apply to future plans and are pinned on tasks; [recent skill evidence](skill-evidence.md) and [regeneration](regeneration.md) are implemented. Additional Core/Exam Practice schedules, due-review/weak-skill budgeting, effective-date calendar history, switching an already pinned template and archive/withdrawal policy for paths remain open. Calendar changes do not rewrite the originally pinned path calendar in this release.
 
 API/SQL tests cover cycles, malformed references, reversed days, immutable publication, graph-only ETags, unchanged old enrollments/content after republishing, owner/role checks, actual quiz/score evidence, missed-task chains, midnight/reconciliation and relational FK/source constraints.

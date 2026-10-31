@@ -23,7 +23,8 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
     /// <summary>VI: Giữ snapshot đề và receipt trong cùng transaction. EN: Pin questions, private keys and the start receipt atomically.</summary>
     public async Task<AttemptView> Start(Guid user, StartAttempt input)
     {
-        var id = await tx.Run($"attempt-start:{user}", async () =>
+        // VI: Bắt đầu và lập lại lịch phải serialize cùng user để không thay task vừa nhận attempt. EN: Serialize starts with planning so regeneration cannot replace an assignment receiving a new attempt.
+        var id = await tx.Run($"learning:{user}", async () =>
         {
             var hash = Receipts.Hash(input); var duplicate = await receipts.Find(user, "attempt-start", input.ClientRequestId, hash);
             if (duplicate is not null) return duplicate.ResourceId;
@@ -52,6 +53,12 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
                     });
             }
             db.Attempts.Add(attempt);
+            var assignments = await db.DailyTasks.Where(x => x.UserId == user && x.ContentVersionId == version.Id && x.Status == "pending" && x.StartedAt == null && x.CreatedAt <= attempt.StartedAt).ToArrayAsync();
+            foreach (var task in assignments)
+            {
+                task.StartedAt = attempt.StartedAt;
+                db.OutboxEvents.Add(new OutboxEvent { Type = "learning.task_started", AggregateId = task.Id, OccurredAt = attempt.StartedAt, PayloadJson = JsonSerializer.Serialize(new { userId = user, taskId = task.Id }) });
+            }
             receipts.Save(user, "attempt-start", input.ClientRequestId, hash, attempt.Id, new { attempt.Id });
             return attempt.Id;
         });

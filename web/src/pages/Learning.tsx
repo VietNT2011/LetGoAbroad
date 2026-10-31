@@ -22,6 +22,7 @@ import {
 export type DashboardData = {
   localDate: string;
   timeZoneId: string;
+  planEtag: string | null;
   enrollment: null | {
     id: string;
     level: string;
@@ -36,6 +37,7 @@ export type DashboardData = {
     kind: "lesson" | "assessment";
     estimatedMinutes: number;
     status: string;
+    startedAt: string | null;
     reasonText: string;
     reasonCode: string;
     activeAttemptId: string | null;
@@ -55,9 +57,83 @@ export function TodayPanel() {
   const { data, loading, error, reload } = useResource<DashboardData>(
     "/learning/dashboard",
   );
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<Error>();
+  const [notice, setNotice] = useState("");
+  const [needsRefresh, setNeedsRefresh] = useState(false);
+  const command = useRef<
+    | { clientRequestId: string; localDate: string; expectedEtag: string }
+    | undefined
+  >(undefined);
   if (loading) return <Loading />;
   if (error) return <ErrorNotice error={error} retry={reload} />;
   if (!data) return null;
+  const refreshPlan = () => {
+    setNeedsRefresh(false);
+    setActionError(undefined);
+    reload();
+  };
+  const regenerate = async () => {
+    if (busy || needsRefresh || !data.planEtag) return;
+    setBusy(true);
+    setActionError(undefined);
+    setNotice("");
+    // VI: Giữ command khi mất ACK; chỉ đổi khóa khi người dùng đã tải một snapshot khác. EN: Reuse a lost-ACK command until a different plan snapshot is loaded.
+    if (
+      command.current?.expectedEtag !== data.planEtag ||
+      command.current.localDate !== data.localDate
+    )
+      command.current = {
+        clientRequestId: crypto.randomUUID(),
+        localDate: data.localDate,
+        expectedEtag: data.planEtag,
+      };
+    try {
+      const ack = await post<{
+        changed: boolean;
+        retainedTaskIds: string[];
+        supersededTaskIds: string[];
+        newTaskIds: string[];
+      }>("/learning/plan/regenerate", command.current);
+      command.current = undefined;
+      setNotice(
+        ack.changed
+          ? `Đã giữ ${ack.retainedTaskIds.length} nhiệm vụ, thay ${ack.supersededTaskIds.length} nhiệm vụ chưa bắt đầu và chọn ${ack.newTaskIds.length} nhiệm vụ mới.`
+          : "Lịch đã phù hợp. Giữ nguyên các nhiệm vụ đang có.",
+      );
+      reload();
+    } catch (error) {
+      setActionError(error as Error);
+      if (
+        error instanceof ApiError &&
+        (error.status === 412 || error.code === "plan_day_changed")
+      )
+        setNeedsRefresh(true);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const openTask = async (task: DashboardData["tasks"][number]) => {
+    if (busy) return;
+    setBusy(true);
+    setActionError(undefined);
+    try {
+      if (task.status === "pending")
+        await post(`/learning/tasks/${task.id}/start`);
+      navigate(
+        task.activeAttemptId
+          ? `/attempts/${task.activeAttemptId}`
+          : task.kind === "lesson"
+            ? `/learn/${task.contentVersionId}`
+            : `/tests/${task.contentVersionId}`,
+      );
+    } catch (error) {
+      setActionError(error as Error);
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <>
       <div className="stats-grid">
@@ -86,10 +162,33 @@ export function TodayPanel() {
           <span className="eyebrow">A LITTLE PLAN, A LOT OF POSSIBILITY</span>
           <h2>Nhịp học hôm nay</h2>
         </div>
-        <Link to="/paths">
-          Xem lộ trình <ArrowRight size={15} />
-        </Link>
+        <div className="plan-actions">
+          {data.enrollment ? (
+            <button
+              className="secondary"
+              disabled={busy || needsRefresh}
+              onClick={regenerate}
+            >
+              {busy ? "Đang xử lý…" : "Lập lại bài chưa bắt đầu"}
+            </button>
+          ) : null}
+          <Link to="/paths">
+            Xem lộ trình <ArrowRight size={15} />
+          </Link>
+        </div>
       </div>
+      <ErrorNotice error={actionError} retry={refreshPlan} />
+      {notice ? (
+        <p className="notice success" role="status">
+          {notice}
+        </p>
+      ) : null}
+      {data.enrollment ? (
+        <p className="muted plan-policy">
+          Mở nhiệm vụ để ghi nhận bắt đầu. Lập lại giữ bài đang làm, bài đã xong
+          và ngân sách hôm nay; hoàn thành vẫn cần quiz hoặc kết quả hợp lệ.
+        </p>
+      ) : null}
       {!data.enrollment ? (
         <div className="onboarding-card">
           <Route size={28} />
@@ -104,14 +203,11 @@ export function TodayPanel() {
       ) : data.tasks.length ? (
         <div className="daily-tasks">
           {data.tasks.map((task, i) => (
-            <Link
-              to={
-                task.activeAttemptId
-                  ? `/attempts/${task.activeAttemptId}`
-                  : task.kind === "lesson"
-                    ? `/learn/${task.contentVersionId}`
-                    : `/tests/${task.contentVersionId}`
-              }
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => openTask(task)}
+              aria-label={`${task.status === "completed" ? "Xem lại" : "Mở nhiệm vụ"}: ${task.title}`}
               className={`daily-task ${task.status}`}
               key={task.id}
             >
@@ -127,6 +223,8 @@ export function TodayPanel() {
                   {task.title}
                   {task.status === "completed" ? (
                     <small className="task-completed">Đã hoàn thành</small>
+                  ) : task.startedAt || task.activeAttemptId ? (
+                    <small className="task-completed">Đã bắt đầu</small>
                   ) : null}
                 </h3>
                 <p>{task.reasonText}</p>
@@ -142,7 +240,7 @@ export function TodayPanel() {
                 {task.estimatedMinutes} phút
               </span>
               <ArrowRight size={17} />
-            </Link>
+            </button>
           ))}
         </div>
       ) : (

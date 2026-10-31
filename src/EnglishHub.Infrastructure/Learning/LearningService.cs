@@ -59,30 +59,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             var tasksExist = await db.DailyTasks.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending" && x.LocalDate < today));
             if (!tasksExist && user.StudyDays.Split(',').Contains(((int)today.DayOfWeek).ToString()))
             {
-                if (enrollment.PathVersionId is not null) await GeneratePathTasks(enrollment, user, today, goal.Id);
-                else
-                {
-                    var doneRoots = await db.LessonProgress.Where(x => x.UserId == userId).Select(x => x.ContentVersion.RootId).Distinct().ToArrayAsync();
-                    var versions = await db.ContentVersions.Include(x => x.Root).Where(x => x.Status == PublicationStatus.Published && x.Root.CurrentPublishedVersionId == x.Id && !x.IsFixture).OrderBy(x => x.Root.Slug).ToListAsync();
-                    var lessons = versions.Where(x => x.Root.Kind == ContentKind.Lesson && !doneRoots.Contains(x.RootId)).Select(x => new PlanCandidate(x.Id, x.Minutes, "lesson", x.CurriculumOrder));
-                    var practices = versions.Where(x => x.Root.Kind == ContentKind.Assessment && x.Root.Slug != "placement-demo").Select((x, i) => new PlanCandidate(x.Id, x.Minutes, "practice", i));
-                    var selected = Planner.Select(lessons, practices, enrollment.MinutesPerDay);
-                    foreach (var (item, slot) in selected.Select((item, slot) => (item, slot)))
-                        db.DailyTasks.Add(new DailyTask
-                        {
-                            EnrollmentId = enrollment.Id,
-                            UserId = userId,
-                            LocalDate = today,
-                            SlotKey = slot,
-                            ContentVersionId = item.ContentVersionId,
-                            EstimatedMinutes = item.Minutes,
-                            CreatedAt = clock.UtcNow,
-                            TimeZoneId = user.TimeZoneId,
-                            GoalRevisionId = goal.Id,
-                            ReasonCode = item.Kind == "lesson" ? "FOUNDATION_NEXT" : "SHORT_PRACTICE",
-                            ReasonText = item.Kind == "lesson" ? "Bài tiếp theo chưa hoàn thành trong lộ trình; quy tắc v1." : "Luyện ngắn để củng cố kiến thức, vừa ngân sách thời gian; quy tắc v1."
-                        });
-                }
+                db.DailyTasks.AddRange(await BuildDailyTasks(enrollment, user, today, goal.Id, enrollment.MinutesPerDay, 3, 0, [], []));
                 await db.SaveChangesAsync();
             }
             await SyncCompleted(userId, today, user.TimeZoneId);
@@ -95,6 +72,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             kind = x.ContentVersion.Root.Kind,
             x.EstimatedMinutes,
             x.Status,
+            x.StartedAt,
             x.ReasonCode,
             x.ReasonText,
             x.PathVersionId,
@@ -109,10 +87,12 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         }).ToListAsync();
         var lessonsCompleted = await db.LessonProgress.CountAsync(x => x.UserId == userId);
         var attempts = await db.Attempts.Where(x => x.UserId == userId && x.Status == AttemptStatus.Graded && !x.ContentVersion.IsFixture && x.Mode != "mistake_review").Select(x => x.Result!).ToListAsync();
+        var planEtag = enrollment is null ? null : await PlanEtag(enrollment, today, user.TimeZoneId, user.StudyDays);
         return (object)new
         {
             localDate = today,
             timeZoneId = user.TimeZoneId,
+            planEtag,
             enrollment = enrollment is null ? null : new { enrollment.Id, enrollment.Level, enrollment.TargetScore, enrollment.MinutesPerDay, enrollment.RuleVersion, enrollment.PlanRevision, enrollment.PathVersionId, enrollment.SelectionReason, enrollment.PathStartedOn },
             tasks,
             statistics = new { lessonsCompleted, attemptsCompleted = attempts.Count, questionsCorrect = attempts.Sum(x => x.CorrectCount), questionsObserved = attempts.Sum(x => x.TotalCount) }

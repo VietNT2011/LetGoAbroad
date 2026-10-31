@@ -76,22 +76,22 @@ public sealed partial class LearningService
         return new(version, nodes, completed, day, missed);
     }
 
-    private async Task GeneratePathTasks(Enrollment enrollment, AppUser user, DateOnly today, Guid goalRevision)
+    private async Task<DailyTask[]> BuildPathTasks(Enrollment enrollment, AppUser user, DateOnly today, Guid goalRevision, int budget, int limit, int slotOffset, Guid[] reservedContent, Guid[] ignoredTasks)
     {
         var state = await ReadPathState(enrollment);
-        var pending = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && x.PathNodeId != null && x.Status == "pending").Select(x => x.PathNodeId!.Value).ToArrayAsync();
-        var candidates = state.Nodes.Select((node, order) => (node, order)).Where(x => !state.Completed.Contains(x.node.Id) && !pending.Contains(x.node.Id) && x.node.StudyDay <= state.StudyDay && x.node.Prerequisites.All(p => state.Completed.Contains(p.PrerequisiteNodeId)))
+        var pending = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && x.PathNodeId != null && x.Status == "pending" && !ignoredTasks.Contains(x.Id)).Select(x => x.PathNodeId!.Value).ToArrayAsync();
+        var candidates = state.Nodes.Select((node, order) => (node, order)).Where(x => !state.Completed.Contains(x.node.Id) && !pending.Contains(x.node.Id) && !reservedContent.Contains(x.node.ContentVersionId) && x.node.StudyDay <= state.StudyDay && x.node.Prerequisites.All(p => state.Completed.Contains(p.PrerequisiteNodeId)))
             .Select(x => new PathCandidate(x.node.Id, x.node.ContentVersionId, x.node.ContentVersion.Root.Kind == ContentKind.Lesson ? "lesson" : "assessment", x.node.ContentVersion.Minutes, x.node.StudyDay, x.order, state.Missed.GetValueOrDefault(x.node.Id)?.Id));
-        var selected = PathScheduler.Select(candidates, enrollment.MinutesPerDay);
-        foreach (var (item, slot) in selected.Select((item, slot) => (item, slot)))
+        var selected = PathScheduler.Select(candidates, budget).Take(limit);
+        return selected.Select((item, slot) =>
         {
             var node = state.Nodes.Single(x => x.Id == item.NodeId);
-            db.DailyTasks.Add(new DailyTask
+            return new DailyTask
             {
                 EnrollmentId = enrollment.Id,
                 UserId = user.Id,
                 LocalDate = today,
-                SlotKey = slot,
+                SlotKey = checked(slotOffset + slot),
                 ContentVersionId = node.ContentVersionId,
                 PathVersionId = state.Version.Id,
                 PathNodeId = node.Id,
@@ -102,8 +102,8 @@ public sealed partial class LearningService
                 CreatedAt = clock.UtcNow,
                 ReasonCode = item.SourceTaskId is not null ? "PATH_CARRYOVER" : item.Kind == "lesson" ? "PREREQUISITE_READY" : "PATH_PRACTICE",
                 ReasonText = item.SourceTaskId is not null ? $"Tiếp tục nhiệm vụ từ {state.Missed[node.Id].LocalDate:dd/MM}; giữ nội dung và version lộ trình." : $"{node.Stage.Title} · ngày học gợi ý {node.StudyDay}, lộ trình v{state.Version.Version}; đã đủ điều kiện tiên quyết."
-            });
-        }
+            };
+        }).ToArray();
     }
 
     private async Task MarkMissed(Guid user, string fallbackZone)

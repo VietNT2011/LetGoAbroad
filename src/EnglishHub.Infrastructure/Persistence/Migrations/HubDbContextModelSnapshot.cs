@@ -442,6 +442,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("SourceTaskId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(25)

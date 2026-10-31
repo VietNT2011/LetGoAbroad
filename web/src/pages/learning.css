@@ -51,6 +51,10 @@
   gap: 11px;
 }
 .daily-task {
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
   background: #fff;
   border: 1px solid #e5e9de;
   padding: 19px 22px;
@@ -58,6 +62,21 @@
   display: flex;
   align-items: center;
   gap: 19px;
+}
+.plan-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.plan-policy {
+  font-size: 12px;
+  line-height: 1.8;
+}
+@media (max-width: 700px) {
+  .plan-actions {
+    gap: 10px;
+  }
 }
 .task-order {
   border: 1px solid #e0e7d4;
