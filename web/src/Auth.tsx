@@ -41,8 +41,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }>({ loading: true, generation: 0, scope: 0 });
   const generation = useRef(0);
   const controller = useRef<AbortController | undefined>(undefined);
+  const focusTarget = useRef<HTMLElement | undefined>(undefined);
   const signals = useRef<ReturnType<typeof authSignals> | undefined>(undefined);
   const revalidate = useCallback(async (clear = false) => {
+    if (clear) focusTarget.current = undefined;
+    else {
+      const focused = document.activeElement;
+      if (
+        focused instanceof HTMLElement &&
+        focused.closest("[data-auth-private]")
+      )
+        focusTarget.current = focused;
+    }
     const request = ++generation.current;
     controller.current?.abort();
     const abort = new AbortController();
@@ -90,8 +100,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(() => revalidate(), [revalidate]);
   // VI: Chỉ mở transport sau commit React đã bỏ subtree của actor/role cũ. EN: Unlock transport only after React commits the correct actor/role subtree.
   useLayoutEffect(() => {
-    if (!view.loading && view.generation === generation.current)
-      confirmSession(view.user?.id ?? null);
+    if (view.loading || view.generation !== generation.current) return;
+    confirmSession(view.user?.id ?? null);
+    // VI: Cùng cây riêng thì trả con trỏ về chỗ đang viết; node của actor/role cũ đã bị tháo nên không được focus. EN: Restore the editor only in the retained private tree; removed actor/role nodes cannot regain focus.
+    const target = focusTarget.current;
+    if (!target?.isConnected) focusTarget.current = undefined;
+    else if (
+      document.visibilityState === "visible" &&
+      document.hasFocus() &&
+      !target.closest("[hidden], [inert]")
+    ) {
+      focusTarget.current = undefined;
+      target.focus({ preventScroll: true });
+    }
   }, [view]);
   useEffect(() => {
     const check = () => {
@@ -169,6 +190,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       {/* VI: Focus cùng tài khoản giữ draft; đổi ID/role hoặc signal rõ ràng tạo cây riêng mới. EN: Same-actor focus checks retain drafts; actor/role changes or explicit signals create a fresh private tree. */}
       <div
         key={`${scope}:${user.id}:${[...user.roles].sort().join(",")}`}
+        data-auth-private
         hidden={loading}
         inert={loading}
         style={loading ? { display: "none" } : undefined}

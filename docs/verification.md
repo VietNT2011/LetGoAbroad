@@ -40,12 +40,14 @@ The [cross-tab session guard](session-consistency.md) adds nine API cases and tw
 
 The [frontend dependency checkpoint](frontend-dependencies.md) pins Vite7.3.8/Vitest4.1.12, reruns the20 frontend tests and production build, and adds a report-preserving CI audit gate. Seven isolated policy probes verify clean/known acceptance and rejection of a new advisory, a new package, critical severity, production propagation and an invalid registry report. Full audit still reports the five dev-only propagated picomatch findings; production audit reports zero. Backend source is unchanged from the263/269 local suites; each pushed head receives fresh remote jobs.
 
+The same-owner editor-focus follow-up adds two DOM cases: restore focus/selection after a retained private tree is revealed, and never focus a removed old-actor editor. All22 frontend cases and the production build pass; native focus behavior remains unverified.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **269 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
 | `scripts/test.ps1` | **263 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **20 passed, 0 failed**; simulated DOM/transport session races |
+| `npm --prefix web test` | **22 passed, 0 failed**; simulated DOM/transport session and focus races |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

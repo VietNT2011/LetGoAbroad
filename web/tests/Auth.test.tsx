@@ -65,6 +65,10 @@ function PrivateDraft() {
     <section data-private>
       <span>{user?.displayName}</span>
       <output>{draft}</output>
+      <input
+        aria-label="Private draft input"
+        defaultValue="Unsent private text"
+      />
       <button onClick={() => setDraft("A private draft")}>Edit draft</button>
     </section>
   );
@@ -160,6 +164,7 @@ describe("cross-tab identity lifecycle", () => {
     await act(async () => root.unmount());
     container.remove();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("clears the old private tree immediately on a remote change and mounts B with an empty draft", async () => {
@@ -193,6 +198,38 @@ describe("cross-tab identity lifecycle", () => {
       "A private draft",
     );
     expect(draft?.parentElement?.hidden).toBe(false);
+  });
+
+  it("restores editor focus and selection after same-owner verification hides the tree", async () => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    await mount();
+    const input = container.querySelector("input")!;
+    input.focus();
+    input.setSelectionRange(2, 6);
+    const next = deferred<Response>();
+    me = () => next.promise;
+    await act(async () => window.dispatchEvent(new Event("focus")));
+    // VI: JSDOM không tự blur khi display:none; mô phỏng phần browser đó. EN: JSDOM does not blur display:none controls, so simulate that browser transition.
+    input.blur();
+    expect(document.activeElement).not.toBe(input);
+    await act(async () => next.resolve(json(actorA)));
+    await flush();
+    expect(document.activeElement).toBe(input);
+    expect(input.selectionStart).toBe(2);
+    expect(input.selectionEnd).toBe(6);
+  });
+
+  it("never restores focus into an old actor's editor after the private tree changes", async () => {
+    vi.spyOn(document, "hasFocus").mockReturnValue(true);
+    await mount();
+    const old = container.querySelector("input")!;
+    old.focus();
+    me = async () => json(actorB);
+    await act(async () => window.dispatchEvent(new Event("focus")));
+    await flush();
+    expect(old.isConnected).toBe(false);
+    expect(document.activeElement).not.toBe(old);
+    expect(document.activeElement).not.toBe(container.querySelector("input"));
   });
 
   it("replaces retained private state when focus discovers a different actor without a message", async () => {
