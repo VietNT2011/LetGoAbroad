@@ -63,6 +63,7 @@ public static class DependencyInjection
         services.AddSingleton<IObjectStorage, AzureObjectStorage>();
         services.AddSingleton<IMediaProcessor, FfmpegProcessor>();
         services.AddScoped<MediaService>();
+        services.AddScoped<RecordingReflectionService>();
         services.AddScoped<BackgroundQueue>();
         services.AddScoped<MediaPipeline>();
         services.AddScoped<MediaLifecycle>();

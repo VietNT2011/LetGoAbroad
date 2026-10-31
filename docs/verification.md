@@ -70,15 +70,19 @@ The [bilingual transcript authoring form](transcript-editor.md) adds eight DOM c
 
 The [lesson-sample recording comparison](recording-comparison.md) adds six DOM/transport cases on **18/11/2026**, for123 frontend cases and a successful production build. Tests cover authorized sample resolution, invalid links, no autoplay/write, access failures, source-change cancellation/removal and page-scoped pause without rewind. The existing five recording-page cases continue to pass with router context. Backend source remains unchanged from the336/348 local privacy suites. Both remote jobs passed for the [CMS-form head `a66c40a`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44349306918); later heads require their own CI. Native audition/device acceptance and durable recording context are not claimed.
 
+The [private recording reflections](recording-reflections.md) add22 relational cases and six frontend cases, verified locally on **20/11/2026**. Final complete runs pass358 SQLite/370 SQL-media and129 frontend cases, with zero failures/skips and a successful production build. Coverage includes inherited ownership with no Admin override, read-only/no-store metadata, exact replay after deletion, competing first/edited saves, stale and no-op versions, optional subjective bounds, raw2000-character notes, retained journals and explicit client retry/conflict recovery. The migration adds an empty metadata table without learner backfill. Notes/ratings remain subjective and do not create lesson/exam/XP evidence; durable sample links and edit history remain open.
+
+Docker was stopped at the first attempt. After opening it, an initial cold SQL run failed from internal memory pressure and the process stopped; subsequent connection/DNS errors are not a completed source verification. SQL alone was restarted and one validated interrupted fixture was removed. The [local buffer-pool startup policy](testing.md#local-sql-memory--bộ-nhớ-sql-cục-bộ) was then applied; the final370-case run above passed. The final358 SQLite run also includes explicit no-store header assertions. Docker API/worker publication passed. Fresh full/production npm audits both report zero advisories with the same dependency graph; the historical dev-only exception policy remains available in the gate. Native microphone/visual acceptance is not claimed.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **348 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **336 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **370 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **358 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **123 passed, 0 failed**; simulated DOM/transport contracts including listening grading/position, bilingual CMS authoring and lesson-sample recording comparison |
+| `npm --prefix web test` | **129 passed, 0 failed**; simulated DOM/transport contracts including listening/CMS/comparison and private-reflection retry/conflict/journal flows |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
-| `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |
+| `npm --prefix web run audit:ci` | Passed; fresh20/11/2026 full report has0 advisories, without dependency-graph changes. Historical exception policy remains documented in the [dependency record](frontend-dependencies.md) |
 | Docker API/web + worker build | Passed; non-root runtime, pinned base images |
 | `/health/ready` and `/api/v1/auth/csrf` | HTTP 200 after correcting the key-volume ownership |
 | Git whitespace check | `git diff --check` passed |

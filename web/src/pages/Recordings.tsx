@@ -5,6 +5,10 @@ import { useAudioRecorder } from "../useAudioRecorder";
 import { audioUpload } from "../audioUpload";
 import { AudioPlayer } from "./Media";
 import {
+  RecordingJournal,
+  RecordingReflectionEditor,
+} from "./RecordingReflection";
+import {
   RecordingReference,
   pauseOtherRecordingAudio,
 } from "./RecordingReference";
@@ -283,7 +287,10 @@ export default function RecordingsPage() {
                         : ""}
                     </p>
                     {item.status === "ready" ? (
-                      <AudioPlayer assetId={item.id} />
+                      <>
+                        <AudioPlayer assetId={item.id} />
+                        <RecordingReflectionEditor assetId={item.id} />
+                      </>
                     ) : null}
                     {!["delete_pending", "expired"].includes(item.status) ? (
                       deleteId === item.id ? (
@@ -343,6 +350,7 @@ export default function RecordingsPage() {
           </>
         ) : null}
       </section>
+      <RecordingJournal />
     </section>
   );
 }

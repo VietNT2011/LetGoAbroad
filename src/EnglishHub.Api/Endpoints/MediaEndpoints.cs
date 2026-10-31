@@ -9,6 +9,9 @@ public static class MediaEndpoints
     public static void MapMedia(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/media").RequireAuthorization().WithTags("Media");
+        app.MapGet("/api/v1/me/recording-journal", (HttpContext ctx, RecordingReflectionService service, int offset = 0) => { ctx.Response.Headers.CacheControl = "no-store"; return service.List(ctx.User.UserId(), offset); }).RequireAuthorization().WithTags("Personal recording");
+        group.MapGet("/{id:guid}/reflection", (Guid id, HttpContext ctx, RecordingReflectionService service) => { ctx.Response.Headers.CacheControl = "no-store"; return service.Get(ctx.User.UserId(), id); });
+        group.MapPut("/{id:guid}/reflection", (Guid id, SaveRecordingReflection input, HttpContext ctx, RecordingReflectionService service) => { ctx.Response.Headers.CacheControl = "no-store"; return service.Save(ctx.User.UserId(), id, input); });
         app.MapGet("/api/v1/me/recordings", async (HttpContext ctx, HubDbContext db, int offset = 0) =>
         {
             DomainError.Require(offset is >= 0 and <= 100000, 422, "invalid_offset", "Vị trí trang không hợp lệ.");

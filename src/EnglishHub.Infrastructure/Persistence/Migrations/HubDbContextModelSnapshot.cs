@@ -1830,6 +1830,48 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("QuestionOptions");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.RecordingReflection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Clarity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("MediaAssetId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("Rhythm")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MediaAssetId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedAt", "Id");
+
+                    b.ToTable("RecordingReflections", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecordingReflection_Rubric", "([Clarity] IS NULL OR [Clarity] BETWEEN 1 AND 5) AND ([Rhythm] IS NULL OR [Rhythm] BETWEEN 1 AND 5)");
+                        });
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.SegmentAnswer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2869,6 +2911,17 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.RecordingReflection", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.MediaAsset", "MediaAsset")
+                        .WithOne()
+                        .HasForeignKey("EnglishHub.Domain.RecordingReflection", "MediaAssetId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("MediaAsset");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.SegmentAnswer", b =>
