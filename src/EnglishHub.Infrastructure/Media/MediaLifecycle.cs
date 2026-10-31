@@ -28,7 +28,11 @@ public sealed class MediaLifecycle(HubDbContext db, Transactions tx, Receipts re
     }
     public async Task<Guid> Retry(Guid actor, Guid jobId, Guid commandId)
     {
-        var owner = await db.BackgroundJobs.AsNoTracking().Where(x => x.Id == jobId).Join(db.MediaAssets, x => x.ResourceId, a => a.Id, (j, a) => a.OwnerId).SingleOrDefaultAsync();
+        // VI: Biết ID job không cho Admin can thiệp bản thu riêng; kiểm ACL trước receipt và mọi thay đổi.
+        // EN: A known job ID does not authorize another owner's recording; check current ACL before receipts or mutations.
+        var owner = await db.BackgroundJobs.AsNoTracking().Where(x => x.Id == jobId)
+            .Join(db.MediaAssets.Where(a => a.Purpose == "lesson_audio" || a.OwnerId == actor), x => x.ResourceId, a => a.Id, (j, a) => a.OwnerId).SingleOrDefaultAsync();
+        DomainError.Require(owner != Guid.Empty, 404, "job_not_found", "Không tìm thấy job.");
         return await tx.Run($"media-quota:{owner}", async () =>
         {
             var hash = Receipts.Hash(new { jobId }); var duplicate = await receipts.Find(actor, "media-retry", commandId, hash); if (duplicate is not null) return duplicate.ResourceId;

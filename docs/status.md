@@ -17,6 +17,8 @@ This is a working local learning-core implementation, not a claim that the full 
 
 Vocabulary navigation now opens [personal cards](personal-cards.md); Community remains marked “Sắp có”. Infrastructure profiles alone do not imply that the corresponding product integration works.
 
+[Private recording administration](recording-privacy.md) applies ownership to CMS media/job catalogs and job retry as well as playback; Admin/Editor roles do not grant access to another person's private recording metadata.
+
 ## Next implementation order
 
 1. Close remaining P0 acceptance gaps, especially authored listening, external editorial review and browser/device/offline verification. See [estimated study time](estimated-study-time.md), [due-review allocation](daily-review.md), [personal cards](personal-cards.md), [daily activity](learning-activity.md), [Exam Practice starter](exam-curriculum.md), [Core starter curriculum](core-curriculum.md), [path calendars](path-calendars.md), [path switching](path-switching.md), [skill evidence](skill-evidence.md), [lesson notes](lesson-notes.md), [goal revisions](goal-revisions.md), [versioned paths](paths.md), [typed answers](answer-policy.md), [question annotations](annotations.md) and [database test lifecycle](testing.md).

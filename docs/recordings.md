@@ -14,6 +14,8 @@ Local object URLs are revoked when previews change or unmount. Draft/transfer st
 
 The existing create/complete/delete/playback endpoints remain authoritative. Deletion rejects new playback immediately while durable cleanup finishes; existing short-lived playback grants retain the documented expiry window. This feature adds no schema migration, automatic speech scoring, AI/STT provider or assessment/lesson completion. Contextual recording notes/self-assessment history remain separate work.
 
+The [administration privacy follow-up](recording-privacy.md) also filters CMS media/job lists and job retry by current recording ownership. Admin/Editor roles retain editorial-audio operations and their own private recordings; another person's recording metadata/job does not become accessible through operational catalogs.
+
 ## Streaming duration / Thời lượng bản thu dạng stream
 
 A live-mode WebM fixture confirms that format duration may be absent. In that case the processor decodes at most maximumSeconds+1 seconds to a temporary PCM WAV, measures its actual duration and rejects an over-limit source before publishing an MP3. It does not silently accept a truncated recording. Temporary PCM is removed on success/failure. Known-duration sources retain the existing duration and rendition-consistency checks. Two real FFmpeg cases exercise valid duration-less WebM and rejection of an overlong source, without using a person's microphone.

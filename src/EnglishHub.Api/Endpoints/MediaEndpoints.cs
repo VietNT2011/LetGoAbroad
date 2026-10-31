@@ -24,8 +24,13 @@ public static class MediaEndpoints
         group.MapGet("/{id:guid}/content", async (Guid id, HttpContext ctx, MediaService service) => { ctx.Response.Headers.CacheControl = "no-store"; return Results.Redirect(await service.Playback(ctx.User.UserId(), id, ctx.User.IsInRole("Admin"))); });
         group.MapDelete("/{id:guid}", async (Guid id, HttpContext ctx, MediaLifecycle service) => { await service.Delete(ctx.User.UserId(), id, ctx.User.IsInRole("Admin")); return Results.Accepted(); });
         app.MapPost("/api/v1/admin/jobs/{id:guid}/retry", async (Guid id, RetryJob input, HttpContext ctx, MediaLifecycle service) => new { id = await service.Retry(ctx.User.UserId(), id, input.ClientRequestId) }).RequireAuthorization(p => p.RequireRole("Admin"));
-        app.MapGet("/api/v1/admin/media", async (HubDbContext db) => await db.MediaAssets.AsNoTracking().OrderByDescending(x => x.CreatedAt).Take(50).Select(x => new { x.Id, x.FileName, x.Status, x.FailureCode, x.DurationMs, x.Attribution }).ToListAsync()).RequireAuthorization(p => p.RequireRole("Admin", "ContentEditor"));
-        app.MapGet("/api/v1/admin/jobs", async (HubDbContext db) => await db.BackgroundJobs.AsNoTracking().OrderByDescending(x => x.DueAt).Take(50).Select(x => new { x.Id, x.ResourceId, x.Kind, x.State, x.Attempts, x.DueAt, x.LeaseUntil, x.LastErrorCode }).ToListAsync()).RequireAuthorization(p => p.RequireRole("Admin"));
+        // VI: CMS không được lộ tên/nguồn bản thu riêng của người khác. EN: Operational catalogs obey the same private-recording ownership boundary as playback.
+        app.MapGet("/api/v1/admin/media", async (HttpContext ctx, HubDbContext db) => await db.MediaAssets.AsNoTracking()
+            .Where(x => x.Purpose == "lesson_audio" || x.OwnerId == ctx.User.UserId())
+            .OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id).Take(50).Select(x => new { x.Id, x.FileName, x.Status, x.FailureCode, x.DurationMs, x.Attribution }).ToListAsync()).RequireAuthorization(p => p.RequireRole("Admin", "ContentEditor"));
+        app.MapGet("/api/v1/admin/jobs", async (HttpContext ctx, HubDbContext db) => await db.BackgroundJobs.AsNoTracking()
+            .Where(x => db.MediaAssets.Any(a => a.Id == x.ResourceId && (a.Purpose == "lesson_audio" || a.OwnerId == ctx.User.UserId())))
+            .OrderByDescending(x => x.DueAt).ThenBy(x => x.Id).Take(50).Select(x => new { x.Id, x.ResourceId, x.Kind, x.State, x.Attempts, x.DueAt, x.LeaseUntil, x.LastErrorCode }).ToListAsync()).RequireAuthorization(p => p.RequireRole("Admin"));
     }
 }
 public sealed record RetryJob(Guid ClientRequestId);

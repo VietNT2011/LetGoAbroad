@@ -64,10 +64,12 @@ The [segmented-listening framework](segmented-listening.md) adds24 relational ca
 
 The [authored listening starter](listening-curriculum.md) adds seven ordinary corpus/failure cases and three real Storage cases on **18/11/2026**. Final complete local runs pass331 SQLite/343 SQL-media cases, zero failures/skips. The first corpus run exposed the Part2 three-option rule; these short announcements now use Part4 with four choices. Real tests read back every MP3 hash, check206 ranges, probe measured duration/codec, fully decode each file, exercise hidden bilingual dictation without lesson/exam completion, verify concurrent initial publication and preserve archival/deleted media/later CMS versions on reseed. A final SQLite run follows the stored-byte quota accounting and embedded-notice changes. Docker API/worker builds pass with the audio resources included. Frontend source is unchanged from the109 passing cases/build at `0499770`; [both remote jobs for that framework head passed](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44342886070). Native audition and editorial review remain open. No migration or learner-progress backfill is introduced by the corpus.
 
+The [recording-administration privacy fix](recording-privacy.md) adds five relational cases on **18/11/2026**. Final complete runs pass336 SQLite/348 SQL-media, zero failures/skips. CMS media/jobs lists now filter other owners' private recordings before pagination, and private-job retry returns404 before effects or receipt handling. Authorized editorial/own retries and existing real media processing/ACL cases still pass. Initial unrelated playback assertions in a storage-free fixture were removed as explained in that document. There is no migration, frontend source change or learner evidence. The listening-corpus [head `204741e` also passed both remote jobs](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44347042223); exact-head CI remains separate for later commits.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **343 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **331 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **348 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **336 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web test` | **109 passed, 0 failed**; simulated DOM/transport contracts including listening-session grading and serialized position saves |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
