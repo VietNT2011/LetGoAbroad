@@ -1,0 +1,69 @@
+.transcript-editor {
+  margin: 1rem 0;
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 1rem;
+}
+.transcript-editor summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+.transcript-fields fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.transcript-fields legend {
+  padding: 0.75rem 0;
+  font-weight: 800;
+}
+.transcript-row {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--surface);
+}
+.transcript-row h4 {
+  margin: 0 0 0.75rem;
+}
+.transcript-row label {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  font-weight: 650;
+}
+.transcript-row textarea {
+  min-height: 5rem;
+  width: 100%;
+  resize: vertical;
+}
+.transcript-time {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.transcript-time input {
+  width: 100%;
+  min-width: 0;
+}
+.transcript-row .transcript-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.transcript-check input {
+  width: auto;
+}
+.transcript-warnings {
+  border-left: 4px solid var(--primary);
+  padding: 0.75rem 0.75rem 0.75rem 2rem;
+}
+@media (max-width: 580px) {
+  .transcript-time {
+    grid-template-columns: 1fr;
+  }
+  .transcript-row {
+    padding: 0.75rem;
+  }
+}

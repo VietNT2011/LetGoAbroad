@@ -14,6 +14,7 @@ import { useResource, ErrorNotice, Loading } from "../hooks";
 import "./admin.css";
 import { MediaAdmin } from "./Media";
 import { PathAdmin } from "./PathAdmin";
+import { TranscriptEditor } from "./TranscriptEditor";
 type Row = {
   id: string;
   rootId: string;
@@ -224,6 +225,14 @@ export default function AdminPage() {
                 </select>
               </label>
             </div>
+          ) : null}
+          {(
+            selected
+              ? list.data?.find((row) => row.id === selected.id)?.kind ===
+                "lesson"
+              : kind === "lesson"
+          ) ? (
+            <TranscriptEditor json={json} onChange={setJson} disabled={busy} />
           ) : null}
           <label className="editor-label">
             Nội dung có cấu trúc (JSON)

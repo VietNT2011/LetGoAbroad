@@ -1,0 +1,11 @@
+# CMS transcript form / Form biên soạn transcript
+
+VI: Trong CMS, chọn bài học hoặc tạo lesson mới rồi mở **Biên soạn transcript Anh–Việt**. Form cho thêm/bỏ câu, nhập mốc mili giây, câu Anh/Việt, biến thể đáp án theo dòng và lựa chọn bỏ qua dấu kết câu.1000ms là một giây. ID audio bài học vẫn được gắn qua trường `mediaAssetId` trong JSON; server xác nhận mục đích/Ready/thời lượng khi publish.
+
+The editor opens lazily and is controlled by the same JSON draft as the raw editor. Changes are local until **Lưu nháp** or **Tạo version mới**. A published version stays immutable: edited local JSON is input for a new version. In-flight CMS commands disable the form. No fetch, autosave, publication, import, audio upload or learner evidence is triggered by opening/editing it.
+
+Every update preserves other document properties, question groups, media references and unknown segment metadata. Invalid JSON, unsupported segment shapes or unsupported normalization policies keep the original source and direct the author to raw JSON; the form does not try to repair or normalize that payload. Numeric controls accept only safe integers in0–3,600,000ms; additions stop at100 segments or the last one-hour boundary. New segments start at the previous end with a maximum three-second default. Deletion affects only the selected local row.
+
+Basic warnings identify reversed/out-of-bounds/overlapping timing, missing bilingual text, length and variant-count problems. They are editorial hints, not a duplicate grading/publication implementation. Raw variants, including an unfinished blank line, remain intact so the author can finish editing. The canonical reset explicitly removes the optional variants property; the backend then defaults to the English text. The existing server validator still enforces normalized uniqueness, the canonical answer, actual media duration and all publication constraints.
+
+Eight DOM cases check lazy/no-write behavior, bilingual editing with preserved unrelated data, explicit variant reset, overlap/incomplete hints, deletion/addition continuity, unsupported-source preservation, count/time/numeric bounds and busy-state locking. The complete frontend suite passes117 cases and the TypeScript/Vite production build. Native visual/mobile/keyboard acceptance has not been performed, following the user's preference against Computer Use.

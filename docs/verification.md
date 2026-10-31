@@ -66,12 +66,14 @@ The [authored listening starter](listening-curriculum.md) adds seven ordinary co
 
 The [recording-administration privacy fix](recording-privacy.md) adds five relational cases on **18/11/2026**. Final complete runs pass336 SQLite/348 SQL-media, zero failures/skips. CMS media/jobs lists now filter other owners' private recordings before pagination, and private-job retry returns404 before effects or receipt handling. Authorized editorial/own retries and existing real media processing/ACL cases still pass. Initial unrelated playback assertions in a storage-free fixture were removed as explained in that document. There is no migration, frontend source change or learner evidence. The listening-corpus [head `204741e` also passed both remote jobs](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44347042223); exact-head CI remains separate for later commits.
 
+The [bilingual transcript authoring form](transcript-editor.md) adds eight DOM cases on **18/11/2026**, for117 frontend cases, zero failures/skips and a successful TypeScript/Vite production build. Lazy opening does not mutate the JSON draft; edits retain unrelated/unknown fields, malformed sources remain intact, variants require explicit reset, and bounds/overlap/busy-state decisions are covered. The form uses the existing CMS save/new-version commands and server validators. Backend source is unchanged from the336/348 complete privacy suites at `667ced0`. No native browser acceptance was performed.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **348 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
 | `scripts/test.ps1` | **336 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **109 passed, 0 failed**; simulated DOM/transport contracts including listening-session grading and serialized position saves |
+| `npm --prefix web test` | **117 passed, 0 failed**; simulated DOM/transport contracts including listening grading/position and bilingual CMS transcript authoring |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

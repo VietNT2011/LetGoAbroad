@@ -4,6 +4,8 @@ VI: Bài có transcript hiện panel **Nghe theo đoạn & luyện dictation**. 
 
 ## Authored immutable content / Nội dung biên soạn
 
+CMS includes a [bilingual transcript form](transcript-editor.md) alongside raw JSON for lesson drafts/new versions. It edits the same local payload; saving/publishing remains an explicit server command.
+
 ContentInput optionally accepts Segments with StartMs,EndMs,TextEn,TextVi,AcceptedAnswers,NormalizationPolicyVersion and IgnoreTerminalPunctuation. Null segments are omitted when hashing import inputs, preserving legacy receipt hashes. CMS JSON editing retains the array. A lesson may contain at most100 ordered, non-overlapping segments, each within one hour and its verified Ready lesson-audio duration at publication. English/Vietnamese text and variants are bounded; the canonical English must match an accepted variant. Normalized variants must be nonempty, unique and at most200 tokens. Private recordings cannot be attached as lesson audio.
 
 Basic invalid timing/policy/shape fails before relational constraints; overlap, missing/invalid authored answers and bounds against actual audio are checked before publish. Published content remains immutable. Draft segment replacement pins the identifying FK before tracking new rows; child-only edits force a parent ETag change so a second stale editor cannot overwrite them. Editorial collection reads are split to avoid multiplying segments by question options. Assessment/publication paths retain their previous query shape.
