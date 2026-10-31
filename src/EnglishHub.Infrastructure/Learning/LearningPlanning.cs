@@ -73,7 +73,25 @@ public sealed partial class LearningService
     private async Task<string> PlanEtag(Enrollment enrollment, DateOnly today, string zone, string studyDays)
     {
         var tasks = await db.DailyTasks.AsNoTracking().Where(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending")).Select(x => new { x.Id, x.RowVersion }).ToArrayAsync();
-        return $"\"plan-{Receipts.Hash(new { today, zone, studyDays, enrollment.Id, enrollment.PathVersionId, enrollment.PathRevisionNumber, enrollment.PlanRevision, tasks = tasks.OrderBy(x => x.Id).ToArray() })}\"";
+        // VI: Kết quả ngoài task cũng có thể đổi ưu tiên; token phải ràng buộc mẫu luyện hiện tại. EN: Unassigned results can change priorities too; bind the current practice aggregates into the token.
+        var practice = await PlanningObservations(enrollment.UserId);
+        return $"\"plan-{Receipts.Hash(new { today, zone, studyDays, enrollment.Id, enrollment.PathVersionId, enrollment.PathRevisionNumber, enrollment.PlanRevision, reinforcementPolicy = WeakSkillPolicy.Version, practice, tasks = tasks.OrderBy(x => x.Id).ToArray() })}\"";
+    }
+
+    // VI: Không trộn full mock với luyện tập; nguồn này giữ nguyên window/normalization của thống kê. EN: Keep full mocks separate and reuse the statistics window and pinned correctness policy.
+    private async Task<SkillObservation[]> PlanningObservations(Guid user) => (await evidence.Read(user)).Groups
+        .Where(x => x.Track == "practice").OrderBy(x => x.Skill, StringComparer.Ordinal)
+        .Select(x => new SkillObservation(x.Skill, x.ObservedCount, x.CorrectCount)).ToArray();
+
+    private static int WeakRank(SkillObservation[] weak, string skill)
+    {
+        var rank = Array.FindIndex(weak, x => x.Skill == skill); return rank < 0 ? int.MaxValue : rank;
+    }
+
+    private static string WeakReason(SkillObservation observation)
+    {
+        var skill = observation.Skill switch { "grammar" => "ngữ pháp", "reading" => "đọc hiểu", "listening" => "nghe hiểu", "vocabulary" => "từ vựng", _ => observation.Skill };
+        return $"Ưu tiên củng cố {skill}: đúng {observation.CorrectCount}/{observation.ObservedCount} câu luyện gần nhất (tối đa 50 câu khác nhau), dưới 60%; quy tắc củng cố v{WeakSkillPolicy.Version}. Đây là dữ liệu luyện tập, không đánh giá trình độ.";
     }
 
     /// <summary>VI: Dashboard và regenerate dùng chung lựa chọn; phần đã giữ tiêu ngân sách trước. EN: Dashboard and regeneration share selection after reserving protected assignments' budget.</summary>
@@ -82,8 +100,9 @@ public sealed partial class LearningService
         if (enrollment.PathVersionId is not null) return await BuildPathTasks(enrollment, user, today, goal, budget, limit, slotOffset, reservedContent, ignoredTasks);
         var doneRoots = await db.LessonProgress.Where(x => x.UserId == user.Id).Select(x => x.ContentVersion.RootId).Distinct().ToArrayAsync();
         var versions = await db.ContentVersions.Include(x => x.Root).Where(x => x.Status == PublicationStatus.Published && x.Root.CurrentPublishedVersionId == x.Id && !x.IsFixture && !reservedContent.Contains(x.Id)).OrderBy(x => x.Root.Slug).ToArrayAsync();
-        var lessons = versions.Where(x => x.Root.Kind == ContentKind.Lesson && !doneRoots.Contains(x.RootId)).Select(x => new PlanCandidate(x.Id, x.Minutes, "lesson", x.CurriculumOrder));
-        var practice = versions.Where(x => x.Root.Kind == ContentKind.Assessment && x.Root.Slug != "placement-demo").Select((x, i) => new PlanCandidate(x.Id, x.Minutes, "practice", i));
-        return Planner.Select(lessons, practice, budget).Take(limit).Select((item, slot) => new DailyTask { EnrollmentId = enrollment.Id, UserId = user.Id, LocalDate = today, SlotKey = checked(slotOffset + slot), ContentVersionId = item.ContentVersionId, EstimatedMinutes = item.Minutes, CreatedAt = clock.UtcNow, TimeZoneId = user.TimeZoneId, GoalRevisionId = goal, ReasonCode = item.Kind == "lesson" ? "FOUNDATION_NEXT" : "SHORT_PRACTICE", ReasonText = item.Kind == "lesson" ? "Bài tiếp theo chưa hoàn thành trong lộ trình; quy tắc v1." : "Luyện ngắn để củng cố kiến thức, vừa ngân sách thời gian; quy tắc v1." }).ToArray();
+        var weak = WeakSkillPolicy.Rank(await PlanningObservations(user.Id));
+        var lessons = versions.Where(x => x.Root.Kind == ContentKind.Lesson && !doneRoots.Contains(x.RootId)).Select(x => new PlanCandidate(x.Id, x.Minutes, "lesson", x.CurriculumOrder, WeakRank(weak, x.Skill)));
+        var practice = versions.Where(x => x.Root.Kind == ContentKind.Assessment && x.Root.Slug != "placement-demo").Select((x, i) => new PlanCandidate(x.Id, x.Minutes, "practice", i, WeakRank(weak, x.Skill)));
+        return Planner.Select(lessons, practice, budget).Take(limit).Select((item, slot) => new DailyTask { EnrollmentId = enrollment.Id, UserId = user.Id, LocalDate = today, SlotKey = checked(slotOffset + slot), ContentVersionId = item.ContentVersionId, EstimatedMinutes = item.Minutes, CreatedAt = clock.UtcNow, TimeZoneId = user.TimeZoneId, GoalRevisionId = goal, ReasonCode = item.WeakSkillRank < weak.Length ? "WEAK_SKILL" : item.Kind == "lesson" ? "FOUNDATION_NEXT" : "SHORT_PRACTICE", ReasonText = item.WeakSkillRank < weak.Length ? WeakReason(weak[item.WeakSkillRank]) : item.Kind == "lesson" ? "Bài tiếp theo chưa hoàn thành trong lộ trình; quy tắc v1." : "Luyện ngắn để củng cố kiến thức, vừa ngân sách thời gian; quy tắc v1." }).ToArray();
     }
 }

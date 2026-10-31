@@ -5,6 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EnglishHub.Infrastructure.Learning;
 
+public sealed record SkillEvidencePart(int Part, int ObservedCount, int CorrectCount);
+public sealed record SkillEvidenceGroup(string Track, string Skill, int ObservedCount, int CorrectCount, int BlankCount, int? AccuracyPercent, string Status, SkillEvidencePart[] Parts);
+public sealed record SkillEvidenceSnapshot(int PolicyVersion, int WindowSize, int MinimumObservations, SkillEvidenceGroup[] Groups);
+
 /// <summary>VI: Chỉ dùng nội bộ sau window SQL; không serialize answer key ra API. EN: Internal window-query rows never become a public answer-key response.</summary>
 public sealed class SkillEvidenceRow
 {
@@ -23,7 +27,7 @@ public sealed class SkillEvidenceRow
 /// <summary>VI: 50 câu khác nhau gần nhất mỗi kỹ năng, tách practice và full mock chưa lộ đáp án. EN: Bound each track/skill to its latest fifty distinct question versions.</summary>
 public sealed class SkillEvidenceService(HubDbContext db)
 {
-    public async Task<object> Read(Guid user)
+    public async Task<SkillEvidenceSnapshot> Read(Guid user)
     {
         // VI: Chỉ sort ID/skill; join text đáp án sau window để tránh memory grant lớn cho LOB. EN: Rank narrow IDs/skills before joining answer text to avoid wide LOB sort grants on both providers.
         var rows = await db.Database.SqlQuery<SkillEvidenceRow>($"""
@@ -57,18 +61,13 @@ public sealed class SkillEvidenceService(HubDbContext db)
             JOIN [GradingKey] k ON k.[AttemptItemId] = recent.[AttemptItemId]
             WHERE recent.[SkillRank] <= 50
             """).ToListAsync();
-        var groups = rows.GroupBy(x => new { x.Track, x.Skill }).OrderBy(x => x.Key.Track).ThenBy(x => x.Key.Skill).Select(group => new
-        {
-            group.Key.Track,
-            group.Key.Skill,
-            observedCount = group.Count(),
-            correctCount = group.Count(Correct),
-            blankCount = group.Count(Blank),
-            accuracyPercent = group.Count() < 5 ? (int?)null : (int)Math.Round(group.Count(Correct) * 100m / group.Count(), MidpointRounding.AwayFromZero),
-            status = group.Count() < 5 ? "insufficient_data" : "observed",
-            parts = group.GroupBy(x => x.Part).OrderBy(x => x.Key).Select(part => new { part = part.Key, observedCount = part.Count(), correctCount = part.Count(Correct) }).ToArray()
-        }).ToArray();
-        return new { policyVersion = 1, windowSize = 50, minimumObservations = 5, groups };
+        // VI: DTO typed dùng chung cho thống kê và planner; không sao chép điều kiện chọn mẫu. EN: Share typed aggregates with planning without duplicating evidence eligibility.
+        var groups = rows.GroupBy(x => new { x.Track, x.Skill }).OrderBy(x => x.Key.Track).ThenBy(x => x.Key.Skill).Select(group => new SkillEvidenceGroup(
+            group.Key.Track, group.Key.Skill, group.Count(), group.Count(Correct), group.Count(Blank),
+            group.Count() < 5 ? null : (int)Math.Round(group.Count(Correct) * 100m / group.Count(), MidpointRounding.AwayFromZero),
+            group.Count() < 5 ? "insufficient_data" : "observed",
+            group.GroupBy(x => x.Part).OrderBy(x => x.Key).Select(part => new SkillEvidencePart(part.Key, part.Count(), part.Count(Correct))).ToArray())).ToArray();
+        return new(1, 50, 5, groups);
     }
 
     private static bool Blank(SkillEvidenceRow row) => row.Type == (int)QuestionType.FillBlank ? string.IsNullOrWhiteSpace(row.AnswerText) : row.SelectedOptionId is null;

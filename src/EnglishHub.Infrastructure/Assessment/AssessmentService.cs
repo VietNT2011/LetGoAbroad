@@ -111,8 +111,10 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
     });
 
     /// <summary>VI: Submit và worker expiry dùng chung finalization. EN: Manual submission and worker expiry share one transactional finalization path.</summary>
-    public Task<AttemptResult> Submit(Guid user, Guid id, SaveAnswers input) => tx.Run($"attempt:{id}", async () =>
+    public Task<AttemptResult> Submit(Guid user, Guid id, SaveAnswers input) => tx.Run($"learning:{user}", async () =>
     {
+        // VI: Khóa learning trước attempt để chấm bài và snapshot lập lịch không xen kẽ. EN: Always lock learning before attempt so grading cannot interleave with a planning snapshot.
+        await tx.Lock($"attempt:{id}");
         var hash = Receipts.Hash(input); var scope = $"submit:{id}"; var duplicate = await receipts.Find(user, scope, input.ClientRequestId, hash);
         var a = await Owned(user, id);
         if (duplicate is not null) return a.Result!;

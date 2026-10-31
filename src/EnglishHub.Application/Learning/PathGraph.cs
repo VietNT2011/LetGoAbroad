@@ -3,7 +3,7 @@ using EnglishHub.Domain;
 namespace EnglishHub.Application.Learning;
 
 public sealed record GraphNode(string Key, int StudyDay, string[] Prerequisites);
-public sealed record PathCandidate(Guid NodeId, Guid ContentVersionId, string Kind, int Minutes, int StudyDay, int Order, Guid? SourceTaskId = null);
+public sealed record PathCandidate(Guid NodeId, Guid ContentVersionId, string Kind, int Minutes, int StudyDay, int Order, Guid? SourceTaskId = null, int WeakSkillRank = int.MaxValue);
 
 /// <summary>VI: Kahn kiểm tra DAG, không đệ quy theo độ sâu dữ liệu CMS. EN: Kahn's algorithm validates a bounded DAG without recursion over authored data.</summary>
 public static class PathGraph
@@ -42,9 +42,11 @@ public static class PathScheduler
             result.Add(candidate); budget -= candidate.Minutes; return true;
         }
         foreach (var item in ordered.Where(x => x.SourceTaskId is not null)) Add(item);
+        // VI: Carryover giữ ưu tiên; chỉ xếp lại các node đã đủ điều kiện do caller lọc. EN: Carryover stays first; rank only the already eligible nodes supplied by the caller.
+        var reinforcement = ordered.OrderBy(x => x.WeakSkillRank).ThenBy(x => x.StudyDay).ThenBy(x => x.Order).ThenBy(x => x.NodeId).ToArray();
         foreach (var kind in new[] { "lesson", "assessment" })
-            foreach (var item in ordered.Where(x => x.Kind == kind)) if (Add(item)) break;
-        foreach (var item in ordered) Add(item);
+            foreach (var item in reinforcement.Where(x => x.Kind == kind)) if (Add(item)) break;
+        foreach (var item in reinforcement) Add(item);
         return result;
     }
 

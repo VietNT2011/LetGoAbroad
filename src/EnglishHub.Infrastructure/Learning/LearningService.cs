@@ -14,7 +14,7 @@ public sealed record LessonFeedback(Guid QuestionId, bool IsCorrect, Guid? Corre
 public sealed record LessonCheck(bool Completed, LessonFeedback[] Feedback);
 
 /// <summary>VI: Tiến độ dựa trên quiz/kết quả đã lưu. EN: Completion comes from persisted quiz evidence, never from simply opening a page.</summary>
-public sealed partial class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, PathService paths, GoalPlanService goals, PathChoiceService pathChoices)
+public sealed partial class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, PathService paths, GoalPlanService goals, PathChoiceService pathChoices, SkillEvidenceService evidence)
 {
     /// <summary>VI: Khóa theo user ngăn hai enrollment từ nhiều tab. EN: A user-level lock prevents duplicate enrollment across tabs or API instances.</summary>
     public Task<Enrollment> Enroll(Guid userId, EnrollInput input) => tx.Run($"learning:{userId}", async () =>

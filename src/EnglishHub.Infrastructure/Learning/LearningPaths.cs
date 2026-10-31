@@ -86,8 +86,9 @@ public sealed partial class LearningService
     {
         var state = await ReadPathState(enrollment);
         var pending = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && x.PathNodeId != null && x.Status == "pending" && !ignoredTasks.Contains(x.Id)).Select(x => x.PathNodeId!.Value).ToArrayAsync();
+        var weak = WeakSkillPolicy.Rank(await PlanningObservations(user.Id));
         var candidates = state.Nodes.Select((node, order) => (node, order)).Where(x => !state.Completed.Contains(x.node.Id) && !pending.Contains(x.node.Id) && !reservedContent.Contains(x.node.ContentVersionId) && x.node.StudyDay <= state.StudyDay && x.node.Prerequisites.All(p => state.Completed.Contains(p.PrerequisiteNodeId)))
-            .Select(x => new PathCandidate(x.node.Id, x.node.ContentVersionId, x.node.ContentVersion.Root.Kind == ContentKind.Lesson ? "lesson" : "assessment", x.node.ContentVersion.Minutes, x.node.StudyDay, x.order, state.Missed.GetValueOrDefault(x.node.Id)?.Id));
+            .Select(x => new PathCandidate(x.node.Id, x.node.ContentVersionId, x.node.ContentVersion.Root.Kind == ContentKind.Lesson ? "lesson" : "assessment", x.node.ContentVersion.Minutes, x.node.StudyDay, x.order, state.Missed.GetValueOrDefault(x.node.Id)?.Id, WeakRank(weak, x.node.ContentVersion.Skill)));
         var selected = PathScheduler.Select(candidates, budget).Take(limit);
         var choiceId = await db.PathChoiceRevisions.Where(x => x.EnrollmentId == enrollment.Id && x.Number == enrollment.PathRevisionNumber).Select(x => (Guid?)x.Id).SingleAsync();
         return selected.Select((item, slot) =>
@@ -108,8 +109,8 @@ public sealed partial class LearningService
                 GoalRevisionId = goalRevision,
                 PathChoiceRevisionId = choiceId,
                 CreatedAt = clock.UtcNow,
-                ReasonCode = item.SourceTaskId is not null ? "PATH_CARRYOVER" : item.Kind == "lesson" ? "PREREQUISITE_READY" : "PATH_PRACTICE",
-                ReasonText = item.SourceTaskId is not null ? $"Tiếp tục nhiệm vụ từ {state.Missed[node.Id].LocalDate:dd/MM}; giữ nội dung và version lộ trình." : $"{node.Stage.Title} · ngày học gợi ý {node.StudyDay}, lộ trình v{state.Version.Version}; đã đủ điều kiện tiên quyết."
+                ReasonCode = item.SourceTaskId is not null ? "PATH_CARRYOVER" : item.WeakSkillRank < weak.Length ? "WEAK_SKILL" : item.Kind == "lesson" ? "PREREQUISITE_READY" : "PATH_PRACTICE",
+                ReasonText = item.SourceTaskId is not null ? $"Tiếp tục nhiệm vụ từ {state.Missed[node.Id].LocalDate:dd/MM}; giữ nội dung và version lộ trình." : (item.WeakSkillRank < weak.Length ? WeakReason(weak[item.WeakSkillRank]) + " " : "") + $"{node.Stage.Title} · ngày học gợi ý {node.StudyDay}, lộ trình v{state.Version.Version}; đã đủ điều kiện tiên quyết."
             };
         }).ToArray();
     }

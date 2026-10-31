@@ -47,7 +47,7 @@ The palette is defined in `web/src/theme.css`; shared and route-specific styles 
 
 TypeScript/Vite production builds passed. Browser checks cover dashboard, task anchor, skill disclosure, category/search filtering, empty results, lesson reading and an unsubmitted radio selection, existing result explanations, saved notes, calendar deep links, Settings and account form presentation. The existing quiz/result data was used; no new attempt was submitted and no profile/calendar form was saved during the UI checks.
 
-Responsive checks use viewport overrides at 320px, 390px and 768px plus the normal desktop viewport, including horizontal-width checks. Keyboard checks exercise mobile Escape/focus return and Tab → skip link → main focus. The weekday label was measured at 64×44px; a cold-loaded saved-list checkbox used its shared 18px control and 44px label.
+Responsive checks use viewport overrides at 320px, 390px, 768px and 1280px, including horizontal-width checks. After clearing overrides, the actual 603px app panel was also checked. Keyboard checks exercise mobile Escape/focus return and Tab → skip link → main focus. The weekday label was measured at 64×44px; a cold-loaded saved-list checkbox used its shared 18px control and 44px label.
 
 Rendered-style contrast observations are recorded separately in `outputs/EnglishHub-UI-audit.json` at handover. They inspect rendered text/background pairs, excluding hidden/decorative/disabled content, and are samples of the inspected routes/states. They are not a full WCAG conformance audit. Before/after screenshots are actual captures, without image recoloring.
 

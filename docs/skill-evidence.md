@@ -28,4 +28,4 @@ Legacy full mocks are excluded from the unseen track. A legacy graded occurrence
 
 Relational API tests exercise the 50-item cap, replacement of repeated questions, sparse/blank samples, typed normalization, fixture/review exclusions, disclosure timing, legacy history, owner isolation and answer-key nondisclosure on SQL Server and SQLite.
 
-This closes the recent-skill-window portion of PATH-04. Activity duration, trends over time, additional taxonomy/tag breakdowns and using weak-skill evidence in the scheduler remain separate work. No calibrated educational validity or external benchmark is claimed.
+This closes the recent-skill-window portion of PATH-04. [Reinforcement allocation](weak-skill-planning.md) reuses these typed aggregates for practice-based task priorities. Activity duration, trends over time and additional taxonomy/tag breakdowns remain separate work. No calibrated educational validity or external benchmark is claimed.
