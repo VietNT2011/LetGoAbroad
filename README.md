@@ -49,6 +49,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
 1. Đăng nhập demo, vào Lộ trình, chọn bắt đầu từ căn bản hoặc làm placement.
    Enrollment mới ghim bản lộ trình đã publish. Người học cũ chọn **Áp dụng mẫu lộ trình**; lịch ngày đang có được giữ. Mẫu Foundation có 3 stage, 14 bài/quiz và 4 mốc practice, mở khóa theo bằng chứng hoàn thành. CMS hỗ trợ draft JSON, kiểm tra DAG và publish version mới; xem [lộ trình có phiên bản](docs/paths.md).
    [Core demo](docs/core-curriculum.md) có 8 bài, 16 câu quiz và 12 câu luyện mới; checkpoint yêu cầu làm đủ bài. Chọn Core thủ công hoặc dùng gợi ý placement Core; không tự chuyển người đang ghim Foundation.
+   [Exam Practice starter](docs/exam-curriculum.md) có 6 bài và 25 câu đọc/ngữ pháp mới trong 3 stage / 8 bước. Hai checkpoint giữ nhóm 4 và 5 câu, yêu cầu đủ toàn bộ 8 hoặc 5 câu và đúng ít nhất 60%. Chọn thủ công hoặc từ placement đầy đủ 15–20/20; listening và full mock được biên soạn vẫn còn mở.
    [Placement cần đủ 20 câu](docs/placement-integrity.md): API không cho rút câu/lọc Part dưới nhãn placement, và enrollment kiểm tra snapshot đầy đủ thay vì suy gợi ý từ một phần đề.
 2. Mở bài, đọc nội dung Anh–Việt, làm quiz cuối bài, quay lại dashboard và refresh. Tiến độ lấy từ bằng chứng đã lưu.
    Chọn đoạn để [tô sáng/ghi chú riêng](docs/lesson-notes.md); bàn phím có cách tìm nguyên văn đoạn trích. Ghi chú ghim đúng version bài, xuất hiện ở mục đã lưu và có hoàn tác xóa; sửa từ nhiều tab cần ETag hiện tại.

@@ -14,10 +14,14 @@ Scheduled continuation on **17/11/2026** added [whole placement integrity](place
 
 The packaged API rejected a one-question placement request with HTTP422 `placement_whole_required`. The main learner's attempt history stayed at three identical records and statistics remained 1 lesson / 3 graded attempts / 4 of 29. The probe decoded `application/problem+json` from PowerShell's byte response before checking the error code; no attempt was started or submitted by the rejected requests.
 
+The [Exam Practice reading/grammar starter](exam-curriculum.md) was added on **17/11/2026**: six lessons, twelve quiz questions and thirteen assessment questions, in three stages/eight nodes. Eight relational cases cover corpus/private keys, preserved Foundation/Core payloads and pins, retirement/reseed, atomic slug collision, automatic admission at 15 and 20/20, the six-day journey and exact checkpoint boundaries (5/8 and 3/5), perfect partial-context rejection and whole three-document snapshots. The initial SQLite run reported 176 passed / 2 failed because a synthetic checkpoint template became a later test's default admission choice; Core/Exam fixture helpers now retire their synthetic entry after pinning, retaining the enrolled learner while removing method-order dependence. Final results are below. No schema migration, content overwrite or learner-progress backfill is included.
+
+Packaged Exam UI checks explicitly enrolled the unused second demo learner at 0/8, verified the two-question incomplete-quiz guard without submission, and previewed one-question requests as whole groups of four/five without starting attempts. The 320px viewport retained all eight node titles and prerequisite captions with 305px client/scroll width. The viewport and main session were restored; API comparison confirmed the existing Foundation/Core path-plan payloads were unchanged, and the main statistics remained 1 lesson / 3 attempts / 4 of 29. Exam stayed at zero completed steps and zero attempts.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **176 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **170 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **184 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **178 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

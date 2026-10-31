@@ -1,0 +1,352 @@
+[
+  {
+    "kind": "lesson",
+    "slug": "exam-word-forms",
+    "title": "Exam Practice · Read the slot, then the meaning",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Dùng vị trí ngữ pháp và nghĩa của cả câu để chọn dạng từ.",
+    "body": "A familiar word family can still offer the wrong form.\n\nCompare: The team completed the task successfully. The successful launch encouraged the team. The success of the launch surprised us. Successfully modifies completed; successful describes launch; success is a noun.\n\nFirst identify the role of the missing expression. Is it describing an action, describing a noun, or acting as a noun? Then read the whole sentence to check the meaning and agreement. A suffix is a clue, not a guarantee that a word fits every sentence.\n\nIn The proposal needs final approval, the phrase needs a noun after final. In The team responded promptly, the missing expression describes responded. Do not choose an adjective merely because it belongs to a familiar word family.\n\nGhi nhớ: đọc cụm trước và sau chỗ trống, xác định vai trò, rồi kiểm tra nghĩa toàn câu. Không dùng một mẹo đuôi từ thay cho việc đọc ngữ cảnh.\n\nTự luyện: viết một câu có success, một câu có successful và một câu có successfully. Giải thích từ nào được bổ nghĩa trong mỗi câu.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "The team completed the task ___ before the deadline.",
+            "correct": "successfully",
+            "distractors": ["successful", "success", "succeed"],
+            "explanation": "Trạng từ successfully bổ nghĩa cho completed; các lựa chọn còn lại không làm vai trò đó trong câu."
+          },
+          {
+            "prompt": "The proposal needs final ___ from the director.",
+            "correct": "approval",
+            "distractors": ["approve", "approved", "approving"],
+            "explanation": "Sau tính từ final cần danh từ chỉ sự phê duyệt: approval."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "exam-linking-logic",
+    "title": "Exam Practice · Follow the link between ideas",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Kiểm tra cấu trúc và quan hệ ý, không chỉ dịch một từ nối.",
+    "body": "A connector must fit both grammar and logic.\n\nAlthough the supplier was late, the team finished on time. Although introduces a clause with a subject and verb. Despite the delay, the team finished on time. Despite introduces the noun phrase the delay here. Both examples express contrast, but their structures differ.\n\nA linking sentence also needs a clear relationship. The first room is too small. Therefore, we have booked a larger one. Therefore connects a reason with its consequence. The revised room is larger. However, the starting time has not changed. Here the second statement limits what changed.\n\nWhen completing a paragraph, read beyond the gap. Check what a pronoun such as this or they refers to, whether the next sentence follows logically, and whether an option contradicts a stated fact.\n\nGhi nhớ: despite và although không thể đổi chỗ máy móc mà giữ nguyên phần theo sau. Với chỗ trống cả câu, đọc cả đoạn trước và sau; loại câu không có mối nối rõ hoặc làm sai dữ kiện.\n\nTự luyện: diễn đạt cùng một sự tương phản bằng although + mệnh đề và despite + cụm danh từ.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "___ the supplier was late, the team finished on time.",
+            "correct": "Although",
+            "distractors": ["Despite", "Because of", "During"],
+            "explanation": "The supplier was late là mệnh đề; although phù hợp cấu trúc và quan hệ tương phản."
+          },
+          {
+            "prompt": "The first room is too small. ___, we have booked a larger one.",
+            "correct": "Therefore",
+            "distractors": ["For instance", "Nevertheless", "Similarly"],
+            "explanation": "Đặt phòng lớn hơn là hệ quả của việc phòng đầu quá nhỏ, nên therefore diễn đạt đúng mối nối."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "exam-purpose-inference",
+    "title": "Exam Practice · Infer only what the text supports",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Tách mục đích chính, chi tiết trực tiếp và suy luận có căn cứ.",
+    "body": "Fictional workplace email\n\nHi Jo,\nThank you for sending the poster draft. The venue and start time are correct. Could you increase the contact number's font size and send a new PDF by Thursday morning? Several visitors said the number on last month's poster was difficult to read. Please keep the current colour scheme.\nBest,\nTariq\n\nThe main purpose is to request a specific revision. The email does not ask Jo to redesign the whole poster or change the venue. The comment about last month's poster supports a reason for increasing the number's size. It does not establish that every visitor complained.\n\nA supported inference connects stated information without inventing a new event. Because the venue and time are correct, changing them is not part of this request. Because a new PDF is requested by Thursday morning, that is the revision deadline.\n\nGhi nhớ: phân biệt điều được nói rõ với điều có thể suy ra có căn cứ. Cẩn thận các đáp án thêm every, entirely hoặc một nguyên nhân mà văn bản không nêu.\n\nTự luyện: viết một dòng về mục đích, một dữ kiện trực tiếp và một suy luận được hỗ trợ trong email.",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "What is the main purpose of Tariq's email?",
+            "correct": "To request a specific change to the poster draft",
+            "distractors": [
+              "To cancel the event",
+              "To move the event to another venue",
+              "To ask for a completely new colour scheme"
+            ],
+            "explanation": "Tariq nhờ tăng cỡ chữ số liên hệ và gửi PDF mới; các dữ kiện khác được giữ."
+          },
+          {
+            "prompt": "Which conclusion is supported by the email?",
+            "correct": "The contact number was difficult for some visitors to read last month.",
+            "distractors": [
+              "Every visitor complained about the poster.",
+              "The venue on the new draft is incorrect.",
+              "Jo must replace all of the poster's colours."
+            ],
+            "explanation": "Several visitors hỗ trợ nhận định some visitors; không tương đương every visitor."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "exam-cross-document",
+    "title": "Exam Practice · Match the message to the table",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Kết hợp yêu cầu và bảng lựa chọn trước khi kết luận.",
+    "body": "Fictional booking request\nWe need a room for sixteen people from 1 p.m. to 2 p.m. on Tuesday. A screen is required.\n\nTuesday room list\nPine — twelve seats; screen available; free from noon to 3 p.m.\nOak — twenty seats; screen available; free from 1 p.m. to 3 p.m.\nElm — twenty seats; no screen; free from noon to 3 p.m.\n\nNo single feature establishes a match. Pine has a screen and the correct time, but too few seats. Elm has enough seats and the correct time, but lacks a screen. Oak satisfies the capacity, equipment and time requirements together.\n\nBuild a short checklist from the request before reading the options. For a question about a later change, check every affected condition again. If attendance rises to eighteen, Oak still has enough seats; the original choice does not automatically become invalid.\n\nGhi nhớ: không chọn chỉ vì một từ trùng nhau ở hai tài liệu. Đối chiếu tất cả điều kiện liên quan và dùng đúng phiên bản thông tin mới. Những lựa chọn trong bài này là hư cấu.\n\nTự luyện: nêu một điều kiện mà mỗi phòng không phù hợp đã vi phạm.",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "Which room satisfies all requirements in the booking request?",
+            "correct": "Oak",
+            "distractors": ["Pine", "Elm", "All three rooms"],
+            "explanation": "Oak có 20 chỗ, màn hình và trống từ 13:00 đến 15:00, bao trọn thời gian 13:00–14:00."
+          },
+          {
+            "prompt": "If attendance rises from sixteen to eighteen and all other needs stay unchanged, what is supported?",
+            "correct": "Oak still meets the stated requirements.",
+            "distractors": [
+              "Pine now has enough seats.",
+              "Elm gains a screen.",
+              "Every room becomes unavailable."
+            ],
+            "explanation": "18 vẫn không vượt sức chứa 20 của Oak; thay số người không tự thay thiết bị hay lịch trống."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "exam-exceptions-conditions",
+    "title": "Exam Practice · Keep the exception with the rule",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Đọc rõ phạm vi áp dụng, hạn chót và ngoại lệ trong thông báo.",
+    "body": "Fictional training notice\nParticipants may change their workshop date without an administration charge if the request reaches the training desk before noon on Wednesday. Requests received later incur a ten-dollar administration charge. Changes are possible only when the requested session has an available seat. These rules concern date changes; cancellation requests follow a separate policy.\n\nA free change is conditional, not automatic. A request before the deadline can avoid the charge, but the new session must still have an available seat. A late request does not necessarily make a change impossible; the stated difference is a charge, together with the same seat requirement.\n\nDo not transfer a rule to a different action without evidence. This notice does not state the cancellation policy, so it cannot establish a cancellation refund or deadline.\n\nGhi nhớ: ghi lại hành động nào được quy định, các điều kiện cùng áp dụng và điều gì được để sang chính sách khác. Trước noon không bao gồm một yêu cầu đến 12:15. Không suy diễn một điều kiện đã đáp ứng sẽ bỏ qua mọi điều kiện còn lại.\n\nTự luyện: giải thích một yêu cầu đến 11:30 nhưng lớp mới đã hết chỗ có được đổi theo thông báo này không.",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "A request reaches the desk at 11:30 a.m. Wednesday, but the requested session is full. What follows from the notice?",
+            "correct": "The seat requirement still prevents the date change.",
+            "distractors": [
+              "The early request guarantees a seat.",
+              "The participant can ignore the session capacity.",
+              "The cancellation policy automatically applies."
+            ],
+            "explanation": "Không mất phí do gửi sớm không loại bỏ điều kiện còn chỗ ở buổi muốn chuyển."
+          },
+          {
+            "prompt": "What does the notice establish about cancellation refunds?",
+            "correct": "It does not state them; cancellation follows a separate policy.",
+            "distractors": [
+              "All cancellations receive a full refund.",
+              "No cancellation can receive a refund.",
+              "Refund requests are due on Friday."
+            ],
+            "explanation": "Văn bản chỉ nêu quy tắc đổi ngày; không đủ dữ kiện kết luận mức hoặc hạn hoàn tiền khi hủy."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "exam-paraphrase-evidence",
+    "title": "Exam Practice · Check the scope of a paraphrase",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Đọc chính xác at least, some và điều kiện miễn tham gia.",
+    "body": "Fictional volunteer update\nAt least twelve volunteers are needed for Saturday's session. Six have confirmed so far. Volunteers who completed the same training course this year may skip Friday's briefing. All other volunteers must attend the briefing before helping on Saturday.\n\nA useful paraphrase keeps both meaning and scope. At least twelve sets a minimum, not a maximum or an exact final total. Six more confirmations would bring the group to that minimum. It does not say that only six additional people are allowed to join.\n\nThe briefing exception also has a boundary. Completion of the same course this year is the stated condition. Completion last year does not establish that exception. A response that silently drops this year is broader than the source.\n\nWhen reviewing an incorrect answer, identify which word changed the claim. Was a minimum turned into an exact number? Did some become all? Was a time condition removed? Then explain the correct option with a specific sentence from the text.\n\nGhi nhớ: một cách diễn đạt khác chỉ đúng khi giữ cả phạm vi và điều kiện. Không cần chọn đáp án dùng nhiều từ giống văn bản nhất.\n\nTự luyện: viết lại điều kiện được miễn briefing mà vẫn giữ đúng mốc năm.",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "How many more confirmations would bring the group to its stated minimum?",
+            "correct": "Six",
+            "distractors": [
+              "Twelve",
+              "Eighteen",
+              "No additional confirmations"
+            ],
+            "explanation": "Tối thiểu 12 người, hiện 6 đã xác nhận: cần thêm 6 để đạt mức tối thiểu, không phải giới hạn số người được tham gia."
+          },
+          {
+            "prompt": "A volunteer completed the course last year and has not completed it this year. What does the update require?",
+            "correct": "Attend Friday's briefing before helping on Saturday.",
+            "distractors": [
+              "Skip the briefing automatically.",
+              "Ignore the training condition.",
+              "Assume last year and this year are interchangeable."
+            ],
+            "explanation": "Ngoại lệ chỉ dành cho người hoàn thành cùng khóa trong năm nay; trường hợp nêu không đáp ứng điều kiện đó."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "assessment",
+    "slug": "exam-practice-context",
+    "title": "Exam Practice · Complete the message in context",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Hai đoạn nguyên gốc, mỗi đoạn 4 câu; ghép dạng từ, từ nối và câu phù hợp.",
+    "body": "",
+    "groups": [
+      {
+        "part": 6,
+        "stimulus": "Subject: A change to the demonstration room\nOur product demonstration on Friday will [1] in Room C rather than Room A. The larger room gives the equipment team enough space to work [2]. [3] the room has changed, the starting time remains 9:00 a.m. [4] Please use the revised map attached to this message.",
+        "questions": [
+          {
+            "prompt": "Which expression best completes [1] in the demonstration email?",
+            "correct": "take place",
+            "distractors": ["taking place", "took place", "takes place"],
+            "explanation": "Sau will dùng động từ nguyên mẫu; will take place nghĩa là sẽ diễn ra."
+          },
+          {
+            "prompt": "Which form best completes [2] in the demonstration email?",
+            "correct": "safely",
+            "distractors": ["safe", "safety", "safer"],
+            "explanation": "Cần trạng từ mô tả cách làm việc: work safely."
+          },
+          {
+            "prompt": "Which connector best completes [3] in the demonstration email?",
+            "correct": "Although",
+            "distractors": ["Despite", "Because of", "During"],
+            "explanation": "Theo sau là mệnh đề the room has changed; although nối với thông tin giờ bắt đầu không thay đổi."
+          },
+          {
+            "prompt": "Which sentence best fits [4] in the demonstration email?",
+            "skill": "reading",
+            "correct": "You can still arrive at the time shown on your original invitation.",
+            "distractors": [
+              "The demonstration has therefore been cancelled.",
+              "The starting time has moved to the afternoon.",
+              "No map is available for this building."
+            ],
+            "explanation": "Giờ vẫn 9:00 nên giữ giờ đến cũ là mối nối phù hợp. Các lựa chọn còn lại mâu thuẫn với buổi demo, giờ bắt đầu hoặc bản đồ được đính kèm."
+          }
+        ]
+      },
+      {
+        "part": 6,
+        "stimulus": "Notice — equipment booking\nFrom next month, staff must request portable projectors through the online form. Each request requires the [1] of the employee's department manager. Bookings are not [2] until the service desk sends a confirmation email. Staff should wait for that message [3] making plans that depend on a projector. [4] This helps the team prepare the next booking on time.",
+        "questions": [
+          {
+            "prompt": "Which word best completes [1] in the equipment notice?",
+            "correct": "approval",
+            "distractors": ["approve", "approved", "approving"],
+            "explanation": "Cụm the approval of the manager cần danh từ approval, chỉ sự chấp thuận của quản lý."
+          },
+          {
+            "prompt": "Which word best completes [2] in the equipment notice?",
+            "correct": "final",
+            "distractors": ["finally", "finalize", "finalization"],
+            "explanation": "Sau are not cần tính từ trong cấu trúc này: bookings are not final, tức chưa được chốt."
+          },
+          {
+            "prompt": "Which word best completes [3] in the equipment notice?",
+            "correct": "before",
+            "distractors": ["between", "among", "beside"],
+            "explanation": "Cần đợi xác nhận trước khi lập kế hoạch phụ thuộc vào thiết bị: before making plans."
+          },
+          {
+            "prompt": "Which sentence best fits [4] in the equipment notice?",
+            "skill": "reading",
+            "correct": "Please return the equipment by the agreed deadline.",
+            "distractors": [
+              "Staff never need to return borrowed equipment.",
+              "The online form cannot be used next month.",
+              "Confirmation emails are no longer sent."
+            ],
+            "explanation": "Trả đúng hạn nối hợp lý với việc chuẩn bị cho lần đặt tiếp theo; các đáp án khác trái với quy trình hoặc không hỗ trợ câu sau."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "assessment",
+    "slug": "exam-practice-documents",
+    "title": "Exam Practice · Connect three workplace documents",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Một nhóm ba tài liệu hư cấu đi cùng 5 câu; giữ toàn bộ nhóm khi luyện.",
+    "body": "",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "Document 1 — Email from Hana, training coordinator\nThe Friday data-skills workshop will run from 10:00 to 11:30. We expect 18 attendees and need a projector. Please reserve a suitable room by 4 p.m. Tuesday.\n\nDocument 2 — Friday room availability\nCedar:12 seats; projector included; available 9 a.m.–noon.\nMaple:24 seats; projector included; available 10 a.m.–noon.\nBirch:24 seats; no projector; available 9 a.m.–noon.\n\nDocument 3 — Reply from the rooms desk, Tuesday 3 p.m.\nI have reserved Maple for your group from 10:00 to 11:30 Friday. The projector is included. Collect the access card from reception at 9:45 a.m. and return it before noon. Final attendance may change provided the group does not exceed the room's capacity. Contact me by noon Wednesday if you need to release the booking.\n\nAll organisations, schedules and room options in this exercise are fictional.",
+        "questions": [
+          {
+            "prompt": "What is the main purpose of Hana's email?",
+            "correct": "To arrange a suitable room for the workshop",
+            "distractors": [
+              "To buy a projector permanently",
+              "To cancel every Friday workshop",
+              "To change the office's regular opening hours"
+            ],
+            "explanation": "Hana nêu thời gian, số người, thiết bị và hạn đặt phòng để nhờ bố trí phòng phù hợp."
+          },
+          {
+            "prompt": "Which combination makes Maple meet the original requirements?",
+            "correct": "Enough seats, a projector, and availability for the requested time",
+            "distractors": [
+              "Fewer seats than Cedar and no projector",
+              "Availability only before 9 a.m.",
+              "A projector but capacity below 18 people"
+            ],
+            "explanation": "Maple có 24 chỗ, máy chiếu và trống 10:00–12:00. Cedar thiếu chỗ; Birch không có máy chiếu."
+          },
+          {
+            "prompt": "Where should Hana collect the access card at 9:45 a.m.?",
+            "correct": "Reception",
+            "distractors": [
+              "Inside Cedar",
+              "The projector supplier's shop",
+              "The training coordinator's home"
+            ],
+            "explanation": "Document 3 nói rõ collect the access card from reception at 9:45 a.m.; không cần suy diễn địa điểm khác."
+          },
+          {
+            "prompt": "If final attendance becomes 23 and all other requirements stay unchanged, what is supported?",
+            "correct": "Maple can still accommodate the group under the stated condition.",
+            "distractors": [
+              "The group exceeds Maple's capacity.",
+              "Cedar becomes the only suitable room.",
+              "The projector booking is automatically cancelled."
+            ],
+            "explanation": "23 không vượt 24 chỗ của Maple; email cho phép thay số người khi không vượt sức chứa. Cedar vẫn chỉ 12 chỗ."
+          },
+          {
+            "prompt": "By when should Hana contact the rooms desk if the booking is no longer needed?",
+            "correct": "Noon Wednesday",
+            "distractors": [
+              "4 p.m. Tuesday",
+              "9:45 a.m. Friday",
+              "Before noon Friday"
+            ],
+            "explanation": "Noon Wednesday là hạn báo nhả phòng; các mốc khác lần lượt liên quan đặt phòng ban đầu, nhận thẻ và trả thẻ."
+          }
+        ]
+      }
+    ]
+  }
+]

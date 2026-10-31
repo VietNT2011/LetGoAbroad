@@ -19,7 +19,7 @@ EN: The new `assessment_all_raw` node rule requires a newly graded `mini` or `pr
 
 ## Admission, publication and existing databases
 
-The template slug is `core-eight-study-days`, with three stages and ten nodes. New learners can select it explicitly. With no manual override, the existing demo placement policy's Core band (8–14 correct out of 20) now pins this published Core template instead of falling back to an unpinned catalog plan. This fills a missing template; it does not validate the current placement test as a broad proficiency assessment. Exam Practice still requires its own authored curriculum, and placement listening coverage remains an acceptance gap.
+The template slug is `core-eight-study-days`, with three stages and ten nodes. New learners can select it explicitly. With no manual override, the existing demo placement policy's Core band (8–14 correct out of 20) now pins this published Core template instead of falling back to an unpinned catalog plan. This fills a missing template; it does not validate the current placement test as a broad proficiency assessment. The [Exam Practice reading/grammar starter](exam-curriculum.md) now supplies the next level; placement listening coverage remains an acceptance gap.
 
 VI: Core chỉ seed khi `Seed:Demo` bật ngoài Production. Nội dung và graph mới dùng chung transaction/khóa catalog; lỗi không để lại bản publish nửa chừng. Validator nội dung CMS kiểm tra câu hỏi trước khi lưu. Slug bị chiếm khi chưa có template làm seed dừng rõ ràng thay vì ghi đè hoặc ghim nhầm nội dung. Khi template đã tồn tại, chạy lại không sửa payload, con trỏ phiên bản, retirement hay enrollment. Foundation vẫn giữ version/nội dung/tiến độ cũ. Không có migration schema mới.
 

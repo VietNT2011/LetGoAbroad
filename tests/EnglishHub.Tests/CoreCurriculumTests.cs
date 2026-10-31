@@ -132,7 +132,9 @@ public sealed class CoreCurriculumTests(TestApp app) : IClassFixture<TestApp>
         var input = new PathInput("Core checkpoint test", "Full coverage with preserved groups", "Original test · CC0", [new("one", "Practice", [new("checkpoint", version, 1, "assessment_all_raw", 60, [])])]);
         var created = await admin.PostAsJsonAsync("/api/v1/admin/paths", new CreatePathInput($"full-coverage-{Guid.NewGuid():N}", "core", input)); created.EnsureSuccessStatusCode(); var draft = await created.Content.ReadFromJsonAsync<JsonElement>();
         using var publish = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/admin/path-versions/{draft.GetProperty("id").GetGuid()}/publish"); publish.Headers.TryAddWithoutValidation("If-Match", draft.GetProperty("etag").GetString()); (await admin.SendAsync(publish)).EnsureSuccessStatusCode();
-        (await learner.PostAsJsonAsync("/api/v1/learning/enrollment", new EnrollInput(true, PathVersionId: draft.GetProperty("id").GetGuid()))).EnsureSuccessStatusCode(); await Dashboard(learner); return version;
+        (await learner.PostAsJsonAsync("/api/v1/learning/enrollment", new EnrollInput(true, PathVersionId: draft.GetProperty("id").GetGuid()))).EnsureSuccessStatusCode(); await Dashboard(learner);
+        // VI: Mẫu checkpoint riêng không trở thành lựa chọn mặc định cho test admission chạy sau. EN: Retire this synthetic catalog entry after pinning so admission tests do not depend on method order.
+        var pathId = draft.GetProperty("id").GetGuid(); var template = await db.PathTemplates.SingleAsync(x => x.CurrentPublishedVersionId == pathId); template.RetiredAt = app.Clock.UtcNow; await db.SaveChangesAsync(); return version;
     }
     private async Task<HttpClient> Learner()
     {
