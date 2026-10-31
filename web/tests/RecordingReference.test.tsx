@@ -16,6 +16,8 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const request = vi.mocked(api);
 const one = "11111111-1111-4111-8111-111111111111";
 const two = "22222222-2222-4222-8222-222222222222";
+const segment = "33333333-3333-4333-8333-333333333333";
+const otherSegment = "44444444-4444-4444-8444-444444444444";
 const sample = (
   id = one,
   mediaAssetId: string | null = "authorized-audio",
@@ -43,6 +45,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
+  vi.restoreAllMocks();
 });
 async function render(path: string) {
   await act(async () =>
@@ -55,6 +58,79 @@ async function render(path: string) {
   await flush();
 }
 describe("recording sample comparison", () => {
+  it("resolves clip timing through the authenticated exact-version response, ignoring caller timing", async () => {
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+    request.mockResolvedValue({
+      ...sample(),
+      recordingSegment: { id: segment, order: 1, startMs: 2000, endMs: 5000 },
+    });
+    await render(
+      `/recordings?lesson=${one}&segment=${segment}&startMs=0&endMs=999999`,
+    );
+    expect(request.mock.calls[0][0]).toBe(`/lessons/${one}?segment=${segment}`);
+    expect(container.textContent).toContain("Mẫu theo đoạn 2");
+    expect(container.textContent).toContain("2–5 giây");
+    expect(container.querySelector("audio")?.autoplay).toBe(false);
+  });
+  it("does not silently play the whole lesson if a requested segment is missing or mismatched", async () => {
+    request.mockResolvedValue({
+      ...sample(),
+      recordingSegment: { id: otherSegment, order: 0, startMs: 0, endMs: 2000 },
+    });
+    await render(`/recordings?lesson=${one}&segment=${segment}`);
+    expect(container.querySelector("audio")).toBeNull();
+    expect(container.textContent).toContain("Không tìm thấy đúng đoạn");
+  });
+  it("stops and removes the previous clip immediately when only the segment changes", async () => {
+    const pause = vi
+      .spyOn(HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => {});
+    request.mockImplementation((path) =>
+      path === `/lessons/${one}?segment=${segment}`
+        ? Promise.resolve({
+            ...sample(),
+            recordingSegment: {
+              id: segment,
+              order: 0,
+              startMs: 0,
+              endMs: 2000,
+            },
+          })
+        : new Promise(() => {}),
+    );
+    function Harness() {
+      const navigate = useNavigate();
+      return (
+        <>
+          <button
+            onClick={() =>
+              navigate(`/recordings?lesson=${one}&segment=${otherSegment}`)
+            }
+          >
+            Change clip
+          </button>
+          <RecordingReference />
+        </>
+      );
+    }
+    await act(async () =>
+      root.render(
+        <MemoryRouter
+          initialEntries={[`/recordings?lesson=${one}&segment=${segment}`]}
+        >
+          <Harness />
+        </MemoryRouter>,
+      ),
+    );
+    await flush();
+    expect(container.querySelector("audio")).not.toBeNull();
+    const signal = request.mock.calls[0][1]?.signal;
+    await act(async () => container.querySelector("button")!.click());
+    await flush();
+    expect(signal?.aborted).toBe(true);
+    expect(container.querySelector("audio")).toBeNull();
+    expect(pause).toHaveBeenCalled();
+  });
   it("does not fetch, upload or create practice when no sample is chosen", async () => {
     await render("/recordings");
     expect(request).not.toHaveBeenCalled();

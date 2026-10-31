@@ -78,12 +78,14 @@ The recording-reflection draft-lifetime follow-up on **20/11/2026** adds four DO
 
 The [recording-source and revision-history feature](recording-context.md), verified on **20/11/2026**, adds15 relational cases, one real SQL/Azurite/FFmpeg Storage case and six frontend cases. Complete final runs pass373 SQLite,386 SQL-media and139 frontend cases with zero failures/skips, plus production web and Docker API/worker builds. Coverage includes exact version/segment pins, no implicit note save, atomic source/note races, retained history-only archive rights, stable cursors, unchanged legacy receipt shape and explicit legacy capture on the first real edit. The SQL run took12 minutes; all fixtures completed. Migration creates no historical edits or automatic bindings. Native microphone/device acceptance remains open.
 
+The [selected-segment recording comparison](recording-clips.md), verified on **20/11/2026**, adds two relational cases and six frontend cases. Complete final runs pass375 SQLite,388 SQL-media and145 frontend cases, zero failures/skips, plus production web and Docker builds. Timing resolves only through the authorized exact lesson version without transcripts or learning/session writes; a cross-version segment returns404. Media events and animation frames bound playback; retry preserves position without autoplay and removing a source stops its player. Incompatible decoder duration is rejected, allowing only1ms of authored-time rounding. Native playback precision/device acceptance remains unverified. The prior source/history checkpoint also passed [both CI jobs](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44674846486).
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **386 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **373 passed, 0 failed, 0 skipped**; the thirteen Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **388 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **375 passed, 0 failed, 0 skipped**; the thirteen Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **139 passed, 0 failed**; simulated DOM/transport contracts including private-reflection replay/conflicts, retained drafts and resource-path isolation |
+| `npm --prefix web test` | **145 passed, 0 failed**; simulated DOM/transport contracts including private-reflection replay/conflicts, retained drafts and resource-path isolation |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed; fresh20/11/2026 full report has0 advisories, without dependency-graph changes. Historical exception policy remains documented in the [dependency record](frontend-dependencies.md) |

@@ -83,6 +83,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
    Bài có audio mở được [ghi âm kèm mẫu để nghe đối chiếu](docs/recording-comparison.md); bản nháp chỉ gửi khi bấm Lưu riêng.
    Bản thu Ready có [ghi chú/tự đánh giá riêng](docs/recording-reflections.md); nhật ký giữ nhận xét hiện tại sau khi xóa audio, không tự cộng điểm học hoặc chấm phát âm.
    Có thể [ghim đúng bài mẫu/đoạn nghe và xem lịch sử nhận xét](docs/recording-context.md); gắn nguồn giữ nguyên bản nháp đang gõ, bỏ nguồn hiện tại vẫn giữ lịch sử riêng.
+   Mẫu có đoạn được chọn có [player phát đúng đoạn để so giọng](docs/recording-clips.md), không tự phát hoặc mở transcript.
    Upload/xóa phân biệt [lệnh đã được nhận và xử lý đã hoàn tất](docs/media-acknowledgments.md); phản hồi202 rỗng không còn bị báo thành lỗi parse JSON.
 
 Thư viện có 14 bài nền tảng và quiz, 20 câu grammar khác nhau, mini reading 5 email × 4 câu và bài gõ đáp án 5 câu. Câu điền đáp án có autosave, biến thể biên soạn và [policy chuẩn hóa v1](docs/answer-policy.md), áp dụng được cả trong lesson quiz. Bài có audio Ready và transcript biên soạn hỗ trợ [nghe theo đoạn, lặp câu, dictation và tiếp tục vị trí nghe](docs/segmented-listening.md); CMS nhận mảng `segments`. Nội dung tự biên soạn được ghi nguồn trong [seed](seed/README.md).

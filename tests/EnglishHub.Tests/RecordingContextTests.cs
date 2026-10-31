@@ -167,6 +167,31 @@ public sealed class RecordingContextTests(TestApp app) : IClassFixture<TestApp>
         (await SetSource(bank, Link(source.Version, source.Segment))).EnsureSuccessStatusCode(); Assert.True((await Read(bank)).Source!.Archived);
     }
 
+    [Fact]
+    public async Task Recording_sample_timing_is_version_bound_read_only_and_never_reveals_transcript()
+    {
+        using var bank = await Bank(); var source = await Sample(); var before = await Counts();
+        var result = await bank.Client.GetAsync($"/api/v1/lessons/{source.Version}?segment={source.Segment}"); result.EnsureSuccessStatusCode();
+        var body = await result.Content.ReadFromJsonAsync<JsonElement>(); var timing = body.GetProperty("recordingSegment");
+        Assert.Equal(new[] { "endMs", "id", "order", "startMs" }, timing.EnumerateObject().Select(p => p.Name).Order().ToArray());
+        Assert.Equal(source.Segment, timing.GetProperty("id").GetGuid()); Assert.Equal(0, timing.GetProperty("startMs").GetInt64()); Assert.Equal(3000, timing.GetProperty("endMs").GetInt64());
+        Assert.DoesNotContain("Secret authored sentence", body.GetRawText()); Assert.DoesNotContain("acceptedAnswers", body.GetRawText()); Assert.Equal(before, await Counts());
+        var ordinary = await bank.Client.GetFromJsonAsync<JsonElement>($"/api/v1/lessons/{source.Version}"); Assert.Equal(JsonValueKind.Null, ordinary.GetProperty("recordingSegment").ValueKind);
+    }
+
+    [Fact]
+    public async Task Recording_sample_timing_rejects_other_versions_and_keeps_archived_owner_access()
+    {
+        using var bank = await Bank(); using var stranger = await Bank(); var source = await Sample(); var other = await Sample();
+        Assert.Equal(HttpStatusCode.NotFound, (await bank.Client.GetAsync($"/api/v1/lessons/{source.Version}?segment={other.Segment}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await bank.Client.GetAsync($"/api/v1/lessons/{source.Version}?segment={Guid.NewGuid()}")).StatusCode);
+        (await SetSource(bank, Link(source.Version, source.Segment))).EnsureSuccessStatusCode(); var row = await Read(bank); (await SetSource(bank, Link(null, null, row.Etag))).EnsureSuccessStatusCode();
+        using var scope = app.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<HubDbContext>(); await db.ContentVersions.Where(v => v.Id == source.Version).ExecuteUpdateAsync(s => s.SetProperty(v => v.Status, PublicationStatus.Archived));
+        (await bank.Client.GetAsync($"/api/v1/lessons/{source.Version}?segment={source.Segment}")).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.NotFound, (await stranger.Client.GetAsync($"/api/v1/lessons/{source.Version}?segment={source.Segment}")).StatusCode);
+        using var anonymous = app.CreateClient(); Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync($"/api/v1/lessons/{source.Version}?segment={source.Segment}")).StatusCode);
+    }
+
     private sealed record RecordingBank(Guid User, Guid Asset, HttpClient Client) : IDisposable { public void Dispose() => Client.Dispose(); }
     private async Task<RecordingBank> Bank(MediaStatus status = MediaStatus.Ready)
     {
@@ -189,7 +214,7 @@ public sealed class RecordingContextTests(TestApp app) : IClassFixture<TestApp>
     private static Task<HttpResponseMessage> SetSource(RecordingBank b, SetRecordingSource input) => b.Client.PutAsJsonAsync(SourcePath(b), input);
     private static async Task<RecordingReflectionView> Read(RecordingBank b) => (await b.Client.GetFromJsonAsync<RecordingReflectionView>(Path(b), Json))!;
     private static Task<JsonElement> History(RecordingBank b) => b.Client.GetFromJsonAsync<JsonElement>(HistoryPath(b));
-    private async Task<string> Counts() { using var scope = app.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<HubDbContext>(); return JsonSerializer.Serialize(new { metadata = await db.RecordingReflections.CountAsync(), history = await db.RecordingReflectionRevisions.CountAsync(), receipts = await db.CommandReceipts.CountAsync() }); }
+    private async Task<string> Counts() { using var scope = app.Services.CreateScope(); var db = scope.ServiceProvider.GetRequiredService<HubDbContext>(); return JsonSerializer.Serialize(new { metadata = await db.RecordingReflections.CountAsync(), history = await db.RecordingReflectionRevisions.CountAsync(), receipts = await db.CommandReceipts.CountAsync(), listening = await db.ListeningSessions.CountAsync(), disclosures = await db.ListeningDisclosures.CountAsync(), attempts = await db.Attempts.CountAsync(), progress = await db.LessonProgress.CountAsync() }); }
     private sealed class MetadataGrantStorage : IObjectStorage
     {
         public string PlaybackGrant(string key, DateTimeOffset until) => "metadata-test-grant";

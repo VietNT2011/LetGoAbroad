@@ -2,6 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import { AudioPlayer } from "./Media";
 import { recordingSourceSuggestion } from "../recordingSource";
+import { RecordingClipPlayer, type RecordingClip } from "./RecordingClipPlayer";
 
 type Reference = {
   id: string;
@@ -10,6 +11,7 @@ type Reference = {
   archived: boolean;
   attribution: string;
   mediaAssetId: string | null;
+  recordingSegment?: RecordingClip | null;
 };
 
 /** VI: Chỉ chọn version bài học; asset mẫu luôn lấy từ API có kiểm quyền. EN: Resolve the sample through an authorized lesson version, never a caller-provided media URL. */
@@ -28,14 +30,23 @@ export function RecordingReference() {
   // EN: Remount when the version changes so old sample data/audio cannot remain visible during the next fetch.
   return (
     <ReferenceLesson
-      key={suggestion.versionId}
+      key={`${suggestion.versionId}:${suggestion.segmentId ?? ""}`}
       version={suggestion.versionId}
+      segment={suggestion.segmentId}
     />
   );
 }
 
-function ReferenceLesson({ version }: { version: string }) {
-  const reference = useResource<Reference>(`/lessons/${version}`);
+function ReferenceLesson({
+  version,
+  segment,
+}: {
+  version: string;
+  segment: string | null;
+}) {
+  const reference = useResource<Reference>(
+    `/lessons/${version}${segment ? `?segment=${segment}` : ""}`,
+  );
   return (
     <section className="card-create" aria-label="Bài mẫu để so giọng">
       <span className="eyebrow">LISTEN, RECORD, COMPARE</span>
@@ -52,7 +63,19 @@ function ReferenceLesson({ version }: { version: string }) {
           <h3>
             {reference.data.title} · v{reference.data.version}
           </h3>
-          {reference.data.mediaAssetId ? (
+          {segment &&
+          (!reference.data.recordingSegment ||
+            reference.data.recordingSegment.id !== segment) ? (
+            <p role="alert">
+              Không tìm thấy đúng đoạn trong phiên bản bài mẫu. Mở lại từ bài
+              nghe.
+            </p>
+          ) : reference.data.mediaAssetId && reference.data.recordingSegment ? (
+            <RecordingClipPlayer
+              assetId={reference.data.mediaAssetId}
+              clip={reference.data.recordingSegment}
+            />
+          ) : reference.data.mediaAssetId ? (
             <AudioPlayer
               key={reference.data.mediaAssetId}
               assetId={reference.data.mediaAssetId}

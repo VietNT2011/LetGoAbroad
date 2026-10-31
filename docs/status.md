@@ -21,6 +21,8 @@ Vocabulary navigation now opens [personal cards](personal-cards.md); Community r
 
 [Lesson-sample recording comparison](recording-comparison.md) opens an authorized lesson version alongside local capture/playback with one active page player at a time. An explicit [sample binding](recording-context.md) persists the exact lesson version and optional segment on an owned recording.
 
+[Selected-segment comparison](recording-clips.md) resolves timing without transcript/session writes, bounds playback to that segment and stops the old player when changing sources. Native device/decoder precision remains unverified.
+
 [Private recording reflections](recording-reflections.md) add current raw notes/optional subjective clarity and rhythm levels, ETag conflict comparison, exact unknown-outcome replay and an owner journal retained after audio deletion. [Append-only history](recording-context.md) preserves actual note/source edits and authorized historical sample links. These do not count as objective scores or learning completion; broad device acceptance and account-wide erasure remain open.
 
 ## Next implementation order

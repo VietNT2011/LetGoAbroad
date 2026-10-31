@@ -18,7 +18,7 @@ public static class ContentEndpoints
             if (!string.IsNullOrWhiteSpace(search)) query = query.Where(x => x.Title.Contains(search));
             return await query.OrderBy(x => x.Root.Slug).Take(100).Select(x => new { x.Id, x.RootId, x.Root.Slug, x.Root.Kind, x.Title, x.Summary, x.Skill, x.Minutes, x.DurationSeconds, x.IsFixture, x.Version, questionCount = x.Groups.Sum(g => g.Questions.Count) }).ToListAsync();
         }).WithTags("Content");
-        app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, ClaimsPrincipal user, HubDbContext db) =>
+        app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, Guid? segment, ClaimsPrincipal user, HubDbContext db) =>
         {
             var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && (x.Status == PublicationStatus.Published || x.Status == PublicationStatus.Archived && (db.LessonAnnotations.Any(n => n.UserId == user.UserId() && n.ContentVersionId == id) || db.ListeningSessions.Any(s => s.UserId == user.UserId() && s.ContentVersionId == id) || db.RecordingReflections.Any(r => r.MediaAsset.OwnerId == user.UserId() && r.MediaAsset.Purpose == "recording" && r.SourceContentVersionId == id) || db.RecordingReflectionRevisions.Any(h => h.Reflection.MediaAsset.OwnerId == user.UserId() && h.Reflection.MediaAsset.Purpose == "recording" && h.SourceContentVersionId == id))) && x.Root.Kind == ContentKind.Lesson).Select(x => new
             {
@@ -33,9 +33,12 @@ public static class ContentEndpoints
                 archived = x.Status == PublicationStatus.Archived,
                 x.MediaAssetId,
                 hasListeningSegments = x.Segments.Any(),
+                // VI: Chỉ trả thời gian đoạn thuộc đúng version; không mở transcript hoặc tạo phiên nghe.
+                // EN: Resolve timing within the authorized version without revealing transcripts or creating a listening session.
+                recordingSegment = x.Segments.Where(s => s.Id == segment).Select(s => new { s.Id, s.Order, s.StartMs, s.EndMs }).SingleOrDefault(),
                 quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, q.Type, options = q.Options.Select(o => new { o.Id, o.Text }) })
             }).SingleOrDefaultAsync();
-            return lesson is null ? Results.NotFound() : Results.Ok(lesson);
+            return lesson is null || segment is not null && lesson.recordingSegment is null ? Results.NotFound() : Results.Ok(lesson);
         }).RequireAuthorization().WithTags("Content");
         var admin = app.MapGroup("/api/v1/admin").RequireAuthorization(p => p.RequireRole("Admin", "ContentEditor")).WithTags("CMS");
         admin.MapGet("/content", async (HubDbContext db) => await db.ContentVersions.AsNoTracking().OrderByDescending(x => x.Version).Select(x => new { x.Id, x.RootId, x.Root.Slug, x.Title, x.Status, x.Version, x.Root.Kind, etag = Convert.ToBase64String(x.RowVersion) }).Take(100).ToListAsync());
