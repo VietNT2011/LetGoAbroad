@@ -46,6 +46,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
 2. Mở bài, đọc nội dung Anh–Việt, làm quiz cuối bài, quay lại dashboard và refresh. Tiến độ lấy từ bằng chứng đã lưu.
 3. Chọn mini test hoặc practice theo Part/số câu. Preview hiển thị số câu thật vì nhóm câu được giữ nguyên.
 4. Chọn đáp án, xem trạng thái autosave, nộp bài và đọc lời giải. Mở hai tab có thể thử ETag conflict; submit lặp không tạo kết quả thứ hai.
+   Đánh dấu câu khi làm bài, viết ghi chú riêng ở trang chữa bài và tìm lại tại **Câu đã lưu & ghi chú**. Note/bookmark gắn đúng version câu hỏi; xóa note giữ nguyên kết quả và bookmark. Xem [quy tắc ghi chú](docs/annotations.md).
 5. Đăng nhập Admin, tạo/sửa draft JSON, preview, publish/archive, hoặc dry-run/import lô tối đa 20 nội dung.
 6. Trong CMS, upload audio có nguồn/quyền sử dụng, theo dõi Uploaded → Processing → Ready hoặc Failed. Chỉ Ready `lesson_audio` được gắn vào `mediaAssetId` của một bản nội dung rồi publish.
 7. Phát audio, seek/tốc độ; xem job và retry lỗi. Xóa media chưa còn tham chiếu Published sẽ chặn quyền phát mới và đưa vào hàng đợi xóa bền vững.

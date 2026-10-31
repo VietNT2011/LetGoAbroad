@@ -729,6 +729,61 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("Questions");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.QuestionAnnotation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AnchorBlock")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("AnchorEnd")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AnchorStart")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsBookmarked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NoteText")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SourceAttemptItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceAttemptItemId", "QuestionId");
+
+                    b.HasIndex("UserId", "QuestionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "UpdatedAt", "Id");
+
+                    b.ToTable("QuestionAnnotations");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.QuestionGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1208,6 +1263,24 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Group");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.QuestionAnnotation", b =>
+                {
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.AttemptItem", "SourceItem")
+                        .WithMany()
+                        .HasForeignKey("SourceAttemptItemId", "QuestionId")
+                        .HasPrincipalKey("Id", "QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("SourceItem");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.QuestionGroup", b =>

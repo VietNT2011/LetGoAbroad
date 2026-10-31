@@ -23,6 +23,9 @@ public static class AssessmentEndpoints
         group.MapPut("/{id:guid}/answers", (Guid id, SaveAnswers input, ClaimsPrincipal user, AssessmentService service) => service.Save(user.UserId(), id, input));
         group.MapPost("/{id:guid}/submit", (Guid id, SaveAnswers input, ClaimsPrincipal user, AssessmentService service) => service.Submit(user.UserId(), id, input));
         group.MapGet("/{id:guid}/result", (Guid id, ClaimsPrincipal user, AssessmentService service) => service.Result(user.UserId(), id));
+        group.MapGet("/{id:guid}/annotations", (Guid id, ClaimsPrincipal user, AnnotationService service) => service.ForAttempt(user.UserId(), id));
+        group.MapPut("/{id:guid}/items/{itemId:guid}/annotation", (Guid id, Guid itemId, SaveAnnotation input, ClaimsPrincipal user, AnnotationService service) => service.Save(user.UserId(), id, itemId, input));
+        app.MapGet("/api/v1/me/annotations", (ClaimsPrincipal user, AnnotationService service, bool bookmarkedOnly = false, int offset = 0) => service.List(user.UserId(), bookmarkedOnly, offset)).RequireAuthorization().WithTags("Review");
         group.MapGet("/", async (ClaimsPrincipal user, HubDbContext db) => await db.Attempts.AsNoTracking().Where(x => x.UserId == user.UserId()).OrderByDescending(x => x.StartedAt).Take(30)
             .Select(x => new { x.Id, x.ContentVersion.Title, x.Mode, x.Status, x.StartedAt, x.DeadlineAt, correctCount = x.Result == null ? (int?)null : x.Result.CorrectCount, totalCount = x.Items.Count }).ToListAsync());
     }

@@ -47,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<MailDispatcher>();
         services.AddScoped<Receipts>();
         services.AddScoped<AssessmentService>();
+        services.AddScoped<AnnotationService>();
         services.AddScoped<LearningService>();
         services.AddSingleton<IObjectStorage, AzureObjectStorage>();
         services.AddSingleton<IMediaProcessor, FfmpegProcessor>();

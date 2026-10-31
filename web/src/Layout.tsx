@@ -11,6 +11,7 @@ import {
   ArrowUpRight,
   Shield,
   Users,
+  Bookmark,
 } from "lucide-react";
 import { useAuth } from "./Auth";
 import { useState } from "react";
@@ -23,6 +24,7 @@ export function Layout() {
     { to: "/paths", title: "Lộ trình của tôi", icon: Route },
     { to: "/catalog", title: "Khám phá bài học", icon: Headphones },
     { to: "/tests", title: "Luyện tập & kiểm tra", icon: ClipboardList },
+    { to: "/saved", title: "Câu đã lưu & ghi chú", icon: Bookmark },
     { to: "/vocabulary", title: "Từ vựng & ôn tập", icon: Layers },
     { to: "/groups", title: "Cộng đồng học tập", icon: Users },
   ];

@@ -19,6 +19,7 @@ const ResultPage = lazy(() =>
   import("./pages/Assessment").then((m) => ({ default: m.ResultPage })),
 );
 const AdminPage = lazy(() => import("./pages/Admin"));
+const SavedQuestionsPage = lazy(() => import("./pages/Annotations"));
 // VI: Không giả chức năng chưa triển khai. EN: Pending screens explicitly describe their implementation status.
 function Pending() {
   return (
@@ -59,6 +60,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/tests" element={<Catalog tests />} />
+            <Route path="/saved" element={<SavedQuestionsPage />} />
             <Route path="/learn/:id" element={<Lesson />} />
             <Route path="/tests/:id" element={<TestIntro />} />
             <Route path="/attempts/:id" element={<AttemptPage />} />

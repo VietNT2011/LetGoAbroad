@@ -14,6 +14,7 @@ import { api, post, ApiError, type Content } from "../api";
 import { useResource, Loading, ErrorNotice } from "../hooks";
 import { useAuth } from "../Auth";
 import "./assessment.css";
+import { useAnnotations, BookmarkButton, QuestionNote } from "./Annotations";
 type Item = {
   type: "single_choice" | "fill_blank";
   answerText: string | null;
@@ -233,6 +234,7 @@ export function TestIntro() {
 /** VI: Queue giữ CommandId khi retry và không xóa chỉnh sửa mới hơn ACK. EN: Stable command IDs survive retries; acknowledgements never erase newer local edits. */
 export function AttemptPage() {
   const { id } = useParams();
+  const annotations = useAnnotations(id);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [attempt, setAttempt] = useState<Attempt>();
@@ -489,6 +491,7 @@ export function AttemptPage() {
   return (
     <>
       <ErrorNotice error={error} />
+      <ErrorNotice error={annotations.error} retry={annotations.reload} />
       {error instanceof ApiError && error.status === 412 ? (
         <button className="secondary" onClick={rebase}>
           <RotateCcw size={15} /> Gửi lại bản của tôi theo phiên bản mới
@@ -546,6 +549,14 @@ export function AttemptPage() {
                 <>
                   <p className="stimulus">{item.stimulus}</p>
                   <h2>{item.prompt}</h2>
+                  <BookmarkButton
+                    key={item.id}
+                    itemId={item.id}
+                    annotation={annotations.values[item.id]}
+                    save={annotations.save}
+                    reload={annotations.reload}
+                    disabled={annotations.loading || !!annotations.error}
+                  />
                   {item.type === "fill_blank" ? (
                     <label className="fill-blank">
                       Đáp án của bạn
@@ -668,6 +679,7 @@ type ResultData = {
 };
 export function ResultPage() {
   const { id } = useParams();
+  const annotations = useAnnotations(id);
   const { data, error, loading, reload } = useResource<ResultData>(
     `/attempts/${id}/result`,
   );
@@ -678,6 +690,7 @@ export function ResultPage() {
         <ArrowLeft size={15} /> Trở lại luyện tập
       </Link>
       <ErrorNotice error={error} retry={reload} />
+      <ErrorNotice error={annotations.error} retry={annotations.reload} />
       {loading ? (
         <Loading />
       ) : data ? (
@@ -778,6 +791,20 @@ export function ResultPage() {
                   <p className="explanation">
                     <b>Vì sao?</b> {q.explanation}
                   </p>
+                  <BookmarkButton
+                    itemId={q.id}
+                    annotation={annotations.values[q.id]}
+                    save={annotations.save}
+                    reload={annotations.reload}
+                    disabled={annotations.loading || !!annotations.error}
+                  />
+                  <QuestionNote
+                    itemId={q.id}
+                    annotation={annotations.values[q.id]}
+                    save={annotations.save}
+                    reload={annotations.reload}
+                    disabled={annotations.loading || !!annotations.error}
+                  />
                 </article>
               ))}
           </div>
