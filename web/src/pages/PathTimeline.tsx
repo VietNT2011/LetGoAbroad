@@ -77,7 +77,9 @@ export function PathTimeline({ plan }: { plan: PathPlan }) {
               <small>
                 {node.kind === "lesson"
                   ? "Hoàn thành quiz bài học"
-                  : `Đạt ít nhất ${node.minimumCorrectPercent}% raw score bằng một lần làm mới`}
+                  : node.completionRule === "assessment_all_raw"
+                    ? `Làm đủ toàn bộ bài và đạt ít nhất ${node.minimumCorrectPercent}% raw score bằng một lần làm mới`
+                    : `Đạt ít nhất ${node.minimumCorrectPercent}% raw score bằng một lần làm mới`}
               </small>
               {!node.unlocked ? (
                 <p className="path-prerequisite">

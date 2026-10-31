@@ -416,11 +416,9 @@ summary {
     padding: 20px 16px;
     gap: 15px;
   }
-  .path-node p {
-    display: none;
-  }
+  /* VI: Màn nhỏ vẫn cần lý do khóa và nội dung sẽ học. EN: Narrow screens retain prerequisite explanations and lesson summaries. */
   .path-node h3 {
-    font-size: 14px;
+    font-size: 16px;
   }
   .path-node:not(:last-child):after {
     left: 38px;

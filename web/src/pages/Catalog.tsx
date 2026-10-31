@@ -71,7 +71,7 @@ export function ContentCard({
           <span>
             {item.kind === "assessment"
               ? `${item.questionCount} câu hỏi`
-              : "Bài học nền tảng"}
+              : "Quiz cuối bài"}
           </span>
           <ArrowUpRight size={18} aria-hidden="true" />
         </div>

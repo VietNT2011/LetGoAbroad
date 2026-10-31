@@ -150,7 +150,7 @@ export default function Lesson() {
           <p className="lead">{data.summary}</p>
           <div className="lesson-meta">
             <Clock3 size={15} /> {data.minutes} phút <BookOpen size={15} /> Nội
-            dung nền tảng
+            dung bài học
           </div>
           {data.mediaAssetId ? (
             <AudioPlayer assetId={data.mediaAssetId} />

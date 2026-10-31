@@ -148,7 +148,11 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             if (task.PathNodeId is { } done && completedNodes.Contains(done)) continue;
             var progress = await db.LessonProgress.FirstOrDefaultAsync(x => x.UserId == user && x.ContentVersionId == task.ContentVersionId);
             var minimum = task.PathNode?.MinimumCorrectPercent ?? 0;
-            var attempt = progress is null ? await db.Attempts.Include(x => x.Result).Where(x => x.UserId == user && x.ContentVersionId == task.ContentVersionId && x.Status == AttemptStatus.Graded && !x.ContentVersion.IsFixture && x.Mode != "mistake_review" && x.StartedAt >= task.CreatedAt && x.Result!.TotalCount > 0 && x.Result.CorrectCount * 100 >= minimum * x.Result.TotalCount && !db.TaskCompletions.Any(c => c.AttemptId == x.Id)).OrderBy(x => x.Result!.FinalizedAt).ThenBy(x => x.Id).FirstOrDefaultAsync() : null;
+            // VI: Rule mới yêu cầu đủ câu của version ghim; luyện một phần không vượt checkpoint Core. EN: The opt-in full-coverage rule prevents partial practice from clearing a pinned Core checkpoint; older rules retain their semantics.
+            var requiresAll = task.PathNode?.CompletionRule == "assessment_all_raw";
+            var attempt = progress is null ? await db.Attempts.Include(x => x.Result).Where(x => x.UserId == user && x.ContentVersionId == task.ContentVersionId && x.Status == AttemptStatus.Graded && !x.ContentVersion.IsFixture && x.Mode != "mistake_review" && x.StartedAt >= task.CreatedAt && x.Result!.TotalCount > 0 && x.Result.CorrectCount * 100 >= minimum * x.Result.TotalCount
+                && (!requiresAll || (x.Mode == "mini" || x.Mode == "practice") && x.Result.TotalCount == x.ContentVersion.Groups.Sum(g => g.Questions.Count) && x.ContentVersion.Groups.SelectMany(g => g.Questions).All(q => x.Items.Any(i => i.QuestionId == q.Id)))
+                && !db.TaskCompletions.Any(c => c.AttemptId == x.Id)).OrderBy(x => x.Result!.FinalizedAt).ThenBy(x => x.Id).FirstOrDefaultAsync() : null;
             if (progress is null && attempt is null) continue;
             task.Status = "completed";
             if (task.PathNodeId is { } nodeId)

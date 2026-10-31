@@ -56,6 +56,7 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
         await DemoFoundationSeed.Ensure(db);
         await DemoFillBlankSeed.Ensure(db);
         await DemoPathSeed.Ensure(db);
+        await DemoCoreSeed.Ensure(db);
     }
 }
 app.MapIdentity();

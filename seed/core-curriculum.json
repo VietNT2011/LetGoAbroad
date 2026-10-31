@@ -1,0 +1,386 @@
+[
+  {
+    "kind": "lesson",
+    "slug": "core-present-perfect",
+    "title": "Core · Experience and a finished past",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Chọn thì theo mốc thời gian và mối liên hệ với hiện tại.",
+    "body": "A finished past or a connection to now?\n\nUse the past simple for an event placed in a finished past time: We sent the proposal yesterday. Yesterday tells us when the completed event happened.\n\nUse have/has + past participle to connect a past situation to now: Maya has worked here since 2022. In this sentence, she still works here. Since gives the starting point; for gives a duration: They have used this tool for six months.\n\nCompare: I visited the branch last Monday. I have visited the branch twice. The first sentence places the visit in a finished period; the second describes experience without naming a finished time.\n\nGhi nhớ: không chọn thì chỉ vì nhìn thấy một từ riêng lẻ. Đọc mốc thời gian và xem tình huống còn liên hệ hiện tại hay đã được đặt ở quá khứ. Trong cách dùng đang học, không ghép hiện tại hoàn thành với yesterday.\n\nTự luyện: viết một việc đã làm hôm qua và một kinh nghiệm của bạn đến hiện tại. Gạch chân cụm thời gian rồi giải thích lựa chọn thì.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "Maya still works here. She ___ here since 2022.",
+            "correct": "has worked",
+            "distractors": ["is work", "have worked", "working"],
+            "explanation": "Tình huống bắt đầu trước đây và còn tiếp diễn; she dùng has + worked. Since nêu mốc bắt đầu."
+          },
+          {
+            "prompt": "We ___ the proposal yesterday.",
+            "correct": "sent",
+            "distractors": ["have sent", "has sent", "sending"],
+            "explanation": "Yesterday đặt sự kiện vào khoảng quá khứ đã kết thúc; dùng past simple sent."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-past-events",
+    "title": "Core · Set the scene, tell the event",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Phân biệt hành động đang diễn ra với sự kiện xen vào trong quá khứ.",
+    "body": "What was in progress? What happened?\n\nThe past continuous uses was/were + V-ing to describe an activity in progress at a past time: At 2 p.m., I was reviewing the figures. The past simple can then introduce a shorter event: While I was reviewing the figures, the manager called.\n\nThe reviewing gives the background. The call is the event that occurred during that activity. Compare two background activities: I was reviewing the figures while Lan was preparing the slides. Both were in progress.\n\nA sequence of completed actions usually uses the past simple: The manager called, explained the change, and sent a new file. This sentence advances the story rather than describing its background.\n\nGhi nhớ: while không tự động quyết định mọi động từ phải ở tiếp diễn. Cần xác định vai trò từng hành động trong câu. Dùng was với I/he/she/it; dùng were với you/we/they.\n\nTự luyện: kể một sự cố nhỏ ở nơi làm việc bằng hai câu. Câu đầu nêu việc đang làm; câu sau nêu điều xảy ra và hành động bạn thực hiện tiếp theo.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "At 2 p.m. yesterday, I ___ the figures when the manager called.",
+            "correct": "was reviewing",
+            "distractors": ["were reviewing", "am reviewing", "was review"],
+            "explanation": "Hoạt động nền đang diễn ra trong quá khứ: I was + reviewing."
+          },
+          {
+            "prompt": "Choose the sentence that presents a completed sequence.",
+            "correct": "Lan opened the file, checked the total, and sent the report.",
+            "distractors": [
+              "Lan opens the file, checked the total, and sending the report.",
+              "Lan was open the file and sends the report.",
+              "Lan were checking the total yesterday."
+            ],
+            "explanation": "Ba hành động hoàn tất trong chuỗi kể chuyện dùng opened, checked và sent ở past simple."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-passive-processes",
+    "title": "Core · Describe a process clearly",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Dùng bị động khi trọng tâm là tài liệu hoặc quy trình.",
+    "body": "Put the process in focus.\n\nActive: The finance team checks every invoice. Passive: Every invoice is checked by the finance team. The passive uses a form of be + past participle. The object of the active sentence becomes the subject.\n\nChoose be to match the time and subject: The invoices are checked every morning. The schedule was updated yesterday. The revised file will be sent tomorrow. Checked, updated and sent stay as past participles; be carries the tense.\n\nUse a by phrase when the person or team matters. If the actor is unknown or unimportant, it can be omitted: The schedule was updated yesterday. Do not invent an actor that the source does not identify.\n\nGhi nhớ: bị động không chỉ là thêm -ed. Cần cả động từ be phù hợp và quá khứ phân từ, kể cả dạng bất quy tắc như sent. Với câu chủ động, chủ ngữ thực hiện hành động; với câu bị động này, chủ ngữ nhận tác động.\n\nTự luyện: viết một câu chủ động về quy trình ở lớp hoặc nơi làm việc. Chuyển sang bị động, giữ nguyên thời điểm và kiểm tra sự hòa hợp số ít/số nhiều.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "The invoices ___ by the finance team every morning.",
+            "correct": "are checked",
+            "distractors": ["is checked", "are check", "checking"],
+            "explanation": "Invoices là số nhiều; quy trình thường lệ dùng are + checked."
+          },
+          {
+            "prompt": "The schedule ___ yesterday.",
+            "correct": "was updated",
+            "distractors": ["is update", "were updated", "has updating"],
+            "explanation": "Schedule số ít, yesterday chỉ quá khứ: was + updated."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-first-conditional",
+    "title": "Core · Agree on a realistic next step",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Nối điều kiện tương lai có thể xảy ra với kết quả dự kiến.",
+    "body": "Connect a condition with its possible result.\n\nFor a realistic future condition, a common pattern is if + present simple, then will + base verb: If we finish the review today, we will release the update tomorrow. The condition has not yet been fulfilled. The sentence gives its expected result.\n\nThe order can change: We will release the update tomorrow if we finish the review today. A comma normally separates a leading if clause from the result. In this pattern, do not put will in both clauses.\n\nA condition is not a promise that the condition will happen. If approval arrives by noon, we will book the room does not say approval has arrived. Read the whole condition before treating the result as definite.\n\nGhi nhớ: đây là một mẫu thông dụng cho điều kiện tương lai thực tế, không phải mọi cách dùng của if trong tiếng Anh. Giữ động từ nguyên mẫu sau will. Đừng nhầm câu có điều kiện với xác nhận sự kiện đã xảy ra.\n\nTự luyện: viết kế hoạch có điều kiện cho tuần tới, rồi đổi thứ tự hai mệnh đề mà giữ nguyên ý nghĩa.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "If we ___ the review today, we will release the update tomorrow.",
+            "correct": "finish",
+            "distractors": ["will finish", "finishing", "finishes"],
+            "explanation": "Mẫu đang học dùng if + present simple; với we dùng finish."
+          },
+          {
+            "prompt": "What does 'If approval arrives by noon, we will book the room' establish?",
+            "correct": "The booking depends on approval arriving by noon.",
+            "distractors": [
+              "Approval has already arrived.",
+              "The room was booked yesterday.",
+              "Approval is unnecessary for the booking."
+            ],
+            "explanation": "If nêu điều kiện, không xác nhận điều kiện đã xảy ra hay phòng đã được đặt."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-relative-clauses",
+    "title": "Core · Identify the person or place",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Dùng mệnh đề quan hệ xác định người hoặc địa điểm đang nói tới.",
+    "body": "Make the reference specific.\n\nA defining relative clause helps identify a person or thing: The analyst who prepared the forecast is on leave. Who prepared the forecast tells us which analyst. For people, who or that can introduce this kind of clause. For things, which or that can be used: The file that contains the forecast is on the shared drive.\n\nWhere introduces a place relationship when the clause needs 'in/at that place': The office where we held the interview is upstairs. Compare: The office that we rented is upstairs. In the second example, office is the object of rented, so simply replacing that with where would not work.\n\nGhi nhớ: nhìn vào vai trò trong mệnh đề, không chỉ nhìn danh từ phía trước. Không thêm đại từ chủ ngữ lặp: the analyst who prepared..., không phải who she prepared.... Các ví dụ ở đây là mệnh đề xác định, không có cặp dấu phẩy bao quanh.\n\nTự luyện: mô tả một đồng nghiệp và một nơi bạn thường đến bằng mệnh đề xác định; kiểm tra câu sau who/where có đủ cấu trúc phù hợp.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "The analyst ___ prepared the forecast is on leave.",
+            "correct": "who",
+            "distractors": ["where", "when", "whose"],
+            "explanation": "Who làm chủ ngữ prepared và chỉ người analyst; whose cần đi với danh từ chỉ sở hữu."
+          },
+          {
+            "prompt": "The office ___ we held the interview is upstairs.",
+            "correct": "where",
+            "distractors": ["who", "whose", "what"],
+            "explanation": "Mệnh đề nghĩa là we held the interview in that office; where thể hiện quan hệ địa điểm."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-modals-at-work",
+    "title": "Core · Required, optional, or prohibited?",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "Phân biệt bắt buộc, lời khuyên, không bắt buộc và điều cấm.",
+    "body": "Read the strength of an instruction.\n\nYou must wear a visitor badge expresses a requirement. You should bring a notebook gives advice. You can use the side entrance gives permission in this context. After these modal verbs, use the base form: must wear, should bring, can use.\n\nThe negative meanings are especially important. You do not have to attend means attendance is not required; you may still attend. You must not enter means entry is prohibited. These are different instructions, not two forms of the same rule.\n\nExample notice: The introduction session is optional. Visitors do not have to attend. The equipment room is restricted. Visitors must not enter it without a staff escort. Optional attendance does not give permission to enter a restricted room.\n\nGhi nhớ: don't have to diễn đạt không cần/không bắt buộc; mustn't diễn đạt cấm. Should là lời khuyên trong các ví dụ này. Đọc điều kiện đi kèm như without a staff escort trước khi kết luận.\n\nTự luyện: viết ba câu cho một buổi học nhóm: một yêu cầu, một việc tùy chọn và một điều không được làm. Kiểm tra xem câu phủ định có đúng mức độ bạn muốn diễn đạt không.",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "The introduction session is optional. Visitors ___ attend it.",
+            "correct": "do not have to",
+            "distractors": ["must not", "are forbidden to", "are required to"],
+            "explanation": "Optional nghĩa là tùy chọn: không bắt buộc, không phải bị cấm."
+          },
+          {
+            "prompt": "Entry without an escort is prohibited. Visitors ___ enter alone.",
+            "correct": "must not",
+            "distractors": ["do not have to", "should", "are allowed to"],
+            "explanation": "Prohibited chỉ điều cấm; must not enter alone diễn đạt đúng yêu cầu đó."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-reading-revisions",
+    "title": "Core · Read the revised instruction",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Theo dõi thay đổi và tách giờ họp với hạn gửi tài liệu.",
+    "body": "Subject: Revised budget review\n\nHello team,\nThe budget review originally planned for Tuesday at 10 a.m. has moved to Thursday at 2 p.m. in Room 5. Please send your revised figures by noon on Wednesday so I can combine them before the meeting. If the figures you sent last week have not changed, a short confirmation is enough; do not resend the same attachment. Let me know today if you cannot attend the new time.\nThanks,\nNora\n\nRead for changes, actions and deadlines. The original meeting time is background information, not the current appointment. The Wednesday deadline is for figures; the meeting is on Thursday. The email also gives a different action for people whose figures have not changed.\n\nGhi nhớ: đừng lấy thời gian đầu tiên nhìn thấy làm đáp án. Đánh dấu originally và has moved to. Sau đó lập bảng nhỏ: việc gì, ai làm, hạn nào. Không suy diễn mọi người đều cần gửi lại file vì email đã nêu ngoại lệ.\n\nTự luyện: ghi lại lịch họp mới, hạn gửi số liệu và việc cần làm khi số liệu không đổi bằng ba dòng riêng.",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "When will the budget review now take place?",
+            "correct": "Thursday at 2 p.m.",
+            "distractors": [
+              "Tuesday at 10 a.m.",
+              "Wednesday at noon",
+              "Today at 2 p.m."
+            ],
+            "explanation": "Has moved to Thursday at 2 p.m. nêu lịch mới; Tuesday là lịch cũ và Wednesday là hạn số liệu."
+          },
+          {
+            "prompt": "What should a team member do if last week's figures have not changed?",
+            "correct": "Send a short confirmation without resending the attachment.",
+            "distractors": [
+              "Resend the same attachment twice.",
+              "Skip all communication with Nora.",
+              "Move the meeting back to Tuesday."
+            ],
+            "explanation": "Email nói a short confirmation is enough và do not resend the same attachment."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "lesson",
+    "slug": "core-reading-connections",
+    "title": "Core · Combine the timetable and the condition",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Kết hợp giờ đến và thời gian đi bộ để chọn phương án phù hợp.",
+    "body": "Workshop note: The workshop begins at 9:30 a.m. It takes fifteen minutes to walk from Central Station to the venue. Please arrive before the start.\n\nTwo fictional train options:\nNorth Line — leaves 8:20 a.m.; arrives Central Station 9:05 a.m.; ticket $18.\nCity Rail — leaves 8:40 a.m.; arrives Central Station 9:25 a.m.; ticket $12.\nAssume both services run on time and the walk takes exactly fifteen minutes.\n\nCompare the options against the actual condition. North Line gets you to the venue at 9:20. City Rail gets you there at 9:40. The cheaper ticket does not meet the arrival condition. Station arrival and venue arrival are different events.\n\nGhi nhớ: câu hỏi kết hợp thông tin cần thêm bước suy luận có căn cứ. Liệt kê điều kiện, tìm dữ kiện ở từng phần rồi tính theo giả định đã cho. Không tự thêm thời gian chờ hay khẳng định lịch tàu thực tế: đây là tình huống hư cấu để luyện đọc.\n\nTự luyện: giải thích vì sao phương án rẻ hơn không đáp ứng điều kiện. Sau đó đổi thời gian đi bộ thành bốn phút và tự tính lại.",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "",
+        "questions": [
+          {
+            "prompt": "Which listed train meets the instruction to reach the venue before 9:30?",
+            "correct": "North Line",
+            "distractors": [
+              "City Rail",
+              "Both listed trains",
+              "Neither listed train"
+            ],
+            "explanation": "North Line đến ga 9:05, cộng 15 phút đi bộ là 9:20; City Rail đến địa điểm lúc 9:40."
+          },
+          {
+            "prompt": "Under the stated assumptions, when would a City Rail passenger reach the venue?",
+            "correct": "9:40 a.m.",
+            "distractors": ["9:25 a.m.", "9:30 a.m.", "9:20 a.m."],
+            "explanation": "9:25 là giờ đến ga; cộng đúng 15 phút đi bộ được 9:40."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "assessment",
+    "slug": "core-practice-grammar",
+    "title": "Core · Practice: a clear workplace message",
+    "skill": "grammar",
+    "minutes": 10,
+    "summary": "6 câu mới về thì, bị động, điều kiện, quan hệ và mức độ yêu cầu.",
+    "body": "",
+    "groups": [
+      {
+        "part": 5,
+        "stimulus": "Original EnglishHub workplace sentences",
+        "questions": [
+          {
+            "prompt": "Arun still lives in this city. He ___ here for six years.",
+            "correct": "has lived",
+            "distractors": ["have lived", "is live", "living"],
+            "explanation": "Tình huống còn tiếp diễn tới hiện tại; he dùng has + lived, for chỉ khoảng thời gian."
+          },
+          {
+            "prompt": "While we ___ the slides, the projector stopped working.",
+            "correct": "were preparing",
+            "distractors": ["was preparing", "are prepare", "prepares"],
+            "explanation": "Hành động nền trong quá khứ: we were + preparing."
+          },
+          {
+            "prompt": "The final document ___ by the director yesterday.",
+            "correct": "was approved",
+            "distractors": ["were approved", "was approve", "approving"],
+            "explanation": "Document số ít nhận hành động phê duyệt ở quá khứ: was approved."
+          },
+          {
+            "prompt": "If the supplier confirms today, we ___ the order tomorrow.",
+            "correct": "will place",
+            "distractors": ["placing", "placed yesterday", "will placed"],
+            "explanation": "Mệnh đề kết quả tương lai dùng will + động từ nguyên mẫu place."
+          },
+          {
+            "prompt": "The engineer ___ designed the new system will lead the briefing.",
+            "correct": "who",
+            "distractors": ["where", "when", "whose"],
+            "explanation": "Who chỉ người engineer và làm chủ ngữ của designed."
+          },
+          {
+            "prompt": "The afternoon tour is optional. You ___ join it.",
+            "correct": "do not have to",
+            "distractors": ["must not", "are forbidden to", "are required to"],
+            "explanation": "Optional nghĩa là không bắt buộc; không có nghĩa là cấm tham gia."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "kind": "assessment",
+    "slug": "core-practice-reading",
+    "title": "Core · Practice: read, compare, decide",
+    "skill": "reading",
+    "minutes": 10,
+    "summary": "Hai đoạn hư cấu, mỗi đoạn 3 câu; giữ nguyên nhóm khi chọn luyện.",
+    "body": "",
+    "groups": [
+      {
+        "part": 7,
+        "stimulus": "NOTICE — Riverside Learning Centre\nThe centre normally closes at 6 p.m. This Friday it will close at 3 p.m. for electrical maintenance and reopen at 10 a.m. on Saturday. Return borrowed tablets to the service desk before Friday's closing time. Books can be placed in the outside return box at any time. The online catalogue will remain available during the closure.",
+        "questions": [
+          {
+            "prompt": "Why will the centre close earlier this Friday?",
+            "correct": "For electrical maintenance",
+            "distractors": [
+              "For a staff celebration",
+              "Because all courses have ended",
+              "To replace the online catalogue"
+            ],
+            "explanation": "Thông báo nêu for electrical maintenance; không có lý do lễ kỷ niệm hay kết thúc khóa."
+          },
+          {
+            "prompt": "Which action requires the centre to be open?",
+            "correct": "Returning a borrowed tablet to the service desk",
+            "distractors": [
+              "Putting a book in the outside box",
+              "Viewing the online catalogue",
+              "Reading the closure notice online"
+            ],
+            "explanation": "Tablet phải trả tại service desk trước giờ đóng; hộp trả sách bên ngoài và catalogue vẫn dùng được."
+          },
+          {
+            "prompt": "At 4 p.m. this Friday, which service is explicitly still available?",
+            "correct": "The online catalogue",
+            "distractors": [
+              "The indoor service desk",
+              "A tablet return at the desk",
+              "Access to the centre's classrooms"
+            ],
+            "explanation": "4 p.m. sau giờ đóng đặc biệt 3 p.m.; thông báo xác nhận online catalogue remains available."
+          }
+        ]
+      },
+      {
+        "part": 7,
+        "stimulus": "Email from Ben, event coordinator\nOur workshop starts at 10 a.m. on Monday. The venue is a ten-minute walk from East Station. Please be at the venue by 9:50 a.m.\n\nTravel options supplied with the email (fictional; assume on-time arrivals and exactly ten minutes of walking):\nService A: arrives East Station 9:35 a.m.; fare $15.\nService B: arrives East Station 9:45 a.m.; fare $11.\nBen adds: Keep your ticket if you intend to request reimbursement; requests must include the original ticket.",
+        "questions": [
+          {
+            "prompt": "Which service meets Ben's requested arrival time at the venue?",
+            "correct": "Service A only",
+            "distractors": [
+              "Service B only",
+              "Both services",
+              "Neither service"
+            ],
+            "explanation": "A đến địa điểm 9:45, trước hạn 9:50; B đến 9:55 nên không đạt yêu cầu dù trước giờ bắt đầu 10:00."
+          },
+          {
+            "prompt": "How much less does Service B cost than Service A?",
+            "correct": "$4",
+            "distractors": ["$11", "$15", "$26"],
+            "explanation": "$15 trừ $11 bằng $4; câu hỏi hỏi chênh lệch, không hỏi giá một vé hoặc tổng hai vé."
+          },
+          {
+            "prompt": "What must be included in a reimbursement request?",
+            "correct": "The original ticket",
+            "distractors": [
+              "A classroom key",
+              "A revised workshop programme",
+              "A list of every passenger"
+            ],
+            "explanation": "Câu cuối nêu requests must include the original ticket; không được tự thêm yêu cầu khác."
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -6,10 +6,14 @@ The visual refresh and practice-based reinforcement allocation were verified on 
 
 Catalog query persistence was checked separately on **17/11/2026** with native typing, rapid skill+text updates, reload, content navigation/Back, category Back/Forward, route changes, Unicode/ampersands, clearing/unsupported filters and sign-in returning to query/hash. See [catalog filters](catalog-filters.md) for the input-race fixes and verification limits. Both CI jobs passed for the [reinforcement head `5bf71f7`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43994771714); later heads require separate CI results.
 
+The [Core starter curriculum](core-curriculum.md) was added on **17/11/2026**: eight lessons, two questions per lesson, and two new six-question assessments. Nine relational cases verify authored corpus/publication safety, reseed preservation, placement-band admission, all eight study days, insufficient/sufficient full-coverage evidence, whole-group subsets and rejected modes, and CMS validation/publication guards. The first new fixture queries omitted a private-key projection and one assertion incorrectly expected draft creation to reject a rule that is deliberately checked at publication; the final runs below follow fixture corrections. Existing Foundation completion rules/pins remain unchanged; no schema migration or invented learner progress is included.
+
+Packaged Core UI checks explicitly enrolled the unused secondary demo account at 0/10, read a two-question lesson without submitting and verified the full-assessment captions. A 320px check corrected hidden prerequisite explanations and retained readable node titles; no horizontal overflow was observed. The viewport and main learner session were restored, with Foundation 1/18 and statistics 1 lesson / 3 attempts / 4 of 29 unchanged. Actual native screenshots are included in the handover outputs.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **155 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **149 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **164 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **158 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

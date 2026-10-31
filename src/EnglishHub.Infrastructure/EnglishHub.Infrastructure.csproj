@@ -10,5 +10,6 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14"><PrivateAssets>all</PrivateAssets><IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets></PackageReference>
   </ItemGroup>
   <ItemGroup><EmbeddedResource Include="../../seed/foundation-lessons.json" LogicalName="EnglishHub.Seed.Foundation" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../seed/core-curriculum.json" LogicalName="EnglishHub.Seed.Core" /></ItemGroup>
 </Project>
  

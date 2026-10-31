@@ -432,7 +432,11 @@ export function PathsPage() {
           {picker}
           <div className="button-row">
             <button className="primary" disabled={busy} onClick={start}>
-              Bắt đầu từ căn bản <ArrowRight size={15} />
+              {/* VI: Mẫu tự chọn có thể là Core; tên nút phải đúng lựa chọn. EN: A manual template may be Core, so label the actual enrollment intent. */}
+              {selectedTemplate
+                ? "Bắt đầu với mẫu đã chọn"
+                : "Bắt đầu từ căn bản"}{" "}
+              <ArrowRight size={15} />
             </button>
             <button
               className="secondary"
