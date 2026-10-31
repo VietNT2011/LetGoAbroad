@@ -3,6 +3,7 @@ import { Upload, RefreshCw, Music2, CheckCircle2 } from "lucide-react";
 import { api, post } from "../api";
 import { ErrorNotice, useResource } from "../hooks";
 import "./media.css";
+import { audioUpload } from "../audioUpload";
 type Asset = {
   id: string;
   fileName: string;
@@ -28,7 +29,11 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
   const [error, setError] = useState<Error>();
-  const command = useRef(crypto.randomUUID());
+  const uploadTask = useRef<ReturnType<typeof audioUpload> | undefined>(
+    undefined,
+  );
+  const uploadAbort = useRef<AbortController | undefined>(undefined);
+  useEffect(() => () => uploadAbort.current?.abort(), []);
   const [deleteId, setDeleteId] = useState<string>();
   const retries = useRef<Record<string, string>>({});
   const remove = async (id: string) => {
@@ -62,39 +67,27 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
     }
   };
   const upload = async () => {
-    if (!file) return;
+    if (!file || busy) return;
     setBusy(true);
     setError(undefined);
     try {
-      setProgress("Đang tạo phiên upload…");
-      const grant = await post<{ assetId: string; uploadUrl: string }>(
-        "/media/uploads",
-        {
-          clientRequestId: command.current,
-          purpose: "lesson_audio",
-          fileName: file.name,
-          contentType: file.type || "audio/wav",
-          bytes: file.size,
-          attribution,
-        },
-      );
-      setProgress("Đang gửi file đến kho lưu trữ…");
-      const response = await fetch(grant.uploadUrl, {
-        method: "PUT",
-        headers: {
-          "x-ms-blob-type": "BlockBlob",
-          "Content-Type": file.type || "audio/wav",
-        },
-        body: file,
-      });
-      if (!response.ok)
-        throw new Error(
-          "Upload chưa thành công. Hãy thử lại trước khi phiên hết hạn.",
-        );
-      await post<void>(`/media/${grant.assetId}/complete`);
-      command.current = crypto.randomUUID();
       setProgress(
-        `Đã nhận file. Worker đang xác minh và xử lý. Mã media: ${grant.assetId}`,
+        "Đang gửi audio; khi lỗi mạng có thể tiếp tục phần chưa xác nhận.",
+      );
+      uploadTask.current ??= audioUpload(
+        file,
+        "lesson_audio",
+        attribution,
+        (bytes, total) =>
+          setProgress(
+            `Đã gửi ${Math.floor((bytes * 100) / total)}% · ${bytes}/${total} byte được xác nhận.`,
+          ),
+      );
+      uploadAbort.current = new AbortController();
+      const assetId = await uploadTask.current.send(uploadAbort.current.signal);
+      uploadTask.current = undefined;
+      setProgress(
+        `Đã nhận file. Worker đang xác minh và xử lý. Mã media: ${assetId}`,
       );
       assets.reload();
       if (admin) jobs.reload();
@@ -142,10 +135,10 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
           <input
             type="file"
             accept="audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/webm"
-            disabled={busy}
+            disabled={busy || !!uploadTask.current}
             onChange={(e) => {
               setFile(e.target.files?.[0]);
-              command.current = crypto.randomUUID();
+              uploadTask.current = undefined;
             }}
           />
         </label>
@@ -153,6 +146,7 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
           Nguồn & quyền sử dụng
           <input
             value={attribution}
+            disabled={busy || !!uploadTask.current}
             onChange={(e) => setAttribution(e.target.value)}
             placeholder="Tác giả, giấy phép hoặc căn cứ sử dụng"
             required
@@ -165,8 +159,41 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
         onClick={upload}
       >
         <Upload size={14} />
-        {busy ? "Đang upload…" : "Upload & xử lý"}
+        {busy
+          ? "Đang upload…"
+          : uploadTask.current
+            ? "Gửi lại phần chưa xác nhận"
+            : "Upload & xử lý"}
       </button>
+      {busy && uploadTask.current ? (
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => uploadAbort.current?.abort()}
+        >
+          Tạm dừng gửi
+        </button>
+      ) : null}
+      {uploadTask.current && !busy ? (
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => {
+            uploadTask.current = undefined;
+            setError(undefined);
+            setProgress(
+              "Đã bỏ phiên trong trình duyệt. Kiểm tra danh sách trước khi gửi bản mới: phiên cũ có thể đã được nhận nếu ACK bị mất.",
+            );
+          }}
+        >
+          Bỏ phiên gửi hiện tại
+        </button>
+      ) : null}
+      <p>
+        Tiếp tục khi mạng lỗi trong tab này, trước khi phiên gửi hết hạn. Tải
+        lại hoặc đóng tab sẽ mất trạng thái tiếp tục; file và URL truy cập không
+        được lưu vào bộ nhớ trình duyệt lâu dài.
+      </p>
       {progress ? <p className="media-status">{progress}</p> : null}
       <div className="asset-list">
         {assets.data?.map((asset) => (

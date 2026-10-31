@@ -39,6 +39,25 @@ public sealed class MediaIntegrationTests(TestApp app) : IClassFixture<TestApp>
         Assert.True(await scope.ServiceProvider.GetRequiredService<MediaPipeline>().RunOne(CancellationToken.None));
     }
     [Fact]
+    public async Task Retried_ordered_blocks_commit_to_a_valid_private_recording_with_one_processing_job()
+    {
+        await using var isolated = new TestApp(); using var owner = await isolated.Login("learner2@englishhub.local"); var suite = new MediaIntegrationTests(isolated); var bytes = Wave();
+        isolated.Clock.Advance(DateTimeOffset.UtcNow - isolated.Clock.UtcNow);
+        var created = await owner.PostAsJsonAsync("/api/v1/media/uploads", new CreateUpload(Guid.NewGuid(), "recording", "private-block-fixture.wav", "audio/wav", bytes.Length, "Original synthetic technical tone; not learning speech")); created.EnsureSuccessStatusCode(); var grant = (await created.Content.ReadFromJsonAsync<UploadGrant>())!;
+        using var blobs = new HttpClient(); var blocks = new[] { Convert.ToBase64String("000000"u8.ToArray()), Convert.ToBase64String("000001"u8.ToArray()) };
+        for(var i=0;i<2;i++)
+        {
+            var part = new ByteArrayContent(i == 0 ? bytes[..16000] : bytes[16000..]); var url = grant.UploadUrl + "&comp=block&blockid=" + Uri.EscapeDataString(blocks[i]);
+            using var request = new HttpRequestMessage(HttpMethod.Put,url){Content=part};request.Headers.Add("x-ms-version","2023-11-03");(await blobs.SendAsync(request)).EnsureSuccessStatusCode();
+            if(i==0){using var retry=new HttpRequestMessage(HttpMethod.Put,url){Content=new ByteArrayContent(bytes[..16000])};retry.Headers.Add("x-ms-version","2023-11-03");(await blobs.SendAsync(retry)).EnsureSuccessStatusCode();}
+        }
+        var xml="<?xml version=\"1.0\" encoding=\"utf-8\"?><BlockList>"+string.Concat(blocks.Select(id=>$"<Latest>{id}</Latest>"))+"</BlockList>";
+        for(var i=0;i<2;i++){using var commit=new HttpRequestMessage(HttpMethod.Put,grant.UploadUrl+"&comp=blocklist"){Content=new StringContent(xml,System.Text.Encoding.UTF8,"application/xml")};commit.Headers.Add("x-ms-version","2023-11-03");commit.Headers.Add("x-ms-blob-content-type","audio/wav");(await blobs.SendAsync(commit)).EnsureSuccessStatusCode();}
+        (await owner.PostAsync($"/api/v1/media/{grant.AssetId}/complete",null)).EnsureSuccessStatusCode();(await owner.PostAsync($"/api/v1/media/{grant.AssetId}/complete",null)).EnsureSuccessStatusCode();await suite.Process();
+        var state=await owner.GetFromJsonAsync<JsonElement>($"/api/v1/media/{grant.AssetId}");Assert.Equal("ready",state.GetProperty("status").GetString());using var admin=await isolated.Login("admin@englishhub.local");Assert.Equal(HttpStatusCode.NotFound,(await admin.GetAsync($"/api/v1/media/{grant.AssetId}/content")).StatusCode);
+        await using var scope=isolated.Services.CreateAsyncScope();var db=scope.ServiceProvider.GetRequiredService<EnglishHub.Infrastructure.Persistence.HubDbContext>();Assert.Equal(1,await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(db.BackgroundJobs.Where(x=>x.ResourceId==grant.AssetId)));
+    }
+    [Fact]
     public async Task Uploaded_audio_is_processed_then_private_playback_supports_real_byte_ranges()
     {
         var (client, grant, _) = await Upload(); using var owner = client;
