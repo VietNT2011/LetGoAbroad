@@ -20,6 +20,8 @@ public sealed class MediaIntegrationTests(TestApp app) : IClassFixture<TestApp>
     private async Task<(HttpClient Client, UploadGrant Grant, byte[] Bytes)> Upload(byte[]? bytes = null)
     {
         var client = await app.Login("admin@englishhub.local"); bytes ??= Wave();
+        // VI: Azurite kiểm tra SAS bằng đồng hồ thật; làm mới clock fixture sau setup để grant không hết hạn khi suite chạy chậm. EN: Azurite validates SAS against real time; refresh the fixture clock after setup instead of issuing grants from an aging frozen timestamp.
+        app.Clock.Advance(DateTimeOffset.UtcNow - app.Clock.UtcNow);
         var response = await client.PostAsJsonAsync("/api/v1/media/uploads", new CreateUpload(Guid.NewGuid(), "lesson_audio", "tone.wav", "audio/wav", bytes.Length, "Original synthetic tone · technical integration fixture")); response.EnsureSuccessStatusCode();
         var grant = (await response.Content.ReadFromJsonAsync<UploadGrant>())!;
         await Put(grant.UploadUrl, bytes);
