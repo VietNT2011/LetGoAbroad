@@ -1,5 +1,11 @@
-import { useDeferredValue, useState } from "react";
-import { Link } from "react-router-dom";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useSearchParams,
+} from "react-router-dom";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -77,8 +83,43 @@ export function ContentCard({
   );
 }
 export function Catalog({ tests = false }: { tests?: boolean }) {
-  const [search, setSearch] = useState("");
-  const [skill, setSkill] = useState("");
+  const [filters] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navigationType = useNavigationType();
+  const urlSearch = (filters.get("search") ?? "").slice(0, 200);
+  const [search, setSearch] = useState(urlSearch);
+  const pendingFilters = useRef(filters);
+  // VI: Draft cập nhật đồng bộ để router bất đồng bộ không nuốt ký tự; Back/deep link khôi phục từ URL. EN: A synchronous input draft prevents asynchronous navigation from dropping keystrokes; Back/deep links restore URL state.
+  useEffect(() => {
+    if (navigationType !== "POP" && location.state?.catalogFilters) return;
+    pendingFilters.current = filters;
+    setSearch(urlSearch);
+  }, [filters, location.key, location.state, navigationType, urlSearch]);
+  const requestedSkill = filters.get("skill") ?? "";
+  const skill = Object.hasOwn(skillArt, requestedSkill) ? requestedSkill : "";
+  // VI: URL giữ bộ lọc; gõ thay history hiện tại để không tạo một entry mỗi ký tự. EN: URL filters survive reload/Back; typing replaces history rather than adding an entry per character.
+  const updateFilter = (key: "search" | "skill", value: string) => {
+    if (value === (key === "search" ? search : skill)) return;
+    if (key === "search") setSearch(value);
+    // VI: Ghép bản dự kiến mới nhất và giữ anchor để cập nhật router không mất bộ lọc hay focus. EN: Merge the latest intent and retain the anchor so navigation cannot lose a filter or move typing focus.
+    const next = new URLSearchParams(pendingFilters.current);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    pendingFilters.current = next;
+    navigate(
+      {
+        pathname: location.pathname,
+        search: next.size ? `?${next}` : "",
+        hash: location.hash,
+      },
+      {
+        replace: key === "search",
+        preventScrollReset: true,
+        state: { catalogFilters: true },
+      },
+    );
+  };
   const query = useDeferredValue(search);
   const { data, loading, error, reload } = useResource<Content[]>(
     `/catalog?search=${encodeURIComponent(query)}&skill=${skill}`,
@@ -117,7 +158,7 @@ export function Catalog({ tests = false }: { tests?: boolean }) {
               className={skill === value ? "selected" : ""}
               aria-pressed={skill === value}
               key={value}
-              onClick={() => setSkill(value)}
+              onClick={() => updateFilter("skill", value)}
             >
               {label}
             </button>
@@ -128,13 +169,14 @@ export function Catalog({ tests = false }: { tests?: boolean }) {
           <input
             type="search"
             name="lesson-search"
+            maxLength={200}
             autoComplete="off"
             placeholder={
               tests ? "Tìm bài bạn muốn luyện…" : "Tìm điều bạn muốn học…"
             }
             aria-label={tests ? "Tìm bài luyện" : "Tìm bài học"}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => updateFilter("search", e.target.value)}
           />
         </label>
       </div>

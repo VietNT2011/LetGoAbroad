@@ -50,7 +50,12 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return user ? (
     children
   ) : (
-    <Navigate to="/login" state={{ from: location.pathname }} replace />
+    // VI: Đăng nhập xong trở về cả bộ lọc và anchor của liên kết đã mở. EN: Preserve filters and anchors when returning from sign-in to the requested deep link.
+    <Navigate
+      to="/login"
+      state={{ from: location.pathname + location.search + location.hash }}
+      replace
+    />
   );
 }
 export function AuthPage({

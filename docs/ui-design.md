@@ -51,4 +51,4 @@ Responsive checks use viewport overrides at 320px, 390px, 768px and 1280px, incl
 
 Rendered-style contrast observations are recorded separately in `outputs/EnglishHub-UI-audit.json` at handover. They inspect rendered text/background pairs, excluding hidden/decorative/disabled content, and are samples of the inspected routes/states. They are not a full WCAG conformance audit. Before/after screenshots are actual captures, without image recoloring.
 
-Backend regression suites remain part of CI. Broader screen-reader testing, real-device coverage, learner usability studies, URL-persisted catalog filters and educational-effect experiments remain outside this visual refresh.
+Backend regression suites remain part of CI. [URL-persisted catalog filters](catalog-filters.md) were added separately after the visual refresh. Broader screen-reader testing, real-device coverage, learner usability studies and educational-effect experiments remain unverified.

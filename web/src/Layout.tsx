@@ -32,8 +32,18 @@ export function Layout() {
   const main = useRef<HTMLElement>(null);
   const location = useLocation();
   const navigationType = useNavigationType();
+  const previousLocation = useRef(location);
   // VI: Trang mới mở từ đầu; deep link đợi nội dung bất đồng bộ, không giữ vị trí cuộn của trang cũ. EN: New routes start at the top; deep links wait for asynchronous content instead of retaining the previous route's scroll offset.
   useEffect(() => {
+    // VI: Lọc bằng query không phải trang mới; giữ con trỏ gõ và vị trí cuộn khi PUSH/REPLACE đổi loại. EN: Query-only filtering keeps typing focus and scroll even when navigation switches between PUSH and REPLACE.
+    const previous = previousLocation.current;
+    previousLocation.current = location;
+    if (
+      previous.pathname === location.pathname &&
+      previous.hash === location.hash &&
+      previous.search !== location.search
+    )
+      return;
     const hash = location.hash.slice(1);
     if (!hash) {
       if (navigationType !== "POP") {
@@ -54,7 +64,7 @@ export function Layout() {
     });
     observer.observe(main.current, { childList: true, subtree: true });
     return () => observer.disconnect();
-  }, [location.pathname, location.hash, navigationType]);
+  }, [location.pathname, location.hash, location.search, navigationType]);
   const closeMenu = () => setMenuOpen(false);
   const links = [
     { to: "/dashboard", title: "Tổng quan", icon: LayoutDashboard },

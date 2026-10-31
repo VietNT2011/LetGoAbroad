@@ -4,6 +4,8 @@ Baseline verified locally on **09/11/2026** at `eb0e46eca6fc841ad78568a10669fa7e
 
 The visual refresh and practice-based reinforcement allocation were verified on **17/11/2026**. Reinforcement adds fourteen cases for the minimum/strict threshold, deterministic ordering, affordable candidates, separate tracks, due/prerequisite eligibility, saved explanations, stale evidence tokens, concurrent grading/regeneration, protected starts, replay and legacy/owner boundaries. Initial new fixtures failed because they used an unassigned user ID and unsupported ten-minute goal values; the final runs below follow corrections to those fixtures. No schema migration or learner-progress backfill is part of this feature.
 
+Catalog query persistence was checked separately on **17/11/2026** with native typing, rapid skill+text updates, reload, content navigation/Back, category Back/Forward, route changes, Unicode/ampersands, clearing/unsupported filters and sign-in returning to query/hash. See [catalog filters](catalog-filters.md) for the input-race fixes and verification limits. Both CI jobs passed for the [reinforcement head `5bf71f7`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43994771714); later heads require separate CI results.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **155 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
