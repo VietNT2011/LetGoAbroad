@@ -10,10 +10,14 @@ The [Core starter curriculum](core-curriculum.md) was added on **17/11/2026**: e
 
 Packaged Core UI checks explicitly enrolled the unused secondary demo account at 0/10, read a two-question lesson without submitting and verified the full-assessment captions. A 320px check corrected hidden prerequisite explanations and retained readable node titles; no horizontal overflow was observed. The viewport and main learner session were restored, with Foundation 1/18 and statistics 1 lesson / 3 attempts / 4 of 29 unchanged. Actual native screenshots are included in the handover outputs.
 
+Scheduled continuation on **17/11/2026** added [whole placement integrity](placement-integrity.md). Twelve relational cases cover rejected shortened/filtered/wrong-bank starts without side effects, complete starts and replay, legacy partial or mismatched snapshots, accepted historical receipts, practice exclusion, and complete historical versions after republishing/archiving. An initial historical fixture assumed version2 was unused; it now allocates the next version number. Admission thresholds, existing enrollments and completed historical evidence remain unchanged. No new schema migration, frontend change or runtime learner grading is part of this fix.
+
+The packaged API rejected a one-question placement request with HTTP422 `placement_whole_required`. The main learner's attempt history stayed at three identical records and statistics remained 1 lesson / 3 graded attempts / 4 of 29. The probe decoded `application/problem+json` from PowerShell's byte response before checking the error code; no attempt was started or submitted by the rejected requests.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **164 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **158 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **176 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **170 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

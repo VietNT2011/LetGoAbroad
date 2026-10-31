@@ -1,5 +1,6 @@
 using System.Text.Json;
 using EnglishHub.Application;
+using EnglishHub.Application.Learning;
 using EnglishHub.Domain;
 using EnglishHub.Infrastructure.Content;
 using EnglishHub.Infrastructure.Persistence;
@@ -31,6 +32,8 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
             DomainError.Require(input.Mode is "mini" or "practice" or "placement" or "fixture" or "full_mock" or "mistake_review", 422, "invalid_mode", "Chế độ không hỗ trợ.");
             var version = await content.FullVersions.SingleOrDefaultAsync(x => x.Id == input.ContentVersionId && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Assessment) ?? throw new DomainError(404, "exam_not_found", "Không tìm thấy đề đã publish.");
             DomainError.Require(!version.IsFixture || input.Mode == "fixture", 422, "fixture_requires_label", "Đề kỹ thuật phải dùng chế độ fixture.");
+            // VI: Placement không được rút câu/lọc Part; practice tự chọn vẫn dùng mode riêng. EN: Placement must retain its complete blueprint; optional filtered practice keeps its separate mode.
+            DomainError.Require(input.Mode != "placement" || PlacementPolicy.HasBlueprint(version) && input.Part is null && (input.QuestionCount is null || input.QuestionCount == PlacementPolicy.QuestionCount), 422, "placement_whole_required", "Đánh giá đầu vào cần trọn 20 câu của đề placement, không lọc Part hoặc rút số câu. Hãy dùng chế độ practice nếu muốn luyện một phần.");
             var sectioned = input.Mode == "full_mock" || input.Mode == "fixture" && AssessmentBlueprint.IsFull(version);
             if (sectioned) DomainError.Require(AssessmentBlueprint.IsFull(version) && input.Part is null && input.QuestionCount is null, 422, "invalid_blueprint", "Full mock phải giữ đủ 200 câu theo blueprint.");
             var random = new Random(BitConverter.ToInt32(input.ClientRequestId.ToByteArray()));

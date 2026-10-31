@@ -30,8 +30,11 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         var level = "foundation";
         if (!input.StartFromBasics)
         {
-            var placement = await db.Attempts.Include(x => x.Result).Include(x => x.ContentVersion).ThenInclude(x => x.Root).SingleOrDefaultAsync(x => x.Id == input.PlacementAttemptId && x.UserId == userId && x.Mode == "placement");
-            DomainError.Require(placement?.Result is not null && !placement.ContentVersion.IsFixture && placement.ContentVersion.Root.Slug == "placement-demo", 422, "placement_required", "Hoàn thành bài đánh giá đầu vào hoặc chọn bắt đầu từ căn bản.");
+            var placement = await db.Attempts.Include(x => x.Result).Include(x => x.Items).Include(x => x.ContentVersion).ThenInclude(x => x.Root)
+                .Include(x => x.ContentVersion).ThenInclude(x => x.Groups).ThenInclude(x => x.Questions).AsSplitQuery()
+                .SingleOrDefaultAsync(x => x.Id == input.PlacementAttemptId && x.UserId == userId && x.Mode == "placement");
+            // VI: Kiểm tra lại cả dữ liệu lịch sử có thể được tạo trước guard khởi động. EN: Recheck legacy snapshots as well as newly guarded starts before deriving an admission level.
+            DomainError.Require(PlacementPolicy.Qualifies(placement), 422, "placement_required", "Hoàn tất bài đánh giá đầu vào gồm đủ 20 câu, hoặc chọn bắt đầu từ căn bản.");
             level = Planner.PlacementLevel(placement!.Result!.CorrectCount, placement.Result.TotalCount);
         }
         var enrollment = new Enrollment { UserId = userId, Level = level, TargetScore = user.TargetScore, MinutesPerDay = user.MinutesPerDay, TimeZoneId = user.TimeZoneId, CreatedAt = clock.UtcNow };
