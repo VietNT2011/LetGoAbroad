@@ -93,6 +93,7 @@ pwsh -NoProfile -File .\scripts\test.ps1 -SqlServer -Storage
 
 # Frontend
 npm --prefix web ci
+npm --prefix web run audit:ci
 npm --prefix web test
 npm --prefix web run build
 ```
@@ -100,6 +101,7 @@ npm --prefix web run build
 Chạy `start-infra.ps1` trước các test SQL/Storage nếu stack chưa chạy. Mỗi fixture SQL dùng database tên `EnglishHubTest_<guid>` riêng, không dùng database ứng dụng. Các test DB có FakeClock; test storage vẫn truyền file thật và kiểm tra HTTP 206/ETag/ACL thật. TRX nằm trong `artifacts/TestResults` khi dùng script.
 
 CI có job build/SQLite/frontend và job SQL/Azurite/FFmpeg riêng. Kết quả workflow remote chỉ được coi là đã qua khi chính workflow đó chạy thành công; các lần chạy local được ghi trong tài liệu bàn giao.
+Gate dependency chỉ chấp nhận [một lỗi dev-only picomatch đã ghi rõ](docs/frontend-dependencies.md); lỗi mới hoặc dependency production có cảnh báo sẽ chặn CI.
 
 ## Cấu trúc và quy tắc
 
