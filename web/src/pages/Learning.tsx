@@ -43,6 +43,8 @@ export type DashboardData = {
     reasonCode: string;
     activeAttemptId: string | null;
     carriedFromPreviousDate: boolean;
+    carriedAcrossCalendar: boolean;
+    timeZoneId: string;
     localDate: string;
   }[];
   statistics: {
@@ -229,7 +231,12 @@ export function TodayPanel() {
                   ) : null}
                 </h3>
                 <p>{task.reasonText}</p>
-                {task.carriedFromPreviousDate ? (
+                {task.carriedAcrossCalendar ? (
+                  <small>
+                    Giữ lịch cũ: {task.localDate} · {task.timeZoneId}; thời hạn
+                    bài làm được giữ.
+                  </small>
+                ) : task.carriedFromPreviousDate ? (
                   <small>
                     Đang tiếp tục nhiệm vụ từ {task.localDate}; thời hạn bài làm
                     vẫn do server quyết định.
@@ -465,7 +472,12 @@ export function PathsPage() {
           {plan.loading ? (
             <Loading />
           ) : plan.data?.template ? (
-            <PathTimeline plan={plan.data} />
+            <>
+              <a className="back-link" href="#path-choices">
+                Đổi lịch riêng hoặc chuyển mẫu
+              </a>
+              <PathTimeline plan={plan.data} />
+            </>
           ) : (
             <>
               {plan.data?.legacy && templates.data?.length ? (
@@ -695,6 +707,10 @@ export function SettingsPage() {
               placeholder="Asia/Ho_Chi_Minh"
             />
           </label>
+          <p className="muted">
+            Nếu đã đặt lịch riêng cho lộ trình, nhiệm vụ tiếp tục dùng lịch đó.{" "}
+            <Link to="/paths#path-choices">Xem hoặc đổi lịch riêng</Link>.
+          </p>
           <fieldset>
             <legend>Ngày có thể học</legend>
             <div className="study-days">

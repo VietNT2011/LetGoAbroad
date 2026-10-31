@@ -1,5 +1,26 @@
 .path-choices {
   margin: 24px 0;
+  scroll-margin-top: 20px;
+}
+.path-calendar-editor {
+  padding: 20px 0;
+  border-bottom: 1px solid #e3e8d9;
+}
+.path-calendar-editor p {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.path-calendar-editor input:not([type="checkbox"]) {
+  width: 100%;
+}
+.path-calendar-editor .study-days label {
+  display: flex;
+  align-items: center;
+}
+.path-calendar-editor fieldset {
+  border: 1px solid #d6dfd2;
+  border-radius: 8px;
+  padding: 14px;
 }
 .path-choices > p,
 .path-choices li p {

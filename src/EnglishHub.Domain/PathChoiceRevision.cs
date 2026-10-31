@@ -15,6 +15,9 @@ public sealed class PathChoiceRevision
     public DateOnly? PathStartedOn { get; set; }
     public string TimeZoneId { get; set; } = "";
     public string StudyDays { get; set; } = "";
+    public bool UsesPathCalendar { get; set; }
+    public DateOnly? CalendarAnchorOn { get; set; }
+    public int CalendarElapsedDays { get; set; }
     public DateTimeOffset RecordedAt { get; set; }
     public DateTimeOffset EffectiveAt { get; set; }
     // VI: Ghi một lần khi được áp dụng; yêu cầu bị thay thế không có mốc này. EN: Record actual activation once so superseded reservations cannot masquerade as a previously used calendar.

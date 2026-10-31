@@ -37,10 +37,11 @@ public sealed partial class LearningService
         if (duplicate is not null) return JsonSerializer.Deserialize<RegenerationAck>(duplicate.ResponseJson)!;
         // VI: Cookie validation có thể đã track hồ sơ trước khi khóa được lấy. EN: Read fresh preferences after the lock even if cookie validation tracked an older profile.
         var user = await db.Users.AsNoTracking().SingleAsync(x => x.Id == userId);
-        var today = LocalDate(clock.UtcNow, user.TimeZoneId);
-        DomainError.Require(input.LocalDate == today, 409, "plan_day_changed", "Ngày học đã đổi. Hãy tải lịch mới trước khi lập lại.");
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId) ?? throw new DomainError(409, "enrollment_required", "Hãy tạo lộ trình trước.");
         await pathChoices.Resolve(enrollment);
+        UseAssignmentCalendar(enrollment, user);
+        var today = LocalDate(clock.UtcNow, user.TimeZoneId);
+        DomainError.Require(input.LocalDate == today, 409, "plan_day_changed", "Ngày học đã đổi. Hãy tải lịch mới trước khi lập lại.");
         var goal = await goals.Resolve(enrollment, user);
         await SyncCompleted(userId, today, user.TimeZoneId); await MarkMissed(userId, user.TimeZoneId);
         DomainError.Require(input.ExpectedEtag == await PlanEtag(enrollment, today, user.TimeZoneId, user.StudyDays), 412, "plan_conflict", "Nhiệm vụ đã đổi ở phiên khác. Hãy tải lại để xem trước khi lập lại.");
@@ -66,7 +67,7 @@ public sealed partial class LearningService
         receipts.Save(userId, scope, input.ClientRequestId, hash, enrollment.Id, ack); return ack;
     });
 
-    private static string Assignment(DailyTask task) => Receipts.Hash(new { task.ContentVersionId, task.PathVersionId, task.PathNodeId, task.SourceTaskId, task.GoalRevisionId, task.TimeZoneId, task.EstimatedMinutes });
+    private static string Assignment(DailyTask task) => Receipts.Hash(new { task.ContentVersionId, task.PathVersionId, task.PathNodeId, task.SourceTaskId, task.GoalRevisionId, task.PathChoiceRevisionId, task.TimeZoneId, task.EstimatedMinutes });
 
     /// <summary>VI: Token ràng buộc lịch, revision mục tiêu và phiên bản task theo owner. EN: Bind the owner calendar, active goal and relevant task versions into one plan token.</summary>
     private async Task<string> PlanEtag(Enrollment enrollment, DateOnly today, string zone, string studyDays)

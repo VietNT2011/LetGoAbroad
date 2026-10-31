@@ -5,6 +5,12 @@ namespace EnglishHub.Infrastructure.Learning;
 
 public sealed partial class LearningService
 {
+    public Task<PathChoiceAck> ChangePathCalendar(Guid userId, PathCalendarInput input) => tx.Run($"learning:{userId}", async () =>
+    {
+        var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId) ?? throw new DomainError(409, "enrollment_required", "Hãy tạo lộ trình trước.");
+        return await pathChoices.ScheduleCalendar(enrollment, input);
+    });
+
     public Task<object> PathChoiceHistory(Guid userId) => tx.Run($"learning:{userId}", async () =>
     {
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);

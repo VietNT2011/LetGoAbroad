@@ -42,23 +42,23 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         enrollment.PlacementAttemptId = input.StartFromBasics ? null : input.PlacementAttemptId;
         enrollment.SelectionReason = input.PathVersionId is not null ? "manual_template" : input.StartFromBasics ? "learner_basics" : "placement_demo_v1";
         if (path is not null) PinPath(enrollment, path, user);
-        db.Enrollments.Add(enrollment); await goals.Initialize(enrollment); await pathChoices.Initialize(enrollment,"enrollment"); return enrollment;
+        db.Enrollments.Add(enrollment); await goals.Initialize(enrollment); await pathChoices.Initialize(enrollment, "enrollment"); return enrollment;
     });
 
     /// <summary>VI: Ngày học tính trong timezone hồ sơ và được ghim vào task. EN: Resolve the local study date from the profile timezone and pin it to generated tasks.</summary>
     public Task<object> Dashboard(Guid userId) => tx.Run($"learning:{userId}", async () =>
     {
-        var user = await db.Users.SingleAsync(x => x.Id == userId);
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(clock.UtcNow, TimeZoneInfo.FindSystemTimeZoneById(user.TimeZoneId)).DateTime);
+        var user = await db.Users.AsNoTracking().SingleAsync(x => x.Id == userId);
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);
+        if (enrollment is not null) { await pathChoices.Resolve(enrollment); UseAssignmentCalendar(enrollment, user); }
+        var today = LocalDate(clock.UtcNow, user.TimeZoneId);
         if (enrollment is not null)
         {
-            await pathChoices.Resolve(enrollment);
             var goal = await goals.Resolve(enrollment, user);
             enrollment.TimeZoneId = user.TimeZoneId;
             await SyncCompleted(userId, today, user.TimeZoneId);
             await MarkMissed(userId, user.TimeZoneId);
-            var tasksExist = await db.DailyTasks.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending" && x.LocalDate < today));
+            var tasksExist = await db.DailyTasks.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending"));
             if (!tasksExist && user.StudyDays.Split(',').Contains(((int)today.DayOfWeek).ToString()))
             {
                 db.DailyTasks.AddRange(await BuildDailyTasks(enrollment, user, today, goal.Id, enrollment.MinutesPerDay, 3, 0, [], []));
@@ -66,7 +66,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             }
             await SyncCompleted(userId, today, user.TimeZoneId);
         }
-        var tasks = await db.DailyTasks.AsNoTracking().Where(x => x.UserId == userId && x.Status != "superseded" && (x.LocalDate == today || x.Status == "pending" && x.LocalDate < today)).OrderBy(x => x.LocalDate).ThenBy(x => x.SlotKey).Select(x => new
+        var tasks = await db.DailyTasks.AsNoTracking().Where(x => x.UserId == userId && x.Status != "superseded" && (x.LocalDate == today || x.Status == "pending")).OrderBy(x => x.LocalDate).ThenBy(x => x.SlotKey).Select(x => new
         {
             x.Id,
             x.ContentVersionId,
@@ -81,10 +81,12 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             x.PathNodeId,
             x.SourceTaskId,
             x.GoalRevisionId,
+            x.PathChoiceRevisionId,
             goalRevisionNumber = x.GoalRevision == null ? (int?)null : x.GoalRevision.Number,
             x.TimeZoneId,
             x.LocalDate,
             carriedFromPreviousDate = x.LocalDate < today,
+            carriedAcrossCalendar = x.TimeZoneId != user.TimeZoneId || x.LocalDate > today,
             activeAttemptId = db.Attempts.Where(a => a.UserId == userId && a.ContentVersionId == x.ContentVersionId && a.Status == AttemptStatus.InProgress && a.StartedAt >= x.CreatedAt && a.DeadlineAt > clock.UtcNow).OrderByDescending(a => a.StartedAt).Select(a => (Guid?)a.Id).FirstOrDefault()
         }).ToListAsync();
         var lessonsCompleted = await db.LessonProgress.CountAsync(x => x.UserId == userId);
@@ -94,12 +96,20 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         {
             localDate = today,
             timeZoneId = user.TimeZoneId,
+            usesPathCalendar = enrollment?.UsesPathCalendar ?? false,
             planEtag,
             enrollment = enrollment is null ? null : new { enrollment.Id, enrollment.Level, enrollment.TargetScore, enrollment.MinutesPerDay, enrollment.RuleVersion, enrollment.PlanRevision, enrollment.PathVersionId, enrollment.SelectionReason, enrollment.PathStartedOn },
             tasks,
             statistics = new { lessonsCompleted, attemptsCompleted = attempts.Count, questionsCorrect = attempts.Sum(x => x.CorrectCount), questionsObserved = attempts.Sum(x => x.TotalCount) }
         };
     });
+
+    // VI: Chỉ sửa bản profile không track dùng để chọn task; không ghi đè hồ sơ Identity. EN: Override only the untracked scheduling copy, never the persisted Identity profile.
+    private static void UseAssignmentCalendar(Enrollment enrollment, AppUser user)
+    {
+        if (!enrollment.UsesPathCalendar || enrollment.PathVersionId is null) return;
+        user.TimeZoneId = enrollment.PathTimeZoneId!; user.StudyDays = enrollment.PathStudyDays!;
+    }
 
     /// <summary>VI: Lượt kiểm tra sai chỉ trả feedback; lượt đúng mới ghi progress. EN: Incorrect checks return feedback; only successful evidence creates progress.</summary>
     public Task<LessonCheck> CompleteLesson(Guid user, Guid versionId, CompleteLessonInput input) => tx.Run($"learning:{user}", async () =>

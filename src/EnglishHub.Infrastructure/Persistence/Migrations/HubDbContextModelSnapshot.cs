@@ -415,6 +415,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("LocalDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("PathChoiceRevisionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("PathNodeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -461,6 +464,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ContentVersionId");
 
+                    b.HasIndex("EnrollmentId", "PathChoiceRevisionId");
+
                     b.HasIndex("EnrollmentId", "PathNodeId")
                         .IsUnique()
                         .HasFilter("[PathNodeId] IS NOT NULL AND [Status] = 'pending'");
@@ -501,6 +506,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(30)");
 
                     b.Property<int>("MinutesPerDay")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("PathCalendarAnchorOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("PathCalendarElapsedDays")
                         .HasColumnType("int");
 
                     b.Property<int>("PathRevisionNumber")
@@ -551,6 +562,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("UsesPathCalendar")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PathVersionId");
@@ -560,7 +574,10 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("Enrollments");
+                    b.ToTable("Enrollments", t =>
+                        {
+                            t.HasCheckConstraint("CK_Enrollment_Calendar", "[PathCalendarElapsedDays] >= 0");
+                        });
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.GradingKey", b =>
@@ -831,6 +848,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ActivatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<DateOnly?>("CalendarAnchorOn")
+                        .HasColumnType("date");
+
+                    b.Property<int>("CalendarElapsedDays")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("EffectiveAt")
                         .HasColumnType("datetimeoffset");
 
@@ -885,6 +908,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("UsesPathCalendar")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PathVersionId");
@@ -898,7 +924,7 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
                     b.ToTable("PathChoiceRevisions", t =>
                         {
-                            t.HasCheckConstraint("CK_PathChoice_Values", "[Number] >= 1 AND [EffectiveAt] >= [RecordedAt] AND ([ActivatedAt] IS NULL OR [ActivatedAt] >= [EffectiveAt]) AND (([PathVersionId] IS NULL AND [PathStartedOn] IS NULL) OR ([PathVersionId] IS NOT NULL AND [PathStartedOn] IS NOT NULL))");
+                            t.HasCheckConstraint("CK_PathChoice_Values", "[Number] >= 1 AND [CalendarElapsedDays] >= 0 AND [EffectiveAt] >= [RecordedAt] AND ([ActivatedAt] IS NULL OR [ActivatedAt] >= [EffectiveAt]) AND (([PathVersionId] IS NULL AND [PathStartedOn] IS NULL) OR ([PathVersionId] IS NOT NULL AND [PathStartedOn] IS NOT NULL))");
                         });
                 });
 
@@ -1651,6 +1677,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ContentVersionId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.PathChoiceRevision", null)
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId", "PathChoiceRevisionId")
+                        .HasPrincipalKey("EnrollmentId", "Id")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("EnglishHub.Domain.Enrollment", "Enrollment")
                         .WithMany()

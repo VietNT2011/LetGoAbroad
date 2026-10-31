@@ -14,8 +14,9 @@ public static class PathEndpoints
         learner.MapGet("/templates", async (HubDbContext db) => await db.PathVersions.AsNoTracking().Where(x => x.Status == PublicationStatus.Published && x.Template.CurrentPublishedVersionId == x.Id && x.Template.RetiredAt == null).OrderBy(x => x.Template.Slug)
             .Select(x => new { x.Id, x.TemplateId, x.Template.Slug, x.Template.Level, x.Version, x.Title, x.Summary, nodeCount = x.Stages.Sum(s => s.Nodes.Count), studyDays = x.Stages.SelectMany(s => s.Nodes).Max(n => n.StudyDay) }).ToListAsync());
         learner.MapGet("/path-plan", (ClaimsPrincipal user, LearningService service) => service.PathPlan(user.UserId()));
-        learner.MapGet("/path-revisions", (ClaimsPrincipal user, LearningService service)=>service.PathChoiceHistory(user.UserId()));
-        learner.MapPost("/enrollment/switch-path", (SwitchPathInput input,ClaimsPrincipal user,LearningService service)=>service.SwitchPath(user.UserId(),input));
+        learner.MapGet("/path-revisions", (ClaimsPrincipal user, LearningService service) => service.PathChoiceHistory(user.UserId()));
+        learner.MapPost("/enrollment/switch-path", (SwitchPathInput input, ClaimsPrincipal user, LearningService service) => service.SwitchPath(user.UserId(), input));
+        learner.MapPost("/enrollment/calendar", (PathCalendarInput input, ClaimsPrincipal user, LearningService service) => service.ChangePathCalendar(user.UserId(), input));
         learner.MapPost("/enrollment/adopt-path", async (AdoptPathInput input, ClaimsPrincipal user, LearningService service) => new { pathVersionId = await service.AdoptPath(user.UserId(), input) });
         var cms = app.MapGroup("/api/v1/admin").RequireAuthorization(p => p.RequireRole("Admin", "ContentEditor")).WithTags("Path CMS");
         cms.MapGet("/paths", async (HubDbContext db) => await db.PathVersions.AsNoTracking().OrderBy(x => x.Template.Slug).ThenByDescending(x => x.Version).Take(100).Select(x => new { x.Id, x.TemplateId, x.Template.Slug, x.Template.Level, x.Template.RetiredAt, x.Version, x.Title, x.Status, etag = Convert.ToBase64String(x.RowVersion) }).ToListAsync());

@@ -10,7 +10,7 @@ public sealed record SwitchPathInput(Guid ClientRequestId, Guid PathVersionId, s
 public sealed record PathChoiceAck(Guid RevisionId, Guid? PathVersionId, int Number, DateTimeOffset EffectiveAt, bool Changed);
 
 /// <summary>VI: Dùng dưới khóa learning; khi đặt chỗ mới phải lấy thêm path-catalog. EN: Use under the learning lock and also the catalog lock when reserving new admissions.</summary>
-public sealed class PathChoiceService(HubDbContext db, IClock clock, Receipts receipts)
+public sealed partial class PathChoiceService(HubDbContext db, IClock clock, Receipts receipts)
 {
     public async Task<PathChoiceRevision> Initialize(Enrollment enrollment, string action = "observed_baseline")
     {
@@ -66,9 +66,10 @@ public sealed class PathChoiceService(HubDbContext db, IClock clock, Receipts re
         if (!changed) choice = latest;
         else
         {
+            DomainError.Require(latest.EffectiveAt <= now || latest.Action != "calendar_change", 409, "calendar_change_pending", "Hãy giữ lịch đang áp dụng trước khi đặt lịch chuyển mẫu.");
             var user = await db.Users.AsNoTracking().SingleAsync(x => x.Id == enrollment.UserId);
             var pending = latest.EffectiveAt > now;
-            var zone = pending ? latest.SchedulingTimeZoneId : user.TimeZoneId;
+            var zone = pending ? latest.SchedulingTimeZoneId : active.UsesPathCalendar ? active.TimeZoneId : user.TimeZoneId;
             var effective = pending ? latest.EffectiveAt : GoalPlanService.NextMidnight(now, zone);
             var cancel = input.PathVersionId == active.PathVersionId;
             if (cancel)
@@ -80,12 +81,13 @@ public sealed class PathChoiceService(HubDbContext db, IClock clock, Receipts re
             {
                 var target = await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == input.PathVersionId && x.Status == PublicationStatus.Published && x.Template.RetiredAt == null)
                     ?? throw new DomainError(422, "path_unavailable", "Mẫu chưa được publish hoặc đã ngừng nhận đăng ký mới.");
-                choice = Snapshot(enrollment, checked(latest.Number + 1), effective, "manual_switch", input.Reason.Trim(), zone, user.StudyDays, now);
+                choice = Snapshot(enrollment, checked(latest.Number + 1), effective, "manual_switch", input.Reason.Trim(), zone, active.UsesPathCalendar ? active.StudyDays : user.StudyDays, now);
                 choice.PathVersionId = target.Id; choice.Level = target.Template.Level; choice.SelectionReason = "manual_switch";
                 choice.PathStartedOn = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(effective, zone).DateTime);
+                choice.CalendarAnchorOn = choice.PathStartedOn; choice.CalendarElapsedDays = 0;
                 // VI: Quay lại version đã học thì tiếp tục calendar cũ; reservation đã hủy không được tính là đã học. EN: Resume a previously activated version's calendar, excluding cancelled reservations.
                 var previous = await db.PathChoiceRevisions.AsNoTracking().Where(x => x.EnrollmentId == enrollment.Id && x.PathVersionId == target.Id && x.ActivatedAt != null).OrderByDescending(x => x.Number).FirstOrDefaultAsync();
-                if (previous is not null) { choice.PathStartedOn = previous.PathStartedOn; choice.TimeZoneId = previous.TimeZoneId; choice.StudyDays = previous.StudyDays; }
+                if (previous is not null) { choice.PathStartedOn = previous.PathStartedOn; choice.TimeZoneId = previous.TimeZoneId; choice.StudyDays = previous.StudyDays; choice.CalendarAnchorOn = previous.CalendarAnchorOn; choice.CalendarElapsedDays = previous.CalendarElapsedDays; choice.UsesPathCalendar = previous.UsesPathCalendar; }
             }
             choice.SchedulingTimeZoneId = zone;
             db.PathChoiceRevisions.Add(choice);
@@ -100,9 +102,11 @@ public sealed class PathChoiceService(HubDbContext db, IClock clock, Receipts re
     {
         await Initialize(enrollment); var observedAt = clock.UtcNow;
         var active = await ResolveAt(enrollment, observedAt); var latest = await Initialize(enrollment);
+        // VI: History đọc no-tracking phải thấy metadata vừa áp dụng trong transaction này. EN: Flush activation before projecting untracked history so its first response includes the observed timestamp.
+        await db.SaveChangesAsync();
         var rows = await db.PathChoiceRevisions.AsNoTracking().Include(x => x.PathVersion).Where(x => x.EnrollmentId == enrollment.Id).OrderByDescending(x => x.Number).Take(20).ToListAsync();
         if (rows.All(x => x.Id != active.Id)) rows.Add(await db.PathChoiceRevisions.AsNoTracking().Include(x => x.PathVersion).SingleAsync(x => x.Id == active.Id));
-        return new { expectedEtag = Token(enrollment, active, latest), activeRevisionId = active.Id, activePathVersionId = active.PathVersionId, revisions = rows.OrderByDescending(x => x.Number).Select(x => new { x.Id, x.Number, x.PathVersionId, title = x.PathVersion == null ? "Lịch theo danh mục" : x.PathVersion.Title, version = x.PathVersion == null ? (int?)null : x.PathVersion.Version, x.Level, x.PlacementAttemptId, x.PathStartedOn, x.TimeZoneId, x.StudyDays, x.RecordedAt, x.EffectiveAt, x.ActivatedAt, x.SchedulingTimeZoneId, x.Action, x.SelectionReason, x.UserReason, status = x.Id == active.Id ? "active" : rows.Any(newer => newer.Number > x.Number && newer.EffectiveAt <= x.EffectiveAt) ? "superseded" : x.EffectiveAt > observedAt ? "scheduled" : "past" }).ToArray() };
+        return new { expectedEtag = Token(enrollment, active, latest), activeRevisionId = active.Id, activePathVersionId = active.PathVersionId, revisions = rows.OrderByDescending(x => x.Number).Select(x => new { x.Id, x.Number, x.PathVersionId, title = x.PathVersion == null ? "Lịch theo danh mục" : x.PathVersion.Title, version = x.PathVersion == null ? (int?)null : x.PathVersion.Version, x.Level, x.PlacementAttemptId, x.PathStartedOn, x.TimeZoneId, x.StudyDays, x.UsesPathCalendar, x.CalendarAnchorOn, x.CalendarElapsedDays, x.RecordedAt, x.EffectiveAt, x.ActivatedAt, x.SchedulingTimeZoneId, x.Action, x.SelectionReason, x.UserReason, status = x.Id == active.Id ? "active" : rows.Any(newer => newer.Number > x.Number && newer.EffectiveAt <= x.EffectiveAt) ? "superseded" : x.EffectiveAt > observedAt ? "scheduled" : "past" }).ToArray() };
     }
 
     private static PathChoiceRevision Snapshot(Enrollment e, int number, DateTimeOffset effective, string action, string reason, string zone, string days, DateTimeOffset recordedAt) => new()
@@ -116,6 +120,9 @@ public sealed class PathChoiceService(HubDbContext db, IClock clock, Receipts re
         PathStartedOn = e.PathStartedOn,
         TimeZoneId = zone,
         StudyDays = days,
+        UsesPathCalendar = e.UsesPathCalendar,
+        CalendarAnchorOn = e.PathCalendarAnchorOn,
+        CalendarElapsedDays = e.PathCalendarElapsedDays,
         RecordedAt = recordedAt,
         EffectiveAt = effective,
         SchedulingTimeZoneId = zone,
@@ -127,6 +134,7 @@ public sealed class PathChoiceService(HubDbContext db, IClock clock, Receipts re
     {
         e.PathRevisionNumber = revision.Number; e.PathVersionId = revision.PathVersionId; e.Level = revision.Level; e.SelectionReason = revision.SelectionReason; e.PathStartedOn = revision.PathStartedOn;
         e.PathTimeZoneId = revision.PathVersionId is null ? null : revision.TimeZoneId; e.PathStudyDays = revision.PathVersionId is null ? null : revision.StudyDays;
+        e.UsesPathCalendar = revision.UsesPathCalendar; e.PathCalendarAnchorOn = revision.CalendarAnchorOn; e.PathCalendarElapsedDays = revision.CalendarElapsedDays;
     }
     private static string Token(Enrollment enrollment, PathChoiceRevision active, PathChoiceRevision latest) => $"\"path-choice-{Receipts.Hash(new { enrollment.Id, active = active.Id, latest = latest.Id })}\"";
 }

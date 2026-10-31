@@ -16,6 +16,7 @@ public sealed partial class LearningService
         enrollment.PathVersionId = version.Id; enrollment.Level = version.Template.Level;
         enrollment.PathStartedOn = LocalDate(clock.UtcNow, user.TimeZoneId);
         enrollment.PathTimeZoneId = user.TimeZoneId; enrollment.PathStudyDays = user.StudyDays;
+        enrollment.PathCalendarAnchorOn = enrollment.PathStartedOn; enrollment.PathCalendarElapsedDays = 0; enrollment.UsesPathCalendar = false;
     }
 
     /// <summary>VI: Người dùng cũ chọn mẫu rõ ràng; giữ task đang có của hôm nay. EN: Legacy learners explicitly adopt a published template while retaining their existing daily assignments.</summary>
@@ -37,13 +38,13 @@ public sealed partial class LearningService
     public Task<object> PathPlan(Guid userId) => tx.Run($"learning:{userId}", async () =>
     {
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);
-        if(enrollment is not null) await pathChoices.Resolve(enrollment);
+        if (enrollment is not null) await pathChoices.Resolve(enrollment);
         if (enrollment?.PathVersionId is null) return (object)new { template = (object?)null, nodes = Array.Empty<object>(), studyDay = 0, legacy = enrollment is not null };
         await SyncCompleted(userId, LocalDate(clock.UtcNow, enrollment.TimeZoneId), enrollment.TimeZoneId);
         var state = await ReadPathState(enrollment);
         return (object)new
         {
-            template = new { state.Version.Id, state.Version.TemplateId, state.Version.Template.Slug, state.Version.Template.Level, state.Version.Version, state.Version.Title, state.Version.Summary, state.Version.Attribution, enrollment.PathStartedOn, enrollment.PathTimeZoneId, enrollment.PathStudyDays },
+            template = new { state.Version.Id, state.Version.TemplateId, state.Version.Template.Slug, state.Version.Template.Level, state.Version.Version, state.Version.Title, state.Version.Summary, state.Version.Attribution, enrollment.PathStartedOn, enrollment.PathTimeZoneId, enrollment.PathStudyDays, enrollment.UsesPathCalendar, enrollment.PathCalendarAnchorOn, enrollment.PathCalendarElapsedDays },
             state.StudyDay,
             enrollment.PathRevisionNumber,
             legacy = false,
@@ -77,7 +78,7 @@ public sealed partial class LearningService
         var completed = (await db.TaskCompletions.Where(x => x.DailyTask.EnrollmentId == enrollment.Id && x.DailyTask.PathNodeId != null).Select(x => x.DailyTask.PathNodeId!.Value).ToArrayAsync()).ToHashSet();
         completed.UnionWith(nodes.Where(n => n.CompletionRule == "lesson_quiz" && learned.Contains(n.ContentVersionId)).Select(n => n.Id));
         var missed = (await db.DailyTasks.AsNoTracking().Where(x => x.EnrollmentId == enrollment.Id && x.PathNodeId != null && x.Status == "missed").OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id).ToListAsync()).GroupBy(x => x.PathNodeId!.Value).ToDictionary(g => g.Key, g => g.First());
-        var day = PathScheduler.StudyDay(enrollment.PathStartedOn!.Value, LocalDate(clock.UtcNow, enrollment.PathTimeZoneId!), enrollment.PathStudyDays!);
+        var day = checked(enrollment.PathCalendarElapsedDays + PathScheduler.StudyDay(enrollment.PathCalendarAnchorOn ?? enrollment.PathStartedOn!.Value, LocalDate(clock.UtcNow, enrollment.PathTimeZoneId!), enrollment.PathStudyDays!));
         return new(version, nodes, completed, day, missed);
     }
 
@@ -88,6 +89,7 @@ public sealed partial class LearningService
         var candidates = state.Nodes.Select((node, order) => (node, order)).Where(x => !state.Completed.Contains(x.node.Id) && !pending.Contains(x.node.Id) && !reservedContent.Contains(x.node.ContentVersionId) && x.node.StudyDay <= state.StudyDay && x.node.Prerequisites.All(p => state.Completed.Contains(p.PrerequisiteNodeId)))
             .Select(x => new PathCandidate(x.node.Id, x.node.ContentVersionId, x.node.ContentVersion.Root.Kind == ContentKind.Lesson ? "lesson" : "assessment", x.node.ContentVersion.Minutes, x.node.StudyDay, x.order, state.Missed.GetValueOrDefault(x.node.Id)?.Id));
         var selected = PathScheduler.Select(candidates, budget).Take(limit);
+        var choiceId = await db.PathChoiceRevisions.Where(x => x.EnrollmentId == enrollment.Id && x.Number == enrollment.PathRevisionNumber).Select(x => (Guid?)x.Id).SingleAsync();
         return selected.Select((item, slot) =>
         {
             var node = state.Nodes.Single(x => x.Id == item.NodeId);
@@ -104,6 +106,7 @@ public sealed partial class LearningService
                 EstimatedMinutes = item.Minutes,
                 TimeZoneId = user.TimeZoneId,
                 GoalRevisionId = goalRevision,
+                PathChoiceRevisionId = choiceId,
                 CreatedAt = clock.UtcNow,
                 ReasonCode = item.SourceTaskId is not null ? "PATH_CARRYOVER" : item.Kind == "lesson" ? "PREREQUISITE_READY" : "PATH_PRACTICE",
                 ReasonText = item.SourceTaskId is not null ? $"Tiếp tục nhiệm vụ từ {state.Missed[node.Id].LocalDate:dd/MM}; giữ nội dung và version lộ trình." : $"{node.Stage.Title} · ngày học gợi ý {node.StudyDay}, lộ trình v{state.Version.Version}; đã đủ điều kiện tiên quyết."

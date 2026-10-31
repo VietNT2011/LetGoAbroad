@@ -19,6 +19,10 @@ public sealed class Enrollment : VersionedEntity
     public DateOnly? PathStartedOn { get; set; }
     public string? PathTimeZoneId { get; set; }
     public string? PathStudyDays { get; set; }
+    // VI: Calendar riêng chỉ bật sau lựa chọn rõ ràng; anchor giữ các ngày trước đổi lịch. EN: Explicit path calendars retain elapsed study days before their new anchor.
+    public bool UsesPathCalendar { get; set; }
+    public DateOnly? PathCalendarAnchorOn { get; set; }
+    public int PathCalendarElapsedDays { get; set; }
 }
 public sealed class DailyTask : VersionedEntity
 {
@@ -43,6 +47,7 @@ public sealed class DailyTask : VersionedEntity
     public string? TimeZoneId { get; set; }
     public Guid? GoalRevisionId { get; set; }
     public PlanGoalRevision? GoalRevision { get; set; }
+    public Guid? PathChoiceRevisionId { get; set; }
 }
 public sealed class LessonProgress : VersionedEntity
 {
