@@ -28,13 +28,16 @@ public sealed partial class LearningService
         DomainError.Require(enrollment.PathVersionId is null, 409, "path_already_pinned", "Enrollment đã ghim một version; không tự chuyển sang mẫu mới.");
         var version = await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == input.PathVersionId && x.Status == PublicationStatus.Published && x.Template.RetiredAt == null) ?? throw new DomainError(422, "path_unavailable", "Mẫu chưa được publish hoặc đã ngừng nhận đăng ký mới.");
         var user = await db.Users.SingleAsync(x => x.Id == userId);
+        await pathChoices.Initialize(enrollment);
         PinPath(enrollment, version, user); enrollment.SelectionReason = "legacy_adoption";
+        await pathChoices.RecordAdoption(enrollment);
         receipts.Save(userId, "adopt-path", input.ClientRequestId, hash, version.Id, new { version.Id }); return version.Id;
     });
 
     public Task<object> PathPlan(Guid userId) => tx.Run($"learning:{userId}", async () =>
     {
-        var enrollment = await db.Enrollments.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == userId);
+        var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);
+        if(enrollment is not null) await pathChoices.Resolve(enrollment);
         if (enrollment?.PathVersionId is null) return (object)new { template = (object?)null, nodes = Array.Empty<object>(), studyDay = 0, legacy = enrollment is not null };
         await SyncCompleted(userId, LocalDate(clock.UtcNow, enrollment.TimeZoneId), enrollment.TimeZoneId);
         var state = await ReadPathState(enrollment);
@@ -42,6 +45,7 @@ public sealed partial class LearningService
         {
             template = new { state.Version.Id, state.Version.TemplateId, state.Version.Template.Slug, state.Version.Template.Level, state.Version.Version, state.Version.Title, state.Version.Summary, state.Version.Attribution, enrollment.PathStartedOn, enrollment.PathTimeZoneId, enrollment.PathStudyDays },
             state.StudyDay,
+            enrollment.PathRevisionNumber,
             legacy = false,
             nodes = state.Nodes.Select(node => new
             {

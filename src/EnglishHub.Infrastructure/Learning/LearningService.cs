@@ -14,7 +14,7 @@ public sealed record LessonFeedback(Guid QuestionId, bool IsCorrect, Guid? Corre
 public sealed record LessonCheck(bool Completed, LessonFeedback[] Feedback);
 
 /// <summary>VI: Tiến độ dựa trên quiz/kết quả đã lưu. EN: Completion comes from persisted quiz evidence, never from simply opening a page.</summary>
-public sealed partial class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, PathService paths, GoalPlanService goals)
+public sealed partial class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, PathService paths, GoalPlanService goals, PathChoiceService pathChoices)
 {
     /// <summary>VI: Khóa theo user ngăn hai enrollment từ nhiều tab. EN: A user-level lock prevents duplicate enrollment across tabs or API instances.</summary>
     public Task<Enrollment> Enroll(Guid userId, EnrollInput input) => tx.Run($"learning:{userId}", async () =>
@@ -42,7 +42,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         enrollment.PlacementAttemptId = input.StartFromBasics ? null : input.PlacementAttemptId;
         enrollment.SelectionReason = input.PathVersionId is not null ? "manual_template" : input.StartFromBasics ? "learner_basics" : "placement_demo_v1";
         if (path is not null) PinPath(enrollment, path, user);
-        db.Enrollments.Add(enrollment); await goals.Initialize(enrollment); return enrollment;
+        db.Enrollments.Add(enrollment); await goals.Initialize(enrollment); await pathChoices.Initialize(enrollment,"enrollment"); return enrollment;
     });
 
     /// <summary>VI: Ngày học tính trong timezone hồ sơ và được ghim vào task. EN: Resolve the local study date from the profile timezone and pin it to generated tasks.</summary>
@@ -53,6 +53,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);
         if (enrollment is not null)
         {
+            await pathChoices.Resolve(enrollment);
             var goal = await goals.Resolve(enrollment, user);
             enrollment.TimeZoneId = user.TimeZoneId;
             await SyncCompleted(userId, today, user.TimeZoneId);

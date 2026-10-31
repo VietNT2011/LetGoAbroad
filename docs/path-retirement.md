@@ -15,6 +15,6 @@ EN: `PathTemplate.RetiredAt` is admission metadata outside the immutable publish
 
 VI: CMS giữ nguyên JSON đang soạn khi đổi trạng thái nhận đăng ký. Sau ACK, giao diện chỉ đọc lại metadata mới nhất để tránh coi một receipt cũ là trạng thái hiện tại. Xung đột giữ bản đang soạn và yêu cầu người dùng tải version muốn xem; không tự ghi đè draft.
 
-EN: This lifecycle manages future admissions. It preserves access for existing pinned learners; content takedown, deleting histories and switching an enrollment to a different template require separate policies. When no matching active template exists, the existing optional legacy/catalog enrollment fallback remains; no retired template is silently pinned.
+EN: This lifecycle manages future admissions. It preserves existing pins and [scheduled switch reservations](path-switching.md) committed before retirement. New switch reservations are checked under the same catalog lock as enrollment/adoption. Content takedown and deleting histories require separate policies. When no matching active template exists, the optional legacy/catalog enrollment fallback remains; no retired template is silently pinned.
 
 Relational tests cover discovery/direct-ID exclusion, legacy adoption, continued learning on an existing pin, immutable graph/ETag, restore and replay after restore, publication guards, Admin/CSRF enforcement, competing writes and enrollment/retirement races.

@@ -10,6 +10,7 @@ public sealed class Enrollment : VersionedEntity
     public string TimeZoneId { get; set; } = "Asia/Ho_Chi_Minh";
     public int RuleVersion { get; set; } = 1;
     public int PlanRevision { get; set; } = 1;
+    public int PathRevisionNumber { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public Guid? PathVersionId { get; set; }
     public PathVersion? PathVersion { get; set; }

@@ -43,6 +43,7 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
         ConfigureLearning(b);
         ConfigurePaths(b);
         ConfigureGoalRevisions(b);
+        ConfigurePathChoices(b);
         ConfigureReview(b);
         ConfigureLessonAnnotations(b);
         ConfigureCommunity(b);
@@ -64,6 +65,7 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
     partial void ConfigureLearning(ModelBuilder b);
     partial void ConfigurePaths(ModelBuilder b);
     partial void ConfigureGoalRevisions(ModelBuilder b);
+    partial void ConfigurePathChoices(ModelBuilder b);
     partial void ConfigureReview(ModelBuilder b);
     partial void ConfigureLessonAnnotations(ModelBuilder b);
     partial void ConfigureCommunity(ModelBuilder b);

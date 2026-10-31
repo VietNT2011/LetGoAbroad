@@ -503,6 +503,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<int>("MinutesPerDay")
                         .HasColumnType("int");
 
+                    b.Property<int>("PathRevisionNumber")
+                        .HasColumnType("int");
+
                     b.Property<DateOnly?>("PathStartedOn")
                         .HasColumnType("date");
 
@@ -812,6 +815,91 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("ProcessedAt", "OccurredAt");
 
                     b.ToTable("OutboxEvents");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathChoiceRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTimeOffset?>("ActivatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("EffectiveAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("EnrollmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("PathStartedOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid?>("PathVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PlacementAttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("SchedulingTimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<string>("SelectionReason")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StudyDays")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("UserReason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PathVersionId");
+
+                    b.HasIndex("PlacementAttemptId");
+
+                    b.HasIndex("EnrollmentId", "Number")
+                        .IsUnique();
+
+                    b.HasIndex("EnrollmentId", "UserId");
+
+                    b.ToTable("PathChoiceRevisions", t =>
+                        {
+                            t.HasCheckConstraint("CK_PathChoice_Values", "[Number] >= 1 AND [EffectiveAt] >= [RecordedAt] AND ([ActivatedAt] IS NULL OR [ActivatedAt] >= [EffectiveAt]) AND (([PathVersionId] IS NULL AND [PathStartedOn] IS NULL) OR ([PathVersionId] IS NOT NULL AND [PathStartedOn] IS NOT NULL))");
+                        });
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.PathNode", b =>
@@ -1675,6 +1763,30 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathChoiceRevision", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.PathVersion", "PathVersion")
+                        .WithMany()
+                        .HasForeignKey("PathVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.Attempt", null)
+                        .WithMany()
+                        .HasForeignKey("PlacementAttemptId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.Enrollment", "Enrollment")
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Enrollment");
+
+                    b.Navigation("PathVersion");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.PathNode", b =>

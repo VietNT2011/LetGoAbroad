@@ -50,6 +50,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
    Khi hai tab sửa cấu hình, tab cũ giữ bản đang nhập và yêu cầu [so sánh với server](docs/profile-concurrency.md) trước khi lưu lại.
    Dashboard hiển thị [dữ liệu kỹ năng gần đây](docs/skill-evidence.md): tối đa 50 câu khác nhau, luôn có số mẫu, dưới 5 câu ghi chưa đủ dữ liệu; tách bài luyện và full mock theo lịch sử mở lời giải.
    Có thể [lập lại nhiệm vụ hôm nay](docs/regeneration.md): giữ bài đã bắt đầu/hoàn thành, thay phần chưa bắt đầu trong ngân sách còn lại; hai tab dùng snapshot cũ sẽ được yêu cầu tải lại.
+   Trang Lộ trình cho [đặt lịch chuyển mẫu và hủy yêu cầu](docs/path-switching.md), giữ lịch hôm nay và lịch sử lý do/placement; mẫu mới áp dụng từ mốc nửa đêm đã ghi nhận.
 3. Chọn mini test hoặc practice theo Part/số câu. Preview hiển thị số câu thật vì nhóm câu được giữ nguyên.
 4. Chọn đáp án, xem trạng thái autosave, nộp bài và đọc lời giải. Mở hai tab có thể thử ETag conflict; submit lặp không tạo kết quả thứ hai.
    Đánh dấu câu khi làm bài, viết ghi chú riêng ở trang chữa bài và tìm lại tại **Câu đã lưu & ghi chú**. Note/bookmark gắn đúng version câu hỏi; xóa note giữ nguyên kết quả và bookmark. Xem [quy tắc ghi chú](docs/annotations.md).

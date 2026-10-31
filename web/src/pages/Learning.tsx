@@ -14,6 +14,7 @@ import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAuth } from "../Auth";
 import "./learning.css";
 import { SkillEvidence } from "./SkillEvidence";
+import { PathChoices } from "./PathChoices";
 import {
   PathTimeline,
   type PathPlan,
@@ -508,6 +509,15 @@ export function PathsPage() {
               </div>
             </>
           )}
+          {plan.data?.template ? (
+            <PathChoices
+              templates={templates.data ?? []}
+              onChanged={() => {
+                plan.reload();
+                dashboard.reload();
+              }}
+            />
+          ) : null}
         </>
       )}
     </>

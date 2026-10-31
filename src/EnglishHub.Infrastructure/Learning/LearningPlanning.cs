@@ -40,6 +40,7 @@ public sealed partial class LearningService
         var today = LocalDate(clock.UtcNow, user.TimeZoneId);
         DomainError.Require(input.LocalDate == today, 409, "plan_day_changed", "Ngày học đã đổi. Hãy tải lịch mới trước khi lập lại.");
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId) ?? throw new DomainError(409, "enrollment_required", "Hãy tạo lộ trình trước.");
+        await pathChoices.Resolve(enrollment);
         var goal = await goals.Resolve(enrollment, user);
         await SyncCompleted(userId, today, user.TimeZoneId); await MarkMissed(userId, user.TimeZoneId);
         DomainError.Require(input.ExpectedEtag == await PlanEtag(enrollment, today, user.TimeZoneId, user.StudyDays), 412, "plan_conflict", "Nhiệm vụ đã đổi ở phiên khác. Hãy tải lại để xem trước khi lập lại.");
@@ -71,7 +72,7 @@ public sealed partial class LearningService
     private async Task<string> PlanEtag(Enrollment enrollment, DateOnly today, string zone, string studyDays)
     {
         var tasks = await db.DailyTasks.AsNoTracking().Where(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending")).Select(x => new { x.Id, x.RowVersion }).ToArrayAsync();
-        return $"\"plan-{Receipts.Hash(new { today, zone, studyDays, enrollment.Id, enrollment.PathVersionId, enrollment.PlanRevision, tasks = tasks.OrderBy(x => x.Id).ToArray() })}\"";
+        return $"\"plan-{Receipts.Hash(new { today, zone, studyDays, enrollment.Id, enrollment.PathVersionId, enrollment.PathRevisionNumber, enrollment.PlanRevision, tasks = tasks.OrderBy(x => x.Id).ToArray() })}\"";
     }
 
     /// <summary>VI: Dashboard và regenerate dùng chung lựa chọn; phần đã giữ tiêu ngân sách trước. EN: Dashboard and regeneration share selection after reserving protected assignments' budget.</summary>
