@@ -18,10 +18,14 @@ The [Exam Practice reading/grammar starter](exam-curriculum.md) was added on **1
 
 Packaged Exam UI checks explicitly enrolled the unused second demo learner at 0/8, verified the two-question incomplete-quiz guard without submission, and previewed one-question requests as whole groups of four/five without starting attempts. The 320px viewport retained all eight node titles and prerequisite captions with 305px client/scroll width. The viewport and main session were restored; API comparison confirmed the existing Foundation/Core path-plan payloads were unchanged, and the main statistics remained 1 lesson / 3 attempts / 4 of 29. Exam stayed at zero completed steps and zero attempts.
 
+The [7/30-day learning activity view](learning-activity.md) was verified on **17–18/11/2026**. Thirteen relational cases cover source-count policy, zero-filled bounded windows, exact UTC/local edges, both DST transitions, Samoa's skipped date, owner isolation, fixtures/modes/results, archived content, disclosed full-mock participation, profile-timezone re-bucketing and idempotent lesson/submit receipt replay. A failed cold SQL/media run (43 passed / 154 failed) exposed SQL memory exhaustion and an expired fixture SAS grant. Collection setup is now serial and the upload fixture refreshes its clock after login; concurrency tests still send parallel commands and the strict post-delete HTTP404 check remains. See [testing](testing.md) for the diagnosis and guarded fixture cleanup. Final successful runs are below.
+
+Packaged activity UI checks switched 7→30→7→30 and refreshed without mixing window labels, opened/closed the daily table with Enter, and retained 30 data rows plus scoped headers. At a 320px viewport, client/scroll width were both 305px and the table was 239px wide; the viewport was reset afterward. The main learner's 30-day view showed 1 completed lesson, 3 graded practice attempts, 0 full mocks and 2 active days; all three learners had zero activities in the latest 7 days. Read-only API probes checked 401/422 responses and unchanged path/attempt payloads, statistics and pins: Foundation 1/18, Exam 0/8, Core 0/10. No learner was graded during this verification. Screenshot and probe JSON are included in the handover outputs.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **184 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **178 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **197 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **191 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

@@ -1,0 +1,213 @@
+.learning-activity {
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.learning-activity > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 24px;
+  cursor: pointer;
+  list-style: none;
+}
+.learning-activity > summary::-webkit-details-marker {
+  display: none;
+}
+.learning-activity > summary .eyebrow {
+  display: block;
+  margin-bottom: 8px;
+}
+.activity-title {
+  font-size: 20px;
+  font-weight: 750;
+}
+.learning-activity[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.activity-content {
+  padding: 0 24px 24px;
+}
+.activity-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.activity-controls [role="group"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.activity-controls [aria-pressed] {
+  min-height: 44px;
+  padding: 9px 15px;
+  border: 1px solid var(--control-line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.activity-controls [aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+.activity-period,
+.activity-policy {
+  color: var(--text-muted);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.activity-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+.activity-totals > div {
+  border-top: 4px solid var(--success);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--surface-subtle);
+}
+.activity-totals > div:nth-child(2) {
+  border-color: var(--primary);
+}
+.activity-totals > div:nth-child(3) {
+  border-color: var(--warning);
+}
+.activity-totals dt {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.activity-totals dd {
+  margin: 8px 0 0;
+  font-size: 28px;
+  font-weight: 750;
+}
+.activity-empty {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+.activity-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px 8px;
+  padding: 12px 0;
+  list-style: none;
+}
+.activity-days-long {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+}
+.activity-days li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.activity-days b {
+  font-size: 13px;
+}
+.activity-days time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.activity-bar {
+  display: flex;
+  flex-direction: column-reverse;
+  width: min(100%, 30px);
+  height: 44px;
+  background: var(--surface-subtle);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.activity-bar i {
+  display: block;
+  flex-shrink: 0;
+}
+.activity-bar-lesson {
+  background: var(--success);
+}
+.activity-bar-practice {
+  background: var(--primary);
+}
+.activity-bar-mock {
+  background: var(--warning);
+}
+.activity-table > summary {
+  padding: 12px 0;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--primary-dark);
+  font-weight: 650;
+}
+.activity-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.activity-table caption {
+  text-align: left;
+  padding: 10px 0;
+  color: var(--text-muted);
+}
+.activity-table th,
+.activity-table td {
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+.activity-table th:first-child {
+  text-align: left;
+}
+.activity-policy {
+  margin-bottom: 0;
+  font-size: 13px;
+}
+@media (max-width: 650px) {
+  .activity-days-long {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+@media (max-width: 400px) {
+  .learning-activity > summary {
+    padding: 20px 16px;
+  }
+  .activity-content {
+    padding: 0 16px 20px;
+  }
+  .activity-title {
+    font-size: 18px;
+  }
+  .activity-totals {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .activity-totals > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .activity-totals dd {
+    margin: 0;
+  }
+  .activity-days {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .activity-table table {
+    font-size: 12px;
+  }
+  .activity-table th,
+  .activity-table td {
+    padding-inline: 3px;
+  }
+}
