@@ -586,6 +586,68 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("GradingKey");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.LessonAnnotation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("AnchorEnd")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AnchorStart")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BlockKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsHighlighted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("NoteText")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Quote")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentVersionId");
+
+                    b.HasIndex("UserId", "ContentVersionId", "IsDeleted");
+
+                    b.HasIndex("UserId", "UpdatedAt", "Id");
+
+                    b.ToTable("LessonAnnotations", t =>
+                        {
+                            t.HasCheckConstraint("CK_LessonAnnotation_Anchor", "[BlockKey] = 'body' AND [AnchorStart] >= 0 AND [AnchorEnd] > [AnchorStart] AND [AnchorEnd] - [AnchorStart] <= 4000");
+                        });
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.LessonProgress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1556,6 +1618,23 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("EnglishHub.Domain.GradingKey", "AttemptItemId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.LessonAnnotation", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ContentVersion", "ContentVersion")
+                        .WithMany()
+                        .HasForeignKey("ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.LessonProgress", b =>

@@ -4,6 +4,7 @@ import { Bookmark, CheckCircle2, Save } from "lucide-react";
 import { api, ApiError } from "../api";
 import { useResource, ErrorNotice, Loading } from "../hooks";
 import "./annotations.css";
+import { SavedLessonNotes } from "./LessonNotes";
 
 export type Annotation = {
   id: string;
@@ -309,6 +310,7 @@ export default function SavedQuestionsPage() {
           Trang tiếp
         </button>
       </div>
+      <SavedLessonNotes />
     </>
   );
 }

@@ -44,6 +44,7 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
         ConfigurePaths(b);
         ConfigureGoalRevisions(b);
         ConfigureReview(b);
+        ConfigureLessonAnnotations(b);
         ConfigureCommunity(b);
         ConfigureOperations(b);
         foreach (var type in b.Model.GetEntityTypes().Where(x => typeof(VersionedEntity).IsAssignableFrom(x.ClrType)))
@@ -64,6 +65,7 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
     partial void ConfigurePaths(ModelBuilder b);
     partial void ConfigureGoalRevisions(ModelBuilder b);
     partial void ConfigureReview(ModelBuilder b);
+    partial void ConfigureLessonAnnotations(ModelBuilder b);
     partial void ConfigureCommunity(ModelBuilder b);
     partial void ConfigureOperations(ModelBuilder b);
 

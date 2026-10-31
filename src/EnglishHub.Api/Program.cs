@@ -60,6 +60,7 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
 }
 app.MapIdentity();
 app.MapContent();
+app.MapLessonAnnotations();
 app.MapAssessment();
 app.MapLearning();
 app.MapPaths();

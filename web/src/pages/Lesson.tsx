@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { post } from "../api";
 import "./learning.css";
 import { AudioPlayer } from "./Media";
+import { LessonNotes } from "./LessonNotes";
 type LessonData = {
   id: string;
   title: string;
@@ -14,6 +15,7 @@ type LessonData = {
   minutes: number;
   attribution: string;
   version: number;
+  archived: boolean;
   mediaAssetId: string | null;
   quiz: {
     id: string;
@@ -153,12 +155,14 @@ export default function Lesson() {
           {data.mediaAssetId ? (
             <AudioPlayer assetId={data.mediaAssetId} />
           ) : null}
-          <div className="lesson-body">
-            {data.body.split("\n\n").map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
-            ))}
-          </div>
-          <LessonQuiz lesson={data} />
+          {data.archived ? (
+            <p className="notice">
+              Phiên bản đã lưu trữ · Bạn đang xem lại nguồn của ghi chú riêng.
+              Quiz hoàn thành không còn khả dụng.
+            </p>
+          ) : null}
+          <LessonNotes key={data.id} versionId={data.id} body={data.body} />
+          {!data.archived ? <LessonQuiz key={data.id} lesson={data} /> : null}
           <div className="source-note">
             Nguồn / Attribution: {data.attribution}
           </div>

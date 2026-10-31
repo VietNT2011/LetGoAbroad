@@ -8,7 +8,7 @@ EN: Every read and write derives the owner from the authenticated session. An ad
 
 VI: `AnchorBlock` nhận `prompt` hoặc `stimulus` của snapshot câu hỏi. Khoảng là offset UTF-16, đầu bao gồm/cuối không bao gồm, nằm trong đúng block và không được cắt đôi surrogate pair. UI hiện gắn toàn bộ prompt; API hỗ trợ khoảng con. Annotation giữ ContentVersion thông qua FK tới snapshot attempt bất biến. Publish version mới tạo QuestionId mới và không chuyển ghi chú lịch sử sang câu mới.
 
-EN: Text-selection highlights and lesson-body notes are still pending. This feature is question bookmarking and private notes; it is not the P1 mistake scheduler, vocabulary cards or spaced repetition.
+EN: [Lesson-body selection highlights and notes](lesson-notes.md) have a separate owner/version store. This question feature remains distinct from the P1 mistake scheduler, vocabulary cards and spaced repetition.
 
 ## API
 

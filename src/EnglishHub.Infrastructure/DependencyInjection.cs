@@ -48,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<Receipts>();
         services.AddScoped<AssessmentService>();
         services.AddScoped<AnnotationService>();
+        services.AddScoped<LessonAnnotationService>();
         services.AddScoped<LearningService>();
         services.AddScoped<PathService>();
         services.AddScoped<GoalPlanService>();

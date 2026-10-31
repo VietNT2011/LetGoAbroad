@@ -18,9 +18,9 @@ public static class ContentEndpoints
             if (!string.IsNullOrWhiteSpace(search)) query = query.Where(x => x.Title.Contains(search));
             return await query.OrderBy(x => x.Root.Slug).Take(100).Select(x => new { x.Id, x.RootId, x.Root.Slug, x.Root.Kind, x.Title, x.Summary, x.Skill, x.Minutes, x.DurationSeconds, x.IsFixture, x.Version, questionCount = x.Groups.Sum(g => g.Questions.Count) }).ToListAsync();
         }).WithTags("Content");
-        app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, HubDbContext db) =>
+        app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, ClaimsPrincipal user, HubDbContext db) =>
         {
-            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && x.Status == PublicationStatus.Published && x.Root.Kind == ContentKind.Lesson).Select(x => new
+            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && (x.Status == PublicationStatus.Published || x.Status == PublicationStatus.Archived && db.LessonAnnotations.Any(n => n.UserId == user.UserId() && n.ContentVersionId == id)) && x.Root.Kind == ContentKind.Lesson).Select(x => new
             {
                 x.Id,
                 x.Title,
@@ -30,6 +30,7 @@ public static class ContentEndpoints
                 x.Minutes,
                 x.Attribution,
                 x.Version,
+                archived = x.Status == PublicationStatus.Archived,
                 x.MediaAssetId,
                 quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, q.Type, options = q.Options.Select(o => new { o.Id, o.Text }) })
             }).SingleOrDefaultAsync();
