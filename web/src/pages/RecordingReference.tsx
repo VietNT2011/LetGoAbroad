@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import { AudioPlayer } from "./Media";
+import { recordingSourceSuggestion } from "../recordingSource";
 
 type Reference = {
   id: string;
@@ -10,15 +11,14 @@ type Reference = {
   attribution: string;
   mediaAssetId: string | null;
 };
-const versionPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** VI: Chỉ chọn version bài học; asset mẫu luôn lấy từ API có kiểm quyền. EN: Resolve the sample through an authorized lesson version, never a caller-provided media URL. */
 export function RecordingReference() {
   const [search] = useSearchParams();
   const version = search.get("lesson");
   if (!version) return null;
-  if (!versionPattern.test(version))
+  const suggestion = recordingSourceSuggestion(version, search.get("segment"));
+  if (!suggestion)
     return (
       <p role="status">
         Liên kết bài mẫu chưa hợp lệ. Mở lại từ bài nghe bạn muốn luyện.
@@ -26,7 +26,12 @@ export function RecordingReference() {
     );
   // VI: Đổi nguồn hủy cây cũ để không phát nhầm audio trong lúc tải version mới.
   // EN: Remount when the version changes so old sample data/audio cannot remain visible during the next fetch.
-  return <ReferenceLesson key={version} version={version} />;
+  return (
+    <ReferenceLesson
+      key={suggestion.versionId}
+      version={suggestion.versionId}
+    />
+  );
 }
 
 function ReferenceLesson({ version }: { version: string }) {

@@ -12,6 +12,8 @@ public static class MediaEndpoints
         app.MapGet("/api/v1/me/recording-journal", (HttpContext ctx, RecordingReflectionService service, int offset = 0) => { ctx.Response.Headers.CacheControl = "no-store"; return service.List(ctx.User.UserId(), offset); }).RequireAuthorization().WithTags("Personal recording");
         group.MapGet("/{id:guid}/reflection", (Guid id, HttpContext ctx, RecordingReflectionService service) => { ctx.Response.Headers.CacheControl = "no-store"; return service.Get(ctx.User.UserId(), id); });
         group.MapPut("/{id:guid}/reflection", (Guid id, SaveRecordingReflection input, HttpContext ctx, RecordingReflectionService service) => { ctx.Response.Headers.CacheControl = "no-store"; return service.Save(ctx.User.UserId(), id, input); });
+        group.MapPut("/{id:guid}/reflection/source", (Guid id, SetRecordingSource input, HttpContext ctx, RecordingReflectionService service) => { ctx.Response.Headers.CacheControl = "no-store"; return service.SetSource(ctx.User.UserId(), id, input); });
+        group.MapGet("/{id:guid}/reflection/history", (Guid id, HttpContext ctx, RecordingReflectionService service, int? before = null) => { ctx.Response.Headers.CacheControl = "no-store"; return service.History(ctx.User.UserId(), id, before); });
         app.MapGet("/api/v1/me/recordings", async (HttpContext ctx, HubDbContext db, int offset = 0) =>
         {
             DomainError.Require(offset is >= 0 and <= 100000, 422, "invalid_offset", "Vị trí trang không hợp lệ.");

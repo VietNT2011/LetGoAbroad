@@ -2,7 +2,7 @@
 
 VI: Trong **Ghi âm của tôi**, mở **Ghi chú & tự đánh giá** dưới bản thu Ready, nghe lại rồi nhập nhận xét. Có thể chọn mức1–5 cho độ rõ giọng/nhịp đọc hoặc để trống. Bấm **Lưu tự đánh giá riêng** để gửi; mở form và gõ nháp không tự lưu. Đây là ý kiến của chính người học, không phải điểm phát âm tự động và không cộng điểm thi, completion, XP hoặc tiến độ lộ trình.
 
-**Nhật ký tự đánh giá đã lưu** liệt kê các nhận xét hiện tại của chủ tài khoản, gồm nhận xét của file audio đã xóa. Xóa audio không khôi phục quyền phát qua nhật ký. Người dùng vẫn sửa hoặc xóa trắng nội dung nhận xét đang lưu. Mỗi bản thu có một nhận xét hiện tại; lịch sử từng lần sửa và liên kết mẫu bền vững vẫn chưa được triển khai.
+**Nhật ký tự đánh giá đã lưu** liệt kê các nhận xét hiện tại của chủ tài khoản, gồm nhận xét của file audio đã xóa. Xóa audio không khôi phục quyền phát qua nhật ký. Người dùng vẫn sửa hoặc xóa trắng nội dung nhận xét đang lưu. Mỗi bản thu có một nhận xét hiện tại, kèm [liên kết bài mẫu và lịch sử từng lần lưu](recording-context.md). Bỏ nguồn hoặc xóa trắng nhận xét hiện tại giữ lại các bản lịch sử riêng.
 
 ## Ownership and storage / Quyền sở hữu và lưu trữ
 

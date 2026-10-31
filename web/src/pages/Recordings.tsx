@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { recordingSourceSuggestion } from "../recordingSource";
 import { api } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAudioRecorder } from "../useAudioRecorder";
@@ -28,6 +30,13 @@ type RecordingPage = { items: Recording[]; nextOffset: number | null };
 
 /** VI: Bản thu ở máy cho đến khi bấm Lưu; thư viện dùng ACL owner kể cả Admin. EN: Draft capture stays local until explicit Save; library access remains owner-only, including Admin. */
 export default function RecordingsPage() {
+  const [search] = useSearchParams();
+  const sourceVersion = search.get("lesson"),
+    sourceSegment = search.get("segment");
+  const suggestedSource = useMemo(
+    () => recordingSourceSuggestion(sourceVersion, sourceSegment),
+    [sourceVersion, sourceSegment],
+  );
   const page = useRef<HTMLElement>(null);
   const recorder = useAudioRecorder();
   const [manual, setManual] = useState<File>();
@@ -293,7 +302,10 @@ export default function RecordingsPage() {
                     {item.status === "ready" ? (
                       <>
                         <AudioPlayer assetId={item.id} />
-                        <RecordingReflectionEditor assetId={item.id} />
+                        <RecordingReflectionEditor
+                          assetId={item.id}
+                          suggestedSource={suggestedSource}
+                        />
                       </>
                     ) : null}
                     {!["delete_pending", "expired"].includes(item.status) ? (
@@ -364,7 +376,7 @@ export default function RecordingsPage() {
           </>
         ) : null}
       </section>
-      <RecordingJournal />
+      <RecordingJournal suggestedSource={suggestedSource} />
     </section>
   );
 }

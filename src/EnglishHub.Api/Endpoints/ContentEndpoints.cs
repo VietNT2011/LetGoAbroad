@@ -20,7 +20,7 @@ public static class ContentEndpoints
         }).WithTags("Content");
         app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, ClaimsPrincipal user, HubDbContext db) =>
         {
-            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && (x.Status == PublicationStatus.Published || x.Status == PublicationStatus.Archived && (db.LessonAnnotations.Any(n => n.UserId == user.UserId() && n.ContentVersionId == id) || db.ListeningSessions.Any(s => s.UserId == user.UserId() && s.ContentVersionId == id))) && x.Root.Kind == ContentKind.Lesson).Select(x => new
+            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && (x.Status == PublicationStatus.Published || x.Status == PublicationStatus.Archived && (db.LessonAnnotations.Any(n => n.UserId == user.UserId() && n.ContentVersionId == id) || db.ListeningSessions.Any(s => s.UserId == user.UserId() && s.ContentVersionId == id) || db.RecordingReflections.Any(r => r.MediaAsset.OwnerId == user.UserId() && r.MediaAsset.Purpose == "recording" && r.SourceContentVersionId == id) || db.RecordingReflectionRevisions.Any(h => h.Reflection.MediaAsset.OwnerId == user.UserId() && h.Reflection.MediaAsset.Purpose == "recording" && h.SourceContentVersionId == id))) && x.Root.Kind == ContentKind.Lesson).Select(x => new
             {
                 x.Id,
                 x.Title,

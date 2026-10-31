@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
+import { type RecordingSourceSuggestion } from "../recordingSource";
+import {
+  RecordingHistory,
+  RecordingSourceSummary,
+  type RecordingSourceView,
+} from "./RecordingHistory";
 import "./recording-reflection.css";
 
 export type ReflectionView = {
@@ -12,17 +18,30 @@ export type ReflectionView = {
   clarity: number | null;
   rhythm: number | null;
   updatedAt: string | null;
+  source?: RecordingSourceView | null;
+  revision?: number;
 };
 type Draft = Pick<ReflectionView, "notes" | "clarity" | "rhythm">;
 type Command = Draft & { clientRequestId: string; expectedEtag: string | null };
+type SourceCommand = {
+  clientRequestId: string;
+  expectedEtag: string | null;
+  sourceContentVersionId: string | null;
+  sourceSegmentId: string | null;
+};
+type Pending =
+  | { kind: "notes"; body: Command }
+  | { kind: "source"; body: SourceCommand };
 
 /** VI: Mở ghi chú chỉ đọc; mỗi bản thu có nháp riêng và save rõ ràng. EN: Opening a reflection is read-only; each recording has its own draft and explicit save. */
 export function RecordingReflectionEditor({
   assetId,
   onSaved,
+  suggestedSource,
 }: {
   assetId: string;
   onSaved?: (value: ReflectionView) => void;
+  suggestedSource?: RecordingSourceSuggestion;
 }) {
   const [mounted, setMounted] = useState(false);
   return (
@@ -34,7 +53,12 @@ export function RecordingReflectionEditor({
     >
       <summary>Ghi chú & tự đánh giá</summary>
       {mounted ? (
-        <ReflectionForm key={assetId} assetId={assetId} onSaved={onSaved} />
+        <ReflectionForm
+          key={assetId}
+          assetId={assetId}
+          onSaved={onSaved}
+          suggestedSource={suggestedSource}
+        />
       ) : null}
     </details>
   );
@@ -43,9 +67,11 @@ export function RecordingReflectionEditor({
 export function ReflectionForm({
   assetId,
   onSaved,
+  suggestedSource,
 }: {
   assetId: string;
   onSaved?: (value: ReflectionView) => void;
+  suggestedSource?: RecordingSourceSuggestion;
 }) {
   const resource = useResource<ReflectionView>(`/media/${assetId}/reflection`);
   const [baseline, setBaseline] = useState<ReflectionView>();
@@ -60,7 +86,7 @@ export function ReflectionForm({
   const [stale, setStale] = useState(false);
   const [comparison, setComparison] = useState<ReflectionView>();
   const [notice, setNotice] = useState("");
-  const pending = useRef<Command | undefined>(undefined);
+  const pending = useRef<Pending | undefined>(undefined);
   const operation = useRef<AbortController | undefined>(undefined);
   useEffect(() => () => operation.current?.abort(), []);
   useEffect(() => {
@@ -73,13 +99,17 @@ export function ReflectionForm({
       });
     }
   }, [baseline, resource.data]);
-  const save = async () => {
+  const save = async (proposal?: Pending) => {
     if (!baseline || busy || stale) return;
-    pending.current ??= {
-      ...draft,
-      clientRequestId: crypto.randomUUID(),
-      expectedEtag: baseline.etag,
+    pending.current ??= proposal ?? {
+      kind: "notes",
+      body: {
+        ...draft,
+        clientRequestId: crypto.randomUUID(),
+        expectedEtag: baseline.etag,
+      },
     };
+    const command = pending.current;
     setBusy(true);
     setError(undefined);
     setNotice("");
@@ -87,21 +117,28 @@ export function ReflectionForm({
     try {
       // VI: Khi chưa rõ kết quả, gửi lại đúng event/body; không đổi nháp phía sau lệnh cũ.
       // EN: Unknown outcomes retain the exact event/body, preventing an old command from silently changing meaning.
-      const result = await api<ReflectionView>(`/media/${assetId}/reflection`, {
-        method: "PUT",
-        body: JSON.stringify(pending.current),
-        signal: operation.current.signal,
-      });
+      const result = await api<ReflectionView>(
+        `/media/${assetId}/reflection${command.kind === "source" ? "/source" : ""}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(command.body),
+          signal: operation.current.signal,
+        },
+      );
       pending.current = undefined;
       setUnknown(false);
       setBaseline(result);
-      setDraft({
-        notes: result.notes,
-        clarity: result.clarity,
-        rhythm: result.rhythm,
-      });
+      // VI: Đổi bài mẫu không được ghi đè nháp nhận xét chưa lưu. EN: A source acknowledgment must not replace an unsaved note draft.
+      if (command.kind === "notes")
+        setDraft({
+          notes: result.notes,
+          clarity: result.clarity,
+          rhythm: result.rhythm,
+        });
       setNotice(
-        "Đã lưu ghi chú riêng. Tự đánh giá không cộng điểm thi hoặc hoàn thành bài học.",
+        command.kind === "source"
+          ? "Đã lưu liên kết bài mẫu. Nháp nhận xét của bạn vẫn ở nguyên."
+          : "Đã lưu ghi chú riêng. Tự đánh giá không cộng điểm thi hoặc hoàn thành bài học.",
       );
       onSaved?.(result);
     } catch (failure) {
@@ -159,6 +196,47 @@ export function ReflectionForm({
         </p>
       ) : null}
       <ErrorNotice error={error} />
+      <RecordingSourceSummary source={baseline.source} />
+      <div className="button-row">
+        {suggestedSource ? (
+          <button
+            type="button"
+            disabled={busy || unknown || stale}
+            onClick={() =>
+              save({
+                kind: "source",
+                body: {
+                  clientRequestId: crypto.randomUUID(),
+                  expectedEtag: baseline.etag,
+                  sourceContentVersionId: suggestedSource.versionId,
+                  sourceSegmentId: suggestedSource.segmentId,
+                },
+              })
+            }
+          >
+            Liên kết bài mẫu đang mở
+          </button>
+        ) : null}
+        {baseline.source ? (
+          <button
+            type="button"
+            disabled={busy || unknown || stale}
+            onClick={() =>
+              save({
+                kind: "source",
+                body: {
+                  clientRequestId: crypto.randomUUID(),
+                  expectedEtag: baseline.etag,
+                  sourceContentVersionId: null,
+                  sourceSegmentId: null,
+                },
+              })
+            }
+          >
+            Bỏ liên kết mẫu hiện tại
+          </button>
+        ) : null}
+      </div>
       {unknown ? (
         <p role="status">
           Chưa xác nhận lệnh lưu. Nháp đang giữ nguyên để gửi lại đúng lệnh.
@@ -222,6 +300,7 @@ export function ReflectionForm({
                 Rõ giọng: {comparison.clarity ?? "chưa chọn"} · Nhịp đọc:{" "}
                 {comparison.rhythm ?? "chưa chọn"}
               </p>
+              <RecordingSourceSummary source={comparison.source} />
               <button
                 type="button"
                 disabled={busy}
@@ -242,7 +321,7 @@ export function ReflectionForm({
         type="button"
         className="secondary"
         disabled={busy || stale}
-        onClick={save}
+        onClick={() => save()}
       >
         {busy
           ? "Đang lưu…"
@@ -251,11 +330,14 @@ export function ReflectionForm({
             : "Lưu tự đánh giá riêng"}
       </button>
       {notice ? <p role="status">{notice}</p> : null}
+      <RecordingHistory assetId={assetId} revision={baseline.revision ?? 0} />
     </div>
   );
 }
 
-export function RecordingJournal() {
+export function RecordingJournal({
+  suggestedSource,
+}: { suggestedSource?: RecordingSourceSuggestion } = {}) {
   const [mounted, setMounted] = useState(false);
   return (
     <details
@@ -265,12 +347,16 @@ export function RecordingJournal() {
       }}
     >
       <summary>Nhật ký tự đánh giá đã lưu</summary>
-      {mounted ? <JournalRows /> : null}
+      {mounted ? <JournalRows suggestedSource={suggestedSource} /> : null}
     </details>
   );
 }
 
-function JournalRows() {
+function JournalRows({
+  suggestedSource,
+}: {
+  suggestedSource?: RecordingSourceSuggestion;
+}) {
   const [offset, setOffset] = useState(0);
   const [visible, setVisible] = useState<{
     items: ReflectionView[];
@@ -318,8 +404,10 @@ function JournalRows() {
                   {item.rhythm ?? "chưa chọn"}
                   {item.status === "deleted" ? " · Audio đã xóa" : ""}
                 </p>
+                <RecordingSourceSummary source={item.source} />
                 <RecordingReflectionEditor
                   assetId={item.assetId}
+                  suggestedSource={suggestedSource}
                   onSaved={(value) =>
                     setVisible((current) =>
                       current

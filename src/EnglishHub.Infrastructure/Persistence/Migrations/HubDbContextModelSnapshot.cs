@@ -1847,6 +1847,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int>("Revision")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Rhythm")
                         .HasColumnType("int");
 
@@ -1856,6 +1859,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<Guid?>("SourceContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SourceSegmentId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1864,11 +1873,74 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasIndex("MediaAssetId")
                         .IsUnique();
 
+                    b.HasIndex("SourceContentVersionId");
+
+                    b.HasIndex("SourceSegmentId", "SourceContentVersionId");
+
                     b.HasIndex("UpdatedAt", "Id");
 
                     b.ToTable("RecordingReflections", null, t =>
                         {
                             t.HasCheckConstraint("CK_RecordingReflection_Rubric", "([Clarity] IS NULL OR [Clarity] BETWEEN 1 AND 5) AND ([Rhythm] IS NULL OR [Rhythm] BETWEEN 1 AND 5)");
+
+                            t.HasCheckConstraint("CK_RecordingReflection_Source", "[Revision] >= 0 AND ([SourceSegmentId] IS NULL OR [SourceContentVersionId] IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.RecordingReflectionRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CapturedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("Clarity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ReflectionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Rhythm")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("SourceContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("SourceSegmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceContentVersionId");
+
+                    b.HasIndex("ReflectionId", "Number")
+                        .IsUnique();
+
+                    b.HasIndex("SourceSegmentId", "SourceContentVersionId");
+
+                    b.ToTable("RecordingReflectionRevisions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_RecordingReflectionRevision_Rubric", "([Clarity] IS NULL OR [Clarity] BETWEEN 1 AND 5) AND ([Rhythm] IS NULL OR [Rhythm] BETWEEN 1 AND 5)");
+
+                            t.HasCheckConstraint("CK_RecordingReflectionRevision_Source", "[Number] >= 0 AND ([SourceSegmentId] IS NULL OR [SourceContentVersionId] IS NOT NULL)");
                         });
                 });
 
@@ -2921,7 +2993,40 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("EnglishHub.Domain.ContentVersion", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.TranscriptSegment", null)
+                        .WithMany()
+                        .HasForeignKey("SourceSegmentId", "SourceContentVersionId")
+                        .HasPrincipalKey("Id", "ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("MediaAsset");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.RecordingReflectionRevision", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.RecordingReflection", "Reflection")
+                        .WithMany()
+                        .HasForeignKey("ReflectionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.ContentVersion", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.TranscriptSegment", null)
+                        .WithMany()
+                        .HasForeignKey("SourceSegmentId", "SourceContentVersionId")
+                        .HasPrincipalKey("Id", "ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Reflection");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.SegmentAnswer", b =>

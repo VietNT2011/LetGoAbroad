@@ -76,12 +76,14 @@ Docker was stopped at the first attempt. After opening it, an initial cold SQL r
 
 The recording-reflection draft-lifetime follow-up on **20/11/2026** adds four DOM regressions, for133 passing frontend cases and a successful production build. Editors and player nodes survive panel collapse, a sibling save and background/pending refreshes; resource snapshots are hidden immediately when their path changes or is disabled. Explicit pagination clears the old-page cache. This corrects a discovered draft-loss issue before declaring native acceptance. Backend source remains unchanged from the358/370 local suites at `1bdb084`; [both remote jobs for that reflection head passed](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44667456434), and [the separate SQL startup-policy head also passed](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44667449267). No new learner evidence, microphone capture or schema migration is part of this UI follow-up.
 
+The [recording-source and revision-history feature](recording-context.md), verified on **20/11/2026**, adds15 relational cases, one real SQL/Azurite/FFmpeg Storage case and six frontend cases. Complete final runs pass373 SQLite,386 SQL-media and139 frontend cases with zero failures/skips, plus production web and Docker API/worker builds. Coverage includes exact version/segment pins, no implicit note save, atomic source/note races, retained history-only archive rights, stable cursors, unchanged legacy receipt shape and explicit legacy capture on the first real edit. The SQL run took12 minutes; all fixtures completed. Migration creates no historical edits or automatic bindings. Native microphone/device acceptance remains open.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **370 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **358 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **386 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **373 passed, 0 failed, 0 skipped**; the thirteen Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **133 passed, 0 failed**; simulated DOM/transport contracts including private-reflection replay/conflicts, retained drafts and resource-path isolation |
+| `npm --prefix web test` | **139 passed, 0 failed**; simulated DOM/transport contracts including private-reflection replay/conflicts, retained drafts and resource-path isolation |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed; fresh20/11/2026 full report has0 advisories, without dependency-graph changes. Historical exception policy remains documented in the [dependency record](frontend-dependencies.md) |

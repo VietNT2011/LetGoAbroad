@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, ApiError, post } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import {
@@ -466,6 +467,15 @@ export function ListeningPractice({
           </button>
         ))}
       </div>
+      {!busy && !uncertain && !needsRefresh ? (
+        <p>
+          <Link
+            to={`/recordings?lesson=${data.contentVersionId}&segment=${segment.id}`}
+          >
+            Ghi âm với ngữ cảnh đoạn đang chọn →
+          </Link>
+        </p>
+      ) : null}
       <form
         onSubmit={(e) => {
           e.preventDefault();
