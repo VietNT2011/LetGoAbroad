@@ -22,16 +22,18 @@ export function RecordingReflectionEditor({
   onSaved,
 }: {
   assetId: string;
-  onSaved?: () => void;
+  onSaved?: (value: ReflectionView) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   return (
     <details
       className="reflection-editor"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onToggle={(event) => {
+        if (event.currentTarget.open) setMounted(true);
+      }}
     >
       <summary>Ghi chú & tự đánh giá</summary>
-      {open ? (
+      {mounted ? (
         <ReflectionForm key={assetId} assetId={assetId} onSaved={onSaved} />
       ) : null}
     </details>
@@ -43,7 +45,7 @@ export function ReflectionForm({
   onSaved,
 }: {
   assetId: string;
-  onSaved?: () => void;
+  onSaved?: (value: ReflectionView) => void;
 }) {
   const resource = useResource<ReflectionView>(`/media/${assetId}/reflection`);
   const [baseline, setBaseline] = useState<ReflectionView>();
@@ -101,7 +103,7 @@ export function ReflectionForm({
       setNotice(
         "Đã lưu ghi chú riêng. Tự đánh giá không cộng điểm thi hoặc hoàn thành bài học.",
       );
-      onSaved?.();
+      onSaved?.(result);
     } catch (failure) {
       setError(failure as Error);
       if (failure instanceof ApiError && failure.status < 500) {
@@ -254,24 +256,35 @@ export function ReflectionForm({
 }
 
 export function RecordingJournal() {
-  const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   return (
     <details
       className="reflection-editor"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
+      onToggle={(event) => {
+        if (event.currentTarget.open) setMounted(true);
+      }}
     >
       <summary>Nhật ký tự đánh giá đã lưu</summary>
-      {open ? <JournalRows /> : null}
+      {mounted ? <JournalRows /> : null}
     </details>
   );
 }
 
 function JournalRows() {
   const [offset, setOffset] = useState(0);
+  const [visible, setVisible] = useState<{
+    items: ReflectionView[];
+    nextOffset: number | null;
+  }>();
   const journal = useResource<{
     items: ReflectionView[];
     nextOffset: number | null;
   }>(`/me/recording-journal?offset=${offset}`);
+  // VI: Giữ cây editor khi đọc lại danh sách để không mất nháp đang sửa ở một hàng khác.
+  // EN: Keep editor trees mounted during refresh, preserving drafts in other rows.
+  useEffect(() => {
+    if (journal.data) setVisible(journal.data);
+  }, [journal.data]);
   return (
     <div className="reflection-journal">
       <p>
@@ -281,12 +294,12 @@ function JournalRows() {
         Cập nhật nhật ký
       </button>
       <ErrorNotice error={journal.error} retry={journal.reload} />
-      {journal.loading ? (
+      {journal.loading && !visible ? (
         <Loading />
-      ) : journal.data ? (
+      ) : visible ? (
         <>
-          {journal.data.items.length ? (
-            journal.data.items.map((item) => (
+          {visible.items.length ? (
+            visible.items.map((item) => (
               <article key={item.assetId}>
                 <h3>{item.fileName}</h3>
                 {item.updatedAt ? (
@@ -307,7 +320,24 @@ function JournalRows() {
                 </p>
                 <RecordingReflectionEditor
                   assetId={item.assetId}
-                  onSaved={journal.reload}
+                  onSaved={(value) =>
+                    setVisible((current) =>
+                      current
+                        ? {
+                            ...current,
+                            items: current.items.map((row) =>
+                              row.assetId === value.assetId
+                                ? {
+                                    ...value,
+                                    status: row.status,
+                                    fileName: row.fileName,
+                                  }
+                                : row,
+                            ),
+                          }
+                        : current,
+                    )
+                  }
                 />
               </article>
             ))
@@ -318,17 +348,23 @@ function JournalRows() {
             <button
               type="button"
               disabled={!offset}
-              onClick={() => setOffset(Math.max(0, offset - 30))}
+              onClick={() => {
+                setVisible(undefined);
+                setOffset(Math.max(0, offset - 30));
+              }}
             >
               Trang nhật ký trước
             </button>
             <button
               type="button"
               disabled={
-                journal.data.nextOffset == null ||
-                journal.data.nextOffset > 100000
+                visible.nextOffset == null || visible.nextOffset > 100000
               }
-              onClick={() => setOffset(journal.data!.nextOffset!)}
+              onClick={() => {
+                const next = visible.nextOffset!;
+                setVisible(undefined);
+                setOffset(next);
+              }}
             >
               Trang nhật ký sau
             </button>

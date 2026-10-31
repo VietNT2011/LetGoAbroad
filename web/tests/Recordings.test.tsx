@@ -108,6 +108,61 @@ afterEach(async () => {
   container.remove();
 });
 describe("private recording page", () => {
+  it("keeps a ready recording's note draft and player mounted during background processing polls", async () => {
+    vi.useFakeTimers();
+    try {
+      let reads = 0;
+      let resolveLibrary!: (value: unknown) => void;
+      request.mockImplementation(async (path) => {
+        if (path.includes("/reflection"))
+          return {
+            assetId: "ready-1",
+            fileName: "My ready voice.wav",
+            status: "ready",
+            etag: '"base"',
+            notes: "Stored",
+            clarity: null,
+            rhythm: null,
+            updatedAt: null,
+          };
+        if (++reads === 1) return rows();
+        return new Promise((resolve) => {
+          resolveLibrary = resolve;
+        });
+      });
+      await render();
+      const details = container.querySelector(
+        "details.reflection-editor",
+      ) as HTMLDetailsElement;
+      await act(async () => {
+        details.open = true;
+        details.dispatchEvent(new Event("toggle"));
+      });
+      await flush();
+      const editor = container.querySelector("textarea")!;
+      const player = container.querySelector("audio");
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(
+          HTMLTextAreaElement.prototype,
+          "value",
+        )!.set!.call(editor, "Unsaved during processing poll");
+        editor.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      await act(async () => vi.advanceTimersByTime(2500));
+      await flush();
+      expect(reads).toBe(2);
+      expect(container.querySelector("textarea")).toBe(editor);
+      expect(editor.value).toBe("Unsaved during processing poll");
+      expect(container.querySelector("audio")).toBe(player);
+      await act(async () => resolveLibrary(rows()));
+      await flush();
+      expect(container.querySelector("textarea")).toBe(editor);
+      expect(editor.value).toBe("Unsaved during processing poll");
+      expect(container.querySelector("audio")).toBe(player);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("only reads metadata on mount and requests the microphone only after explicit activation", async () => {
     await render();
     expect(start).not.toHaveBeenCalled();

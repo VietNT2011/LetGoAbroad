@@ -70,6 +70,103 @@ afterEach(async () => {
   container.remove();
 });
 describe("private recording reflection", () => {
+  it("keeps an unsaved draft mounted when its panel is collapsed and reopened", async () => {
+    request.mockResolvedValue(view({ etag: '"base"', notes: "Stored" }));
+    await act(async () =>
+      root.render(<RecordingReflectionEditor assetId="own-recording" />),
+    );
+    const details = container.querySelector("details")!;
+    await act(async () => {
+      details.open = true;
+      details.dispatchEvent(new Event("toggle"));
+    });
+    await flush();
+    await type("Unsaved local feedback");
+    const editor = container.querySelector("textarea");
+    await act(async () => {
+      details.open = false;
+      details.dispatchEvent(new Event("toggle"));
+    });
+    await act(async () => {
+      details.open = true;
+      details.dispatchEvent(new Event("toggle"));
+    });
+    await flush();
+    expect(container.querySelector("textarea")).toBe(editor);
+    expect(editor?.value).toBe("Unsaved local feedback");
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(writeCalls()).toHaveLength(0);
+  });
+
+  it("retains a sibling draft when another note is saved and while the journal refreshes", async () => {
+    const first = view({ etag: '"a"', notes: "Stored A" });
+    const second = view({
+      assetId: "second",
+      fileName: "Another recording.wav",
+      etag: '"b"',
+      notes: "Stored B",
+    });
+    let journalReads = 0;
+    let resolveRefresh!: (value: unknown) => void;
+    request.mockImplementation(async (path, options) => {
+      if (options?.method === "PUT")
+        return {
+          ...first,
+          etag: '"new-a"',
+          notes: JSON.parse(options.body as string).notes,
+        };
+      if (path.startsWith("/me/recording-journal")) {
+        if (++journalReads === 1)
+          return { items: [first, second], nextOffset: null };
+        return new Promise((resolve) => {
+          resolveRefresh = resolve;
+        });
+      }
+      return path.includes("/second/") ? second : first;
+    });
+    await act(async () => root.render(<RecordingJournal />));
+    const journal = container.querySelector("details")!;
+    await act(async () => {
+      journal.open = true;
+      journal.dispatchEvent(new Event("toggle"));
+    });
+    await flush();
+    await act(async () => {
+      for (const details of container.querySelectorAll("article details")) {
+        (details as HTMLDetailsElement).open = true;
+        details.dispatchEvent(new Event("toggle"));
+      }
+    });
+    await flush();
+    const editors = container.querySelectorAll("textarea");
+    const otherEditor = editors[1];
+    await act(async () => {
+      for (const [index, value] of ["Edited A", "Unsaved B"].entries()) {
+        Object.getOwnPropertyDescriptor(
+          HTMLTextAreaElement.prototype,
+          "value",
+        )!.set!.call(editors[index], value);
+        editors[index].dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
+    await click("Lưu tự đánh giá riêng");
+    expect(journalReads).toBe(1);
+    expect(container.querySelectorAll("textarea")[1]).toBe(otherEditor);
+    expect(otherEditor.value).toBe("Unsaved B");
+    await click("Cập nhật nhật ký");
+    expect(container.querySelectorAll("textarea")[1]).toBe(otherEditor);
+    expect(otherEditor.value).toBe("Unsaved B");
+    await act(async () =>
+      resolveRefresh({
+        items: [first, { ...second, etag: '"peer"', notes: "Peer B" }],
+        nextOffset: null,
+      }),
+    );
+    await flush();
+    expect(container.querySelectorAll("textarea")[1]).toBe(otherEditor);
+    expect(otherEditor.value).toBe("Unsaved B");
+    expect(writeCalls()).toHaveLength(1);
+  });
   it("opens lazily without creating feedback or touching storage", async () => {
     request.mockResolvedValue(view());
     await act(async () =>

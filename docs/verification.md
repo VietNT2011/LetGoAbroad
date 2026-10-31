@@ -74,12 +74,14 @@ The [private recording reflections](recording-reflections.md) add22 relational c
 
 Docker was stopped at the first attempt. After opening it, an initial cold SQL run failed from internal memory pressure and the process stopped; subsequent connection/DNS errors are not a completed source verification. SQL alone was restarted and one validated interrupted fixture was removed. The [local buffer-pool startup policy](testing.md#local-sql-memory--bộ-nhớ-sql-cục-bộ) was then applied; the final370-case run above passed. The final358 SQLite run also includes explicit no-store header assertions. Docker API/worker publication passed. Fresh full/production npm audits both report zero advisories with the same dependency graph; the historical dev-only exception policy remains available in the gate. Native microphone/visual acceptance is not claimed.
 
+The recording-reflection draft-lifetime follow-up on **20/11/2026** adds four DOM regressions, for133 passing frontend cases and a successful production build. Editors and player nodes survive panel collapse, a sibling save and background/pending refreshes; resource snapshots are hidden immediately when their path changes or is disabled. Explicit pagination clears the old-page cache. This corrects a discovered draft-loss issue before declaring native acceptance. Backend source remains unchanged from the358/370 local suites at `1bdb084`; [both remote jobs for that reflection head passed](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44667456434), and [the separate SQL startup-policy head also passed](https://github.com/VietNT2011/LetGoAbroad/actions/runs/44667449267). No new learner evidence, microphone capture or schema migration is part of this UI follow-up.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **370 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
 | `scripts/test.ps1` | **358 passed, 0 failed, 0 skipped**; the twelve Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **129 passed, 0 failed**; simulated DOM/transport contracts including listening/CMS/comparison and private-reflection retry/conflict/journal flows |
+| `npm --prefix web test` | **133 passed, 0 failed**; simulated DOM/transport contracts including private-reflection replay/conflicts, retained drafts and resource-path isolation |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed; fresh20/11/2026 full report has0 advisories, without dependency-graph changes. Historical exception policy remains documented in the [dependency record](frontend-dependencies.md) |

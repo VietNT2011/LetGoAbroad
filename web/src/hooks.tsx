@@ -2,22 +2,23 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 /** VI: Hủy request cũ để tránh ghi đè dữ liệu mới. EN: Abort obsolete requests so stale responses cannot overwrite the new view. */
 export function useResource<T>(path: string | null) {
-  const [data, setData] = useState<T>();
+  const [snapshot, setSnapshot] = useState<{ path: string; value: T }>();
   const [error, setError] = useState<Error>();
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     if (!path) {
+      setSnapshot(undefined);
       setLoading(false);
       return;
     }
     const abort = new AbortController();
     setLoading(true);
     setError(undefined);
-    setData(undefined);
+    setSnapshot(undefined);
     api<T>(path, { signal: abort.signal })
       .then((result) => {
-        if (!abort.signal.aborted) setData(result);
+        if (!abort.signal.aborted) setSnapshot({ path, value: result });
       })
       .catch((e) => {
         if (!abort.signal.aborted) setError(e);
@@ -28,7 +29,9 @@ export function useResource<T>(path: string | null) {
     return () => abort.abort();
   }, [path, revision]);
   return {
-    data,
+    // VI: Đổi/đóng nguồn phải ẩn snapshot cũ ngay trong render, trước khi effect dọn request.
+    // EN: Hide old-path snapshots during render, before effects clean up the previous request.
+    data: snapshot?.path === path ? snapshot.value : undefined,
     error,
     loading,
     reload: useCallback(() => setRevision((v) => v + 1), []),

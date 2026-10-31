@@ -24,6 +24,7 @@ type Recording = {
   attribution: string;
   createdAt: string;
 };
+type RecordingPage = { items: Recording[]; nextOffset: number | null };
 
 /** VI: Bản thu ở máy cho đến khi bấm Lưu; thư viện dùng ACL owner kể cả Admin. EN: Draft capture stays local until explicit Save; library access remains owner-only, including Admin. */
 export default function RecordingsPage() {
@@ -40,10 +41,13 @@ export default function RecordingsPage() {
   const [deleteId, setDeleteId] = useState<string>();
   const task = useRef<ReturnType<typeof audioUpload> | undefined>(undefined);
   const controller = useRef<AbortController | undefined>(undefined);
-  const library = useResource<{
-    items: Recording[];
-    nextOffset: number | null;
-  }>(`/me/recordings?offset=${offset}`);
+  const library = useResource<RecordingPage>(`/me/recordings?offset=${offset}`);
+  const [visibleLibrary, setVisibleLibrary] = useState<RecordingPage>();
+  // VI: Poll trạng thái xử lý không được tháo editor/nháp hay reset audio của hàng Ready.
+  // EN: Processing polls must not unmount ready-row editors/drafts or reset their audio.
+  useEffect(() => {
+    if (library.data) setVisibleLibrary(library.data);
+  }, [library.data]);
   const capturing = ["requesting", "recording", "stopping"].includes(
     recorder.phase,
   );
@@ -269,13 +273,13 @@ export default function RecordingsPage() {
           Cập nhật thư viện
         </button>
         <ErrorNotice error={library.error} retry={library.reload} />
-        {library.loading ? (
+        {library.loading && !visibleLibrary ? (
           <Loading />
-        ) : library.data ? (
+        ) : visibleLibrary ? (
           <>
-            {library.data.items.length ? (
+            {visibleLibrary.items.length ? (
               <div className="saved-questions">
-                {library.data.items.map((item) => (
+                {visibleLibrary.items.map((item) => (
                   <article key={item.id}>
                     <h3>{item.fileName}</h3>
                     <p>{item.attribution}</p>
@@ -295,7 +299,10 @@ export default function RecordingsPage() {
                     {!["delete_pending", "expired"].includes(item.status) ? (
                       deleteId === item.id ? (
                         <div className="card-filters">
-                          <p>Xóa bản thu này khỏi kho riêng?</p>
+                          <p>
+                            Xóa file audio khỏi kho riêng? Nhận xét đã lưu vẫn
+                            được giữ. Hãy lưu nháp ghi chú trước khi xóa.
+                          </p>
                           <button
                             type="button"
                             disabled={busy}
@@ -335,14 +342,21 @@ export default function RecordingsPage() {
               <button
                 type="button"
                 disabled={!offset || busy}
-                onClick={() => setOffset(Math.max(0, offset - 30))}
+                onClick={() => {
+                  setVisibleLibrary(undefined);
+                  setOffset(Math.max(0, offset - 30));
+                }}
               >
                 Trang trước
               </button>
               <button
                 type="button"
-                disabled={library.data.nextOffset === null || busy}
-                onClick={() => setOffset(library.data!.nextOffset!)}
+                disabled={visibleLibrary.nextOffset === null || busy}
+                onClick={() => {
+                  const next = visibleLibrary.nextOffset!;
+                  setVisibleLibrary(undefined);
+                  setOffset(next);
+                }}
               >
                 Trang sau
               </button>
