@@ -23,6 +23,7 @@ import {
 export type DashboardData = {
   localDate: string;
   timeZoneId: string;
+  usesPathCalendar: boolean;
   planEtag: string | null;
   enrollment: null | {
     id: string;
@@ -140,18 +141,18 @@ export function TodayPanel() {
   return (
     <>
       <div className="stats-grid">
-        <div>
-          <BookOpen size={19} />
+        <div className="stat-teal">
+          <BookOpen size={23} aria-hidden="true" />
           <b>{data.statistics.lessonsCompleted}</b>
           <span>Bài học đã hoàn thành</span>
         </div>
-        <div>
-          <CheckCircle2 size={19} />
+        <div className="stat-blue">
+          <CheckCircle2 size={23} aria-hidden="true" />
           <b>{data.statistics.attemptsCompleted}</b>
           <span>Lần luyện tập đã nộp</span>
         </div>
-        <div>
-          <Target size={19} />
+        <div className="stat-amber">
+          <Target size={23} aria-hidden="true" />
           <b>
             {data.statistics.questionsCorrect}
             <small> / {data.statistics.questionsObserved}</small>
@@ -159,104 +160,122 @@ export function TodayPanel() {
           <span>Câu đúng / câu quan sát</span>
         </div>
       </div>
-      <SkillEvidence />
-      <div className="section-heading">
-        <div>
-          <span className="eyebrow">A LITTLE PLAN, A LOT OF POSSIBILITY</span>
-          <h2>Nhịp học hôm nay</h2>
-        </div>
-        <div className="plan-actions">
-          {data.enrollment ? (
-            <button
-              className="secondary"
-              disabled={busy || needsRefresh}
-              onClick={regenerate}
-            >
-              {busy ? "Đang xử lý…" : "Lập lại bài chưa bắt đầu"}
-            </button>
-          ) : null}
-          <Link to="/paths">
-            Xem lộ trình <ArrowRight size={15} />
-          </Link>
-        </div>
-      </div>
-      <ErrorNotice error={actionError} retry={refreshPlan} />
-      {notice ? (
-        <p className="notice success" role="status">
-          {notice}
-        </p>
-      ) : null}
-      {data.enrollment ? (
-        <p className="muted plan-policy">
-          Mở nhiệm vụ để ghi nhận bắt đầu. Lập lại giữ bài đang làm, bài đã xong
-          và ngân sách hôm nay; hoàn thành vẫn cần quiz hoặc kết quả hợp lệ.
-        </p>
-      ) : null}
-      {!data.enrollment ? (
-        <div className="onboarding-card">
-          <Route size={28} />
+      <section
+        className="today-plan"
+        id="today-plan"
+        aria-labelledby="today-plan-title"
+      >
+        <div className="section-heading">
           <div>
-            <h3>Hành trình của riêng bạn.</h3>
-            <p>Chọn mục tiêu và tạo nhịp học phù hợp với mình.</p>
+            <span className="eyebrow">A LITTLE PLAN, A LOT OF POSSIBILITY</span>
+            <h2 id="today-plan-title">Nhịp học hôm nay</h2>
+            {/* VI: LocalDate là ngày đã chốt bởi server; format ở UTC để không đổi ngày thêm lần nữa. EN: Format the server's date-only snapshot in UTC instead of applying another timezone conversion. */}
+            <p className="plan-calendar">
+              {new Intl.DateTimeFormat("vi-VN", {
+                dateStyle: "medium",
+                timeZone: "UTC",
+              }).format(new Date(`${data.localDate}T00:00:00Z`))}{" "}
+              · {data.timeZoneId}
+              {data.usesPathCalendar ? " · Lịch riêng" : ""}
+            </p>
           </div>
-          <Link className="primary" to="/paths">
-            Tạo lộ trình <ArrowRight size={15} />
-          </Link>
+          <div className="plan-actions">
+            {data.enrollment ? (
+              <button
+                className="secondary"
+                disabled={busy || needsRefresh}
+                onClick={regenerate}
+              >
+                {busy ? "Đang xử lý…" : "Lập lại bài chưa bắt đầu"}
+              </button>
+            ) : null}
+            <Link to="/paths">
+              Xem lộ trình <ArrowRight size={15} />
+            </Link>
+          </div>
         </div>
-      ) : data.tasks.length ? (
-        <div className="daily-tasks">
-          {data.tasks.map((task, i) => (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => openTask(task)}
-              aria-label={`${task.status === "completed" ? "Xem lại" : "Mở nhiệm vụ"}: ${task.title}`}
-              className={`daily-task ${task.status}`}
-              key={task.id}
-            >
-              <span className="task-order">
-                {task.status === "completed" ? (
-                  <CheckCircle2 size={22} />
-                ) : (
-                  `0${i + 1}`
-                )}
-              </span>
-              <div>
-                <h3>
-                  {task.title}
+        <ErrorNotice error={actionError} retry={refreshPlan} />
+        {notice ? (
+          <p className="notice success" role="status">
+            {notice}
+          </p>
+        ) : null}
+        {data.enrollment ? (
+          <p className="muted plan-policy">
+            Mở nhiệm vụ để ghi nhận bắt đầu. Lập lại giữ bài đang làm, bài đã
+            xong và ngân sách hôm nay; hoàn thành vẫn cần quiz hoặc kết quả hợp
+            lệ.
+          </p>
+        ) : null}
+        {!data.enrollment ? (
+          <div className="onboarding-card">
+            <Route size={28} />
+            <div>
+              <h3>Hành trình của riêng bạn.</h3>
+              <p>Chọn mục tiêu và tạo nhịp học phù hợp với mình.</p>
+            </div>
+            <Link className="primary" to="/paths">
+              Tạo lộ trình <ArrowRight size={15} />
+            </Link>
+          </div>
+        ) : data.tasks.length ? (
+          <div className="daily-tasks">
+            {data.tasks.map((task, i) => (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => openTask(task)}
+                aria-label={`${task.status === "completed" ? "Xem lại" : "Mở nhiệm vụ"}: ${task.title}`}
+                className={`daily-task ${task.status}`}
+                key={task.id}
+              >
+                <span className="task-order">
                   {task.status === "completed" ? (
-                    <small className="task-completed">Đã hoàn thành</small>
-                  ) : task.startedAt || task.activeAttemptId ? (
-                    <small className="task-completed">Đã bắt đầu</small>
+                    <CheckCircle2 size={22} />
+                  ) : (
+                    `0${i + 1}`
+                  )}
+                </span>
+                <div>
+                  <h3>
+                    {task.title}
+                    {task.status === "completed" ? (
+                      <small className="task-completed">Đã hoàn thành</small>
+                    ) : task.startedAt || task.activeAttemptId ? (
+                      <small className="task-completed task-started">
+                        Đã bắt đầu
+                      </small>
+                    ) : null}
+                  </h3>
+                  <p>{task.reasonText}</p>
+                  {task.carriedAcrossCalendar ? (
+                    <small>
+                      Giữ lịch cũ: {task.localDate} · {task.timeZoneId}; thời
+                      hạn bài làm được giữ.
+                    </small>
+                  ) : task.carriedFromPreviousDate ? (
+                    <small>
+                      Đang tiếp tục nhiệm vụ từ {task.localDate}; thời hạn bài
+                      làm vẫn do server quyết định.
+                    </small>
                   ) : null}
-                </h3>
-                <p>{task.reasonText}</p>
-                {task.carriedAcrossCalendar ? (
-                  <small>
-                    Giữ lịch cũ: {task.localDate} · {task.timeZoneId}; thời hạn
-                    bài làm được giữ.
-                  </small>
-                ) : task.carriedFromPreviousDate ? (
-                  <small>
-                    Đang tiếp tục nhiệm vụ từ {task.localDate}; thời hạn bài làm
-                    vẫn do server quyết định.
-                  </small>
-                ) : null}
-              </div>
-              <span className="task-time">
-                <Clock3 size={13} />
-                {task.estimatedMinutes} phút
-              </span>
-              <ArrowRight size={17} />
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="empty compact">
-          Hôm nay chưa có nhiệm vụ phù hợp lịch học. Bạn vẫn có thể khám phá thư
-          viện bài học.
-        </div>
-      )}
+                </div>
+                <span className="task-time">
+                  <Clock3 size={13} />
+                  {task.estimatedMinutes} phút
+                </span>
+                <ArrowRight size={17} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="empty compact">
+            Hôm nay chưa có nhiệm vụ phù hợp lịch học. Bạn vẫn có thể khám phá
+            thư viện bài học.
+          </div>
+        )}
+      </section>
+      <SkillEvidence />
     </>
   );
 }

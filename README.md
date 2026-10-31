@@ -4,6 +4,8 @@ Nền tảng tự học tiếng Anh bằng ASP.NET Core 10, EF Core 10, SQL Serv
 
 **Trạng thái:** learning core đang triển khai. Chưa tuyên bố hoàn thành toàn bộ P0–P3. Xem [checklist nghiệm thu](docs/status.md) và [đặc tả gốc](docs/spec.md) để phân biệt phần đã chạy với phần còn thiếu.
 
+Giao diện dùng màu rõ theo kỹ năng, chữ tương phản cao, nhiệm vụ học nổi bật và menu mobile có bàn phím. Xem [cơ sở thiết kế và kiểm chứng UI](docs/ui-design.md), gồm nguồn nghiên cứu, các tỷ lệ tương phản và giới hạn của bằng chứng.
+
 ## Chạy trên Windows
 
 Mở Docker Desktop, chuyển sang Linux containers, rồi chạy trong thư mục repo:

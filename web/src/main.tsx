@@ -7,6 +7,7 @@ import { Dashboard, Catalog } from "./pages/Catalog";
 import { Loading } from "./hooks";
 import { PathsPage, SettingsPage } from "./pages/Learning";
 import "./styles.css";
+import "./theme.css";
 
 const Lesson = lazy(() => import("./pages/Lesson"));
 const TestIntro = lazy(() =>

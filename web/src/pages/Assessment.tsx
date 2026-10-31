@@ -577,6 +577,7 @@ export function AttemptPage() {
                           key={o.id}
                           disabled={remaining === 0 || busy || blocked(item)}
                           className={choices[item.id] === o.id ? "chosen" : ""}
+                          aria-pressed={choices[item.id] === o.id}
                           onClick={() => choose(item, o.id)}
                         >
                           <span>{String.fromCharCode(65 + i)}</span>

@@ -4,7 +4,7 @@
 }
 .path-calendar-editor {
   padding: 20px 0;
-  border-bottom: 1px solid #e3e8d9;
+  border-bottom: 1px solid var(--line);
 }
 .path-calendar-editor p {
   font-size: 13px;
@@ -18,7 +18,7 @@
   align-items: center;
 }
 .path-calendar-editor fieldset {
-  border: 1px solid #d6dfd2;
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 14px;
 }
@@ -52,10 +52,10 @@
 }
 .path-choice-conflict {
   padding: 18px;
-  border: 1px solid #a67d45;
+  border: 1px solid var(--line);
   border-radius: 8px;
   margin-bottom: 20px;
-  background: #fff9ee;
+  background: var(--warning-soft);
 }
 .path-choice-conflict button {
   margin: 4px 8px 4px 0;
@@ -68,9 +68,9 @@
 }
 .path-choice-history li {
   padding: 14px 0;
-  border-bottom: 1px solid #e3e8d9;
+  border-bottom: 1px solid var(--line);
 }
 .path-choice-history small {
   line-height: 1.8;
-  color: #5c7053;
+  color: var(--text-muted);
 }

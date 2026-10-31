@@ -2,7 +2,7 @@
   margin: 35px 0;
 }
 .skill-evidence > small {
-  color: #637558;
+  color: var(--text-muted);
   line-height: 1.8;
   display: block;
   margin-top: 20px;
@@ -15,7 +15,7 @@
 .skill-evidence-grid article {
   background: #fff;
   padding: 22px;
-  border: 1px solid #e0e6d8;
+  border: 1px solid var(--line);
   border-radius: 10px;
 }
 .skill-evidence-grid h4 {
@@ -24,17 +24,17 @@
 }
 .skill-evidence-grid b {
   font-size: 20px;
-  color: #496543;
+  color: var(--text-muted);
 }
 .skill-evidence-grid p,
 .skill-evidence-grid small {
-  font-size: 12px;
-  color: #5c7053;
+  font-size: 13px;
+  color: var(--text-muted);
   line-height: 1.8;
 }
 .skill-evidence-grid details {
   margin-top: 14px;
-  font-size: 12px;
+  font-size: 13px;
 }
 .skill-evidence h3 {
   font-size: 16px;

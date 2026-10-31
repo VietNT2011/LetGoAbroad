@@ -14,7 +14,14 @@ import type { Content } from "../api";
 import { useResource, ErrorNotice, Loading } from "../hooks";
 import { useAuth } from "../Auth";
 import { TodayPanel } from "./Learning";
-const palettes = ["sage", "peach", "lavender", "sand"];
+import { LearningArtwork } from "../LearningArtwork";
+// VI: Mỗi kỹ năng giữ một màu ở mọi thứ tự/lọc. EN: Skill colors remain stable when cards are reordered or filtered.
+const skillArt: Record<string, { tone: string; word: string }> = {
+  grammar: { tone: "violet", word: "Aa" },
+  listening: { tone: "blue", word: "Hello!" },
+  reading: { tone: "teal", word: "Read" },
+  vocabulary: { tone: "amber", word: "Words" },
+};
 const skillNames: Record<string, string> = {
   grammar: "NGỮ PHÁP",
   vocabulary: "TỪ VỰNG",
@@ -34,14 +41,16 @@ export function ContentCard({
       : item.skill === "grammar"
         ? PenLine
         : BookOpen;
+  const art = skillArt[item.skill] ?? { tone: "blue", word: "Learn" };
   return (
     <Link
       className="content-card"
       to={item.kind === "lesson" ? `/learn/${item.id}` : `/tests/${item.id}`}
     >
-      <div className={`card-art ${palettes[index % palettes.length]}`}>
-        <span className="art-number">0{index + 1}</span>
-        <Icon size={68} strokeWidth={1.1} />
+      <div className={`card-art tone-${art.tone}`} aria-hidden="true">
+        <span className="art-number">{String(index + 1).padStart(2, "0")}</span>
+        <span className="art-word">{art.word}</span>
+        <Icon size={68} strokeWidth={1.8} />
         <span className="art-star">✧</span>
         <span className="art-lines" />
       </div>
@@ -51,14 +60,14 @@ export function ContentCard({
         <p>{item.summary}</p>
         <div className="card-meta">
           <span>
-            <Clock3 size={13} /> {item.minutes} phút
+            <Clock3 size={15} aria-hidden="true" /> {item.minutes} phút
           </span>
           <span>
             {item.kind === "assessment"
               ? `${item.questionCount} câu hỏi`
               : "Bài học nền tảng"}
           </span>
-          <ArrowUpRight size={17} />
+          <ArrowUpRight size={18} aria-hidden="true" />
         </div>
         {item.isFixture ? (
           <small className="fixture">Dữ liệu demo kỹ thuật</small>
@@ -106,6 +115,7 @@ export function Catalog({ tests = false }: { tests?: boolean }) {
           ].map(([value, label]) => (
             <button
               className={skill === value ? "selected" : ""}
+              aria-pressed={skill === value}
               key={value}
               onClick={() => setSkill(value)}
             >
@@ -114,15 +124,27 @@ export function Catalog({ tests = false }: { tests?: boolean }) {
           ))}
         </div>
         <label className="search">
-          <Search size={16} />
+          <Search size={18} aria-hidden="true" />
           <input
-            placeholder="Tìm điều bạn muốn học…"
-            aria-label="Tìm bài học"
+            type="search"
+            name="lesson-search"
+            autoComplete="off"
+            placeholder={
+              tests ? "Tìm bài bạn muốn luyện…" : "Tìm điều bạn muốn học…"
+            }
+            aria-label={tests ? "Tìm bài luyện" : "Tìm bài học"}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </label>
       </div>
+      <p className="catalog-results" role="status" aria-live="polite">
+        {loading
+          ? "Đang tìm nội dung…"
+          : error
+            ? "Chưa tải được danh sách."
+            : `${items?.length ?? 0} ${tests ? "bài luyện" : "bài học"}`}
+      </p>
       <ErrorNotice error={error} retry={reload} />
       {loading ? (
         <Loading />
@@ -150,7 +172,9 @@ export function Dashboard() {
           <span className="eyebrow">A NEW DAY, A LITTLE PROGRESS</span>
           <h1>
             Chào {user?.displayName.split(" ").slice(-1)}, mình học nhé{" "}
-            <span className="wave">✧</span>
+            <span className="wave" aria-hidden="true">
+              ✦
+            </span>
           </h1>
           <p>Mỗi lần bạn xuất hiện là một bước tiến. Hôm nay cũng vậy.</p>
         </div>
@@ -172,27 +196,15 @@ export function Dashboard() {
             <span>Một thế giới ngày mai.</span>
           </h2>
           <p>
-            Học theo nhịp của bạn, với một lộ trình rõ ràng.
-            <br />
+            Học theo nhịp của bạn, với một lộ trình rõ ràng. <br />
             Bắt đầu từ điều nhỏ nhất và cứ thế tiến lên.
           </p>
-          <Link to="/paths" className="primary">
-            Khám phá lộ trình của tôi <ArrowRight size={17} />
-          </Link>
+          <a href="#today-plan" className="primary">
+            Học bài hôm nay <ArrowRight size={19} aria-hidden="true" />
+          </a>
         </div>
         <div className="hero-graphic" aria-hidden="true">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="graphic-book">
-            <BookOpen size={96} strokeWidth={1} />
-          </div>
-          <span className="floating-chip chip-one">
-            Hello, possibilities. <Sparkles size={14} />
-          </span>
-          <span className="floating-chip chip-two">
-            <span className="green-circle">✓</span> One step at a time.
-          </span>
-          <span className="graphic-spark">✧</span>
+          <LearningArtwork />
         </div>
       </section>
       <TodayPanel />

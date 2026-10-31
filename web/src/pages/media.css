@@ -5,7 +5,7 @@
   margin-top: 25px;
 }
 .asset-list > article {
-  border: 1px solid #e2e8d7;
+  border: 1px solid var(--line);
   border-radius: 9px;
   padding: 17px;
   display: flex;
@@ -14,7 +14,7 @@
   flex-wrap: wrap;
 }
 .asset-list > article > svg {
-  color: #9bb180;
+  color: var(--text-muted);
 }
 .asset-list article > div {
   display: grid;
@@ -22,40 +22,40 @@
   max-width: 420px;
 }
 .asset-list b {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
-  color: #728a5a;
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 .asset-list code {
-  font-size: 8px;
-  color: #a1b08f;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 .asset-list article > div > span {
-  font-size: 9px;
-  color: #9fab8e;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 .asset-status {
-  font-size: 9px;
-  color: #b08f60;
+  font-size: 13px;
+  color: var(--text-muted);
   margin-left: auto;
   display: flex;
   gap: 5px;
   align-items: center;
 }
 .asset-status.ready {
-  color: #779652;
+  color: var(--success);
 }
 .asset-status.failed {
-  color: #b67b5e;
+  color: var(--danger);
 }
 .asset-list audio {
   width: 100%;
   height: 35px;
 }
 .media-status {
-  font-size: 10px;
-  color: #8b9e75;
+  font-size: 13px;
+  color: var(--text-muted);
   overflow-wrap: anywhere;
   margin: 20px 0;
 }
@@ -68,18 +68,18 @@
   display: flex;
   gap: 15px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: 13px;
   padding: 9px;
-  background: #f6f9ee;
+  background: var(--surface-subtle);
   border-radius: 5px;
 }
 .job-list code {
-  font-size: 8px;
+  font-size: 13px;
 }
 .lesson-audio {
   padding: 23px;
-  background: #f4f7eb;
-  border: 1px solid #e3ead4;
+  background: var(--surface-subtle);
+  border: 1px solid var(--line);
   border-radius: 10px;
   margin-top: 25px;
   display: grid;
@@ -93,7 +93,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-size: 10px;
+  font-size: 13px;
 }
 .lesson-audio select {
   width: 85px;
@@ -102,5 +102,5 @@
 }
 .lesson-audio button {
   justify-self: start;
-  font-size: 10px;
+  font-size: 13px;
 }

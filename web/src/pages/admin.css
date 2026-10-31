@@ -7,7 +7,7 @@
 }
 .cms-list {
   background: #fff;
-  border: 1px solid #e3e9d9;
+  border: 1px solid var(--line);
   border-radius: 10px;
   padding: 14px;
   max-height: 850px;
@@ -24,39 +24,39 @@
 }
 .icon-button {
   border: 0;
-  background: #f1f5e8;
+  background: var(--surface-subtle);
   border-radius: 6px;
   padding: 6px;
   display: grid;
   place-items: center;
-  color: #8ba569;
+  color: var(--text-muted);
 }
 .cms-list > button {
   width: 100%;
   text-align: left;
   border: 0;
-  border-bottom: 1px solid #eef1e8;
+  border-bottom: 1px solid var(--line);
   background: none;
   padding: 15px 10px;
   border-radius: 6px;
   display: grid;
   gap: 6px;
-  color: #6b7f56;
+  color: var(--text-muted);
 }
 .cms-list > button.active {
-  background: #eef4e5;
+  background: var(--surface-subtle);
 }
 .cms-list b {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
 }
 .cms-list span {
-  font-size: 9px;
-  color: #a0ac90;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 .cms-editor {
   background: #fff;
-  border: 1px solid #e2e8d8;
+  border: 1px solid var(--line);
   border-radius: 11px;
   padding: 25px;
 }
@@ -74,8 +74,8 @@
   margin: 0;
 }
 .cms-editor code {
-  font-size: 8px;
-  color: #9bab89;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 .cms-new-fields {
   display: grid;
@@ -84,16 +84,16 @@
   margin-bottom: 24px;
 }
 .editor-label {
-  font-size: 10px;
+  font-size: 13px;
 }
 .editor-label textarea,
 .cms-import textarea {
   font-family: Consolas, monospace;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.8;
   tab-size: 2;
   resize: vertical;
-  background: #fafcf6;
+  background: var(--surface-subtle);
   min-height: 150px;
 }
 .cms-editor details summary {
@@ -110,25 +110,25 @@
   margin-top: 35px;
   padding: 27px;
   background: #fff;
-  border: 1px solid #e2e8d9;
+  border: 1px solid var(--line);
   border-radius: 11px;
 }
 .cms-import h2 {
   font-size: 22px;
 }
 .cms-import pre {
-  font-size: 11px;
+  font-size: 13px;
   overflow: auto;
-  background: #f7f9f1;
+  background: var(--surface-subtle);
   border-radius: 8px;
   padding: 20px;
-  color: #7b9064;
+  color: var(--text-muted);
 }
 .cms-editor > .button-row {
   gap: 9px;
 }
 .cms-editor > .button-row button {
-  font-size: 10px;
+  font-size: 13px;
   padding: 10px 12px;
 }
 @media (max-width: 1000px) {
