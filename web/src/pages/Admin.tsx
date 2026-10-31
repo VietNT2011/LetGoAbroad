@@ -34,6 +34,7 @@ type EditorContent = {
   attribution: string;
   groups: unknown[];
   mediaAssetId?: string | null;
+  segments?: unknown[];
 };
 type Preview = EditorContent & {
   id: string;
@@ -85,6 +86,7 @@ export default function AdminPage() {
           attribution: v.attribution,
           groups: v.groups,
           mediaAssetId: v.mediaAssetId,
+          segments: v.segments ?? [],
         },
         null,
         2,

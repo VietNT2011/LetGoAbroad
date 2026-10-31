@@ -41,6 +41,7 @@ public sealed class ContentVersion : VersionedEntity
     public string Attribution { get; set; } = "";
     public DateTimeOffset? PublishedAt { get; set; }
     public List<QuestionGroup> Groups { get; set; } = [];
+    public List<TranscriptSegment> Segments { get; set; } = [];
 }
 
 /// <summary>VI: Giữ hội thoại/đoạn văn nguyên vẹn khi chọn đề. EN: Select entire groups to preserve shared stimuli.</summary>

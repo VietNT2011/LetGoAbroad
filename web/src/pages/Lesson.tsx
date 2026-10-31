@@ -8,6 +8,7 @@ import { AudioPlayer } from "./Media";
 import { LessonNotes } from "./LessonNotes";
 import { useAuth } from "../Auth";
 import { useStudyActivity } from "../useStudyActivity";
+import { SegmentedListening } from "./SegmentedListening";
 type LessonData = {
   id: string;
   title: string;
@@ -19,6 +20,7 @@ type LessonData = {
   version: number;
   archived: boolean;
   mediaAssetId: string | null;
+  hasListeningSegments: boolean;
   quiz: {
     id: string;
     prompt: string;
@@ -166,6 +168,12 @@ export default function Lesson() {
             </p>
           ) : null}
           <LessonNotes key={data.id} versionId={data.id} body={data.body} />
+          {data.hasListeningSegments ? (
+            <SegmentedListening
+              key={`listening:${data.id}`}
+              versionId={data.id}
+            />
+          ) : null}
           {!data.archived ? <LessonQuiz key={data.id} lesson={data} /> : null}
           <div className="source-note">
             Nguồn / Attribution: {data.attribution}

@@ -3,13 +3,17 @@ using EnglishHub.Domain;
 using EnglishHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace EnglishHub.Infrastructure.Content;
 
 public sealed record OptionInput(string Text, bool IsCorrect);
 public sealed record QuestionInput(string Prompt, string Skill, string Explanation, OptionInput[] Options, QuestionType Type = QuestionType.SingleChoice, string[]? AcceptedAnswerVariants = null, int NormalizationPolicyVersion = AnswerNormalization.CurrentVersion, bool IgnoreTerminalPunctuation = false);
 public sealed record GroupInput(int Part, string Stimulus, QuestionInput[] Questions);
-public sealed record ContentInput(string Title, string Summary, string Body, string Skill, int Minutes, int DurationSeconds, bool IsFixture, string Attribution, GroupInput[] Groups, Guid? MediaAssetId = null);
+public sealed record TranscriptInput(long StartMs, long EndMs, string TextEn, string TextVi, string[]? AcceptedAnswers = null, int NormalizationPolicyVersion = 1, bool IgnoreTerminalPunctuation = true);
+// VI: Bỏ field null để hash receipt import cũ không đổi. EN: Omit absent segments to preserve the legacy import receipt hash.
+public sealed record ContentInput(string Title, string Summary, string Body, string Skill, int Minutes, int DurationSeconds, bool IsFixture, string Attribution, GroupInput[] Groups, Guid? MediaAssetId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] TranscriptInput[]? Segments = null);
 public sealed record CreateContentInput(string Slug, ContentKind Kind, ContentInput Content);
 public sealed record ImportInput(Guid ClientRequestId, CreateContentInput[] Items);
 
@@ -17,6 +21,8 @@ public sealed record ImportInput(Guid ClientRequestId, CreateContentInput[] Item
 public sealed class ContentService(HubDbContext db, Transactions tx, IClock clock, Receipts receipts)
 {
     public IQueryable<ContentVersion> FullVersions => db.ContentVersions.Include(x => x.Root).Include(x => x.Groups).ThenInclude(x => x.Questions).ThenInclude(x => x.Options);
+    // VI: CMS cần cả transcript; tách collection queries để tránh nhân segment × options. EN: Editorial reads split collections to avoid a segment-by-option Cartesian product.
+    public IQueryable<ContentVersion> EditorialVersions => FullVersions.Include(x => x.Segments).AsSplitQuery();
 
     public Task<ContentVersion> Create(CreateContentInput input, Guid actor) => tx.Run("catalog", async () =>
     {
@@ -44,17 +50,24 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     /// <summary>VI: Chỉ draft được sửa; xóa graph nháp theo thứ tự FK. EN: Only drafts are editable; replace draft children in foreign-key order.</summary>
     public Task<ContentVersion> UpdateDraft(Guid id, ContentInput input, string? etag, Guid actor) => tx.Run("catalog", async () =>
     {
-        var v = await FullVersions.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy bản nháp.");
+        var v = await EditorialVersions.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy bản nháp.");
         Etags.Check(v, etag); DomainError.Require(v.Status == PublicationStatus.Draft, 409, "immutable_version", "Hãy tạo version mới để sửa nội dung đã publish.");
         await CheckMedia(input.MediaAssetId);
         var replacement = MakeVersion(v.RootId, v.Version, input);
         db.QuestionOptions.RemoveRange(v.Groups.SelectMany(g => g.Questions).SelectMany(q => q.Options));
         db.Questions.RemoveRange(v.Groups.SelectMany(g => g.Questions)); db.QuestionGroups.RemoveRange(v.Groups);
+        db.TranscriptSegments.RemoveRange(v.Segments);
         await db.SaveChangesAsync();
         v.Title = replacement.Title; v.Summary = replacement.Summary; v.Body = replacement.Body; v.Skill = replacement.Skill;
         v.Minutes = replacement.Minutes; v.DurationSeconds = replacement.DurationSeconds; v.IsFixture = replacement.IsFixture; v.Attribution = replacement.Attribution;
         v.MediaAssetId = replacement.MediaAssetId;
         v.Groups = replacement.Groups;
+        // VI: FK nằm trong alternate key nên phải ghim trước khi track đoạn mới. EN: Set the identifying FK before tracking replacement segments.
+        foreach(var segment in replacement.Segments) segment.ContentVersionId = v.Id;
+        db.TranscriptSegments.AddRange(replacement.Segments);
+        v.Segments = replacement.Segments;
+        // VI: Sửa riêng graph cũng đổi ETag, kể cả Body không đổi. EN: Child-only edits must advance the parent ETag even when scalar text is unchanged.
+        db.Entry(v).Property(x => x.Body).IsModified = true;
         Audit(actor, "content.draft_updated", id); return v;
     });
 
@@ -105,12 +118,17 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
 
     public Task<ContentVersion> Publish(Guid id, string? etag, Guid actor) => tx.Run("catalog", async () =>
     {
-        var v = await FullVersions.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
+        var v = await EditorialVersions.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
         Etags.Check(v, etag);
         DomainError.Require(v.Status == PublicationStatus.Draft, 409, "immutable_version", "Bản đã publish bất biến; hãy tạo version mới.");
         Validate(v);
         if (v.MediaAssetId is { } mediaId)
             DomainError.Require(await db.MediaAssets.AnyAsync(x => x.Id == mediaId && x.Status == MediaStatus.Ready && x.Purpose == "lesson_audio"), 422, "media_not_ready", "Chỉ publish lesson audio đã được worker xác minh Ready.");
+        if (v.Segments.Count > 0)
+        {
+            var duration = await db.MediaAssets.Where(x => x.Id == v.MediaAssetId && x.Status == MediaStatus.Ready).Select(x => x.DurationMs).SingleAsync();
+            DomainError.Require(duration is > 0 && v.Segments.All(x => x.EndMs <= duration), 422, "segment_outside_media", "Đoạn nghe phải nằm trong thời lượng media đã xác minh.");
+        }
         v.Status = PublicationStatus.Published; v.PublishedAt = clock.UtcNow;
         // VI: Lưu version trước con trỏ để thỏa FK vòng. EN: Persist the version before changing the composite publication pointer.
         await db.SaveChangesAsync();
@@ -124,6 +142,18 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
         CheckKind(v.Root.Kind);
         DomainError.Require(!string.IsNullOrWhiteSpace(v.Title) && v.Title.Length <= 240 && !string.IsNullOrWhiteSpace(v.Attribution), 422, "invalid_content", "Cần tiêu đề và thông tin nguồn.");
         DomainError.Require(v.Minutes is >= 1 and <= 180 && v.DurationSeconds is >= 30 and <= 14400, 422, "invalid_duration", "Thời lượng không hợp lệ.");
+        DomainError.Require(v.Segments.Count <= 100 && (v.Segments.Count == 0 || v.Root.Kind == ContentKind.Lesson && v.MediaAssetId is not null), 422, "invalid_segments", "Transcript cần lesson audio và tối đa100 đoạn.");
+        long previousEnd = 0; var order = 0;
+        foreach(var segment in v.Segments.OrderBy(x => x.Order))
+        {
+            DomainError.Require(segment.Order == order++ && segment.StartMs >= previousEnd && segment.EndMs > segment.StartMs && segment.EndMs <= 3600000, 422, "invalid_segment_timing", "Các đoạn phải đúng thứ tự, không chồng nhau và nằm trong một giờ audio.");
+            DomainError.Require(!string.IsNullOrWhiteSpace(segment.TextEn) && segment.TextEn.Length <= 2000 && !string.IsNullOrWhiteSpace(segment.TextVi) && segment.TextVi.Length <= 2000 && segment.NormalizationPolicyVersion == 1, 422, "invalid_segment_text", "Cần nội dung Anh/Việt và policy được hỗ trợ.");
+            var variants = JsonSerializer.Deserialize<string[]>(segment.AcceptedAnswersJson)!;
+            DomainError.Require(variants.Length is >= 1 and <= 20 && variants.All(x => !string.IsNullOrWhiteSpace(x) && x.Length <= 2000) && AnswerNormalization.Matches(segment.TextEn, variants, segment.NormalizationPolicyVersion, segment.IgnoreTerminalPunctuation), 422, "invalid_segment_answers", "Cần1–20 đáp án hợp lệ và bản tiếng Anh phải được chấp nhận.");
+            var normalized = variants.Select(x => AnswerNormalization.Normalize(x, segment.NormalizationPolicyVersion, segment.IgnoreTerminalPunctuation)).ToArray();
+            DomainError.Require(normalized.Distinct().Count() == normalized.Length && normalized.All(x => x.Length > 0 && x.Split(' ').Length <= 200), 422, "invalid_segment_answers", "Đáp án không được rỗng/trùng sau chuẩn hóa và tối đa200 token.");
+            previousEnd = segment.EndMs;
+        }
         if (v.Root.Kind == ContentKind.Lesson) DomainError.Require(v.Body.Length >= 30, 422, "empty_lesson", "Bài học cần nội dung.");
         else
         {
@@ -152,6 +182,8 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     private static ContentVersion MakeVersion(Guid rootId, int number, ContentInput input)
     {
         DomainError.Require(input.Groups.Length <= 200 && input.Title.Length <= 240 && input.Body.Length <= 100000, 422, "content_too_large", "Nội dung vượt giới hạn.");
+        DomainError.Require((input.Segments?.Length ?? 0) <= 100 && (input.Segments ?? []).All(x => x is not null && x.TextEn is not null && x.TextVi is not null && x.TextEn.Length <= 2000 && x.TextVi.Length <= 2000 && (x.AcceptedAnswers is null || x.AcceptedAnswers.Length <= 20 && x.AcceptedAnswers.All(a => a is not null && a.Length <= 2000))), 422, "invalid_segment_shape", "Cấu trúc transcript vượt giới hạn.");
+        DomainError.Require((input.Segments ?? []).All(x => x.StartMs >= 0 && x.EndMs > x.StartMs && x.EndMs <= 3600000 && x.NormalizationPolicyVersion == 1), 422, "invalid_segment_timing", "Mốc thời gian hoặc policy đoạn nghe không hợp lệ.");
         DomainError.Require(input.Summary.Length <= 2000 && input.Skill.Length <= 60 && input.Attribution.Length <= 2000 && input.Groups.All(g => g is not null && g.Questions.Length <= 6 && g.Stimulus.Length <= 20000 && g.Questions.All(q => q is not null && q.Prompt.Length <= 4000 && q.Explanation.Length <= 8000 && q.Options.Length <= 4 && q.Options.All(o => o is not null && o.Text.Length <= 2000))), 422, "invalid_content_shape", "Cấu trúc câu hỏi hoặc giới hạn nội dung không hợp lệ.");
         DomainError.Require(input.Groups.SelectMany(g => g.Questions).All(q => q.Type is QuestionType.SingleChoice or QuestionType.FillBlank && q.NormalizationPolicyVersion == AnswerNormalization.CurrentVersion && (q.AcceptedAnswerVariants is null || q.AcceptedAnswerVariants.Length <= 20 && q.AcceptedAnswerVariants.All(x => x is not null && x.Length <= AnswerNormalization.MaxAnswerLength))), 422, "invalid_answer_policy", "Loại câu hỏi, biến thể hoặc policy chuẩn hóa không hợp lệ.");
         return new ContentVersion
@@ -167,6 +199,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
             IsFixture = input.IsFixture,
             Attribution = input.Attribution,
             MediaAssetId = input.MediaAssetId,
+            Segments = (input.Segments ?? []).Select((s, i) => new TranscriptSegment { Order = i, StartMs = s.StartMs, EndMs = s.EndMs, TextEn = s.TextEn, TextVi = s.TextVi, AcceptedAnswersJson = JsonSerializer.Serialize(s.AcceptedAnswers ?? [s.TextEn]), NormalizationPolicyVersion = s.NormalizationPolicyVersion, IgnoreTerminalPunctuation = s.IgnoreTerminalPunctuation }).ToList(),
             Groups = input.Groups.Select((g, i) => new QuestionGroup
             {
                 Order = i,

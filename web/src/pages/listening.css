@@ -1,0 +1,120 @@
+.listening-panel {
+  margin: 24px 0;
+  border: 2px solid var(--primary);
+  border-radius: 18px;
+  background: var(--surface);
+  overflow-wrap: anywhere;
+}
+.listening-panel > summary {
+  padding: 20px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 19px;
+  font-weight: 750;
+  color: var(--primary-dark);
+}
+.listening-content {
+  padding: 0 20px 24px;
+  line-height: 1.7;
+}
+.listening-content audio {
+  display: block;
+  width: 100%;
+  margin: 20px 0;
+}
+.listening-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+.listening-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.listening-summary p {
+  padding: 14px;
+  border-top: 4px solid var(--primary);
+  border-radius: 8px;
+  background: var(--primary-soft);
+  margin: 0;
+}
+.listening-summary b {
+  display: block;
+  font-size: 24px;
+  color: var(--primary-dark);
+}
+.listening-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+}
+.listening-segments button {
+  min-height: 44px;
+  padding: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--control-line);
+  border-radius: 9px;
+  font: inherit;
+  cursor: pointer;
+}
+.listening-segments [aria-pressed="true"] {
+  border: 2px solid var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+.listening-content textarea {
+  display: block;
+  width: 100%;
+  min-height: 110px;
+  margin: 10px 0;
+  padding: 12px;
+  font: inherit;
+  border: 1px solid var(--control-line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  resize: vertical;
+}
+.listening-transcript {
+  border-left: 4px solid var(--success);
+  padding: 4px 16px;
+  background: var(--surface-subtle);
+  margin: 20px 0;
+  white-space: pre-wrap;
+}
+.dictation-diff {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+}
+.dictation-diff li {
+  padding: 6px 10px;
+  border: 1px solid var(--control-line);
+  border-radius: 7px;
+  overflow-wrap: anywhere;
+}
+.diff-equal {
+  color: var(--success);
+}
+.diff-delete,
+.diff-insert,
+.diff-replace {
+  color: var(--danger);
+  font-weight: 600;
+}
+@media (max-width: 650px) {
+  .listening-summary {
+    grid-template-columns: 1fr;
+  }
+  .listening-content {
+    padding: 0 14px 20px;
+  }
+}

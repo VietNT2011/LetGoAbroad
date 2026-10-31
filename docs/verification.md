@@ -60,12 +60,14 @@ The [same-tab audio block uploader](block-uploads.md) adds thirteen frontend cas
 
 The [private recording UI/library](recordings.md) adds four metadata cases, fifteen simulated capture cases and five page cases on **18/11/2026**. Browser APIs are mocked: no human microphone or permission prompt was used. A live-mode WebM probe exposed absent format duration; two real FFmpeg cases now verify bounded PCM measurement, successful conversion and rejection rather than truncation of overlong input. After this processing fix, both complete local suites were rerun successfully:300 SQLite/309 SQL-media,0 failed/skipped, plus93 frontend tests and a successful production build. Earlier300/307 results before the streaming fix are retained separately and are not the final source verification.
 
+The [segmented-listening framework](segmented-listening.md) adds24 relational cases and16 frontend cases on **18/11/2026**. All324 SQLite/333 SQL-media cases and109 frontend tests pass, with zero failures/skips and a successful production build. Tests cover hidden transcript keys, exact variants, global disclosure across sessions, separate first-answer summaries, expiry/replay, competing starts/answers/position updates, archival playback, owner/CSRF/composite-FK boundaries and CMS validation. A draft replacement initially failed because an identifying FK was assigned after tracking; replacement segments now receive the FK before tracking, and child-only edits advance the parent ETag. Legacy import hashes remain stable when optional segments are absent. The additive migration creates empty listening tables; no learner answers or progress are backfilled. This checkpoint supplies the framework; packaged starter audio is separate. No native browser/microphone automation was used.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **309 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **300 passed, 0 failed, 0 skipped**; the nine Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **333 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **324 passed, 0 failed, 0 skipped**; the nine Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **93 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment, skill-sample comparison, card-editor, mistake-notebook, block-upload and private-capture/library contracts |
+| `npm --prefix web test` | **109 passed, 0 failed**; simulated DOM/transport contracts including listening-session grading and serialized position saves |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

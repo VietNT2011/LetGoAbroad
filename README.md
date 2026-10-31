@@ -82,7 +82,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
 7. Phát audio, seek/tốc độ; xem job và retry lỗi. Xóa media chưa còn tham chiếu Published sẽ chặn quyền phát mới và đưa vào hàng đợi xóa bền vững.
    Upload/xóa phân biệt [lệnh đã được nhận và xử lý đã hoàn tất](docs/media-acknowledgments.md); phản hồi202 rỗng không còn bị báo thành lỗi parse JSON.
 
-Thư viện có 14 bài nền tảng và quiz, 20 câu grammar khác nhau, mini reading 5 email × 4 câu và bài gõ đáp án 5 câu. Câu điền đáp án có autosave, biến thể biên soạn và [policy chuẩn hóa v1](docs/answer-policy.md), áp dụng được cả trong lesson quiz. Nội dung tự biên soạn được ghi nguồn trong [seed](seed/README.md).
+Thư viện có 14 bài nền tảng và quiz, 20 câu grammar khác nhau, mini reading 5 email × 4 câu và bài gõ đáp án 5 câu. Câu điền đáp án có autosave, biến thể biên soạn và [policy chuẩn hóa v1](docs/answer-policy.md), áp dụng được cả trong lesson quiz. Bài có audio Ready và transcript biên soạn hỗ trợ [nghe theo đoạn, lặp câu, dictation và tiếp tục vị trí nghe](docs/segmented-listening.md); CMS nhận mảng `segments`. Nội dung tự biên soạn được ghi nguồn trong [seed](seed/README.md).
 
 Full mock 200 câu là **dữ liệu demo kỹ thuật**, kiểm thử counts/group/timer/grading. Nó có Listening 45 phút rồi Reading 75 phút theo giờ server, nhưng không phải bộ đề TOEIC LR thực đã biên soạn/kiểm định. Fixture không tham gia thống kê thành tích. Chỉ raw score, không quy đổi điểm 990.
 

@@ -57,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<LearningActivityService>();
         services.AddScoped<CardService>();
         services.AddScoped<MistakeService>();
+        services.AddScoped<ListeningService>();
         services.AddScoped<DailyReviewService>();
         services.AddScoped<StudyActivityService>();
         services.AddSingleton<IObjectStorage, AzureObjectStorage>();

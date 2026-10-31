@@ -20,7 +20,7 @@ public static class ContentEndpoints
         }).WithTags("Content");
         app.MapGet("/api/v1/lessons/{id:guid}", async (Guid id, ClaimsPrincipal user, HubDbContext db) =>
         {
-            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && (x.Status == PublicationStatus.Published || x.Status == PublicationStatus.Archived && db.LessonAnnotations.Any(n => n.UserId == user.UserId() && n.ContentVersionId == id)) && x.Root.Kind == ContentKind.Lesson).Select(x => new
+            var lesson = await db.ContentVersions.AsNoTracking().Where(x => x.Id == id && (x.Status == PublicationStatus.Published || x.Status == PublicationStatus.Archived && (db.LessonAnnotations.Any(n => n.UserId == user.UserId() && n.ContentVersionId == id) || db.ListeningSessions.Any(s => s.UserId == user.UserId() && s.ContentVersionId == id))) && x.Root.Kind == ContentKind.Lesson).Select(x => new
             {
                 x.Id,
                 x.Title,
@@ -32,6 +32,7 @@ public static class ContentEndpoints
                 x.Version,
                 archived = x.Status == PublicationStatus.Archived,
                 x.MediaAssetId,
+                hasListeningSegments = x.Segments.Any(),
                 quiz = x.Groups.SelectMany(g => g.Questions).Select(q => new { q.Id, q.Prompt, q.Type, options = q.Options.Select(o => new { o.Id, o.Text }) })
             }).SingleOrDefaultAsync();
             return lesson is null ? Results.NotFound() : Results.Ok(lesson);
@@ -40,8 +41,8 @@ public static class ContentEndpoints
         admin.MapGet("/content", async (HubDbContext db) => await db.ContentVersions.AsNoTracking().OrderByDescending(x => x.Version).Select(x => new { x.Id, x.RootId, x.Root.Slug, x.Title, x.Status, x.Version, x.Root.Kind, etag = Convert.ToBase64String(x.RowVersion) }).Take(100).ToListAsync());
         admin.MapGet("/versions/{id:guid}", async (Guid id, ContentService service) =>
         {
-            var v = await service.FullVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
-            return new { v.Id, v.RootId, v.Title, v.Summary, v.Body, v.Skill, v.Minutes, v.DurationSeconds, v.IsFixture, v.Attribution, v.MediaAssetId, v.Version, v.Status, etag = Etags.Of(v), groups = v.Groups.OrderBy(x => x.Order).Select(g => new { g.Part, g.Stimulus, questions = g.Questions.OrderBy(x => x.Order).Select(q => new { q.Prompt, q.Skill, q.Explanation, q.Type, acceptedAnswerVariants = System.Text.Json.JsonSerializer.Deserialize<string[]>(q.AcceptedAnswerVariantsJson), q.NormalizationPolicyVersion, q.IgnoreTerminalPunctuation, options = q.Options.Select(o => new { o.Text, o.IsCorrect }) }) }) };
+            var v = await service.EditorialVersions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
+            return new { v.Id, v.RootId, v.Title, v.Summary, v.Body, v.Skill, v.Minutes, v.DurationSeconds, v.IsFixture, v.Attribution, v.MediaAssetId, v.Version, v.Status, etag = Etags.Of(v), segments = v.Segments.OrderBy(x => x.Order).Select(s => new { s.StartMs, s.EndMs, s.TextEn, s.TextVi, acceptedAnswers = System.Text.Json.JsonSerializer.Deserialize<string[]>(s.AcceptedAnswersJson), s.NormalizationPolicyVersion, s.IgnoreTerminalPunctuation }), groups = v.Groups.OrderBy(x => x.Order).Select(g => new { g.Part, g.Stimulus, questions = g.Questions.OrderBy(x => x.Order).Select(q => new { q.Prompt, q.Skill, q.Explanation, q.Type, acceptedAnswerVariants = System.Text.Json.JsonSerializer.Deserialize<string[]>(q.AcceptedAnswerVariantsJson), q.NormalizationPolicyVersion, q.IgnoreTerminalPunctuation, options = q.Options.Select(o => new { o.Text, o.IsCorrect }) }) }) };
         });
         admin.MapPost("/content", async (CreateContentInput input, ClaimsPrincipal user, ContentService service) =>
         {
