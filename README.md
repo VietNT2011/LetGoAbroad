@@ -23,6 +23,7 @@ pwsh -NoProfile -File .\scripts\start.ps1
 ```
 
 Hoặc mở `Start-EnglishHub.cmd`. Script tạo mật khẩu SQL/key Azurite ngẫu nhiên trong `deploy/.env` đã được gitignore, dựng web/API/worker, áp dụng migration và chờ readiness. Các core image đã khóa digest. Lần đầu cần tải image/dependency.
+Docker tách [input build UI, API và worker](docs/container-builds.md), giữ cache publish backend khi chỉ đổi giao diện và vẫn rebuild khi đổi seed nhúng.
 
 - Ứng dụng: [http://127.0.0.1:5188](http://127.0.0.1:5188)
 - OpenAPI: [http://127.0.0.1:5188/openapi/v1.json](http://127.0.0.1:5188/openapi/v1.json)

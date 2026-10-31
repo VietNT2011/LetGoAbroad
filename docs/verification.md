@@ -46,6 +46,8 @@ The study-time browser lifecycle follow-up adds twelve frontend cases. It rechec
 
 The [empty media202 acknowledgment fix](media-acknowledgments.md) adds eight transport cases, for42 frontend tests total. Complete/delete acceptance now advances the existing queued-work UI without pretending the asset is Ready. Malformed success bodies and ordinary empty GETs still fail; no production media is created/deleted for the parser check. Backend source and the263/269 local suite coverage are unchanged.
 
+The [container input split](container-builds.md) passes locked-restore API/worker publication, packaged readiness and three isolated dependency probes: frontend-only/API-only changes preserve the relevant backend publish cache, while an embedded-seed change invalidates API publish. Diagnostic SDK exports briefly reduced host free disk space; scoped cleanup/recovery is recorded in the local handover. No C# or frontend application source changes in this build-only follow-up; local263/269 backend and42 frontend coverage remains applicable, with fresh exact-head CI required.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **269 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
