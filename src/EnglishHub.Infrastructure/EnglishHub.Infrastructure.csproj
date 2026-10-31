@@ -13,5 +13,11 @@
   <ItemGroup><EmbeddedResource Include="../../seed/foundation-lessons.json" LogicalName="EnglishHub.Seed.Foundation" /></ItemGroup>
   <ItemGroup><EmbeddedResource Include="../../seed/core-curriculum.json" LogicalName="EnglishHub.Seed.Core" /></ItemGroup>
   <ItemGroup><EmbeddedResource Include="../../seed/exam-curriculum.json" LogicalName="EnglishHub.Seed.Exam" /></ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="../../seed/listening-curriculum.json" LogicalName="EnglishHub.Seed.Listening" />
+    <EmbeddedResource Include="../../seed/audio/*.mp3" LogicalName="EnglishHub.Seed.Audio.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../seed/audio/NOTICE.md" LogicalName="EnglishHub.Seed.Audio.NOTICE.md" />
+    <EmbeddedResource Include="../../seed/audio/FLITE-NOTICE.txt" LogicalName="EnglishHub.Seed.Audio.FLITE-NOTICE.txt" />
+  </ItemGroup>
 </Project>
  

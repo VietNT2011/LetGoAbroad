@@ -11,7 +11,7 @@ VI: Dockerfile trước đây copy toàn repo vào stage .NET, nên sửa UI, t�
 | Worker project | No | No | Yes |
 | Docs and test sources | No | No | No |
 
-The embedded Foundation/Core/Exam seed files remain build inputs. Existing pinned base-image digests, non-root runtimes, NuGet cache mount, runtime environment/volumes, worker FFmpeg and API static output are retained. New root MSBuild imports or static-asset directories must be added to the corresponding COPY list when introduced; current frontend has no public directory or external source import.
+The embedded Foundation/Core/Exam/listening seed files remain build inputs. `seed/audio` is explicitly copied by both Dockerfiles because the Infrastructure assembly embeds its MP3s and source notices. Existing pinned base-image digests, non-root runtimes, NuGet cache mount, runtime environment/volumes, worker FFmpeg and API static output are retained. New root MSBuild imports or static-asset directories must be added to the corresponding COPY list when introduced; current frontend has no public directory or external source import.
 
 Local checks publish both services with locked restore and launch to readiness200. An isolated copy of tracked files (including the candidate Dockerfiles) modifies inputs without changing live source: frontend-only changes preserve API publish cache; API-only changes preserve worker publish cache; changed embedded seed JSON forces API publication. All three expected cache decisions and builds pass. These are cache-dependency checks, not a general build-time or runtime performance benchmark. Runtime learner-progress checks supplement the build and no database migration is involved.
 

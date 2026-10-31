@@ -43,6 +43,7 @@ services:
       Database__Provider: SqlServer
       Database__Initialize: 'true'
       Seed__Demo: 'true'
+      Seed__ListeningAudio: 'true'
       FeatureFlags__EnableMedia: 'true'
       ConnectionStrings__Database: Server=sql;Database=EnglishHub;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=False
       Storage__ConnectionString: DefaultEndpointsProtocol=http;AccountName=englishhub;AccountKey=${AZURITE_ACCOUNT_KEY};BlobEndpoint=http://azurite:10000/englishhub;

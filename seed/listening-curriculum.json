@@ -1,0 +1,197 @@
+[
+  {
+    "slug": "listening-office-meeting",
+    "rootId": "10dfe7ed-e863-5f11-973a-2a0515241e22",
+    "versionId": "3aaf2b95-e1a9-5f4b-b9ef-89bcc26ef83f",
+    "assetId": "fb61ecfd-9447-5e89-b2c0-c414994b57e3",
+    "title": "Listen & type · The office meeting",
+    "summary": "Nghe lịch họp, lời nhắc và địa điểm · 3 câu ngắn có audio tổng hợp.",
+    "body": "Mục tiêu: nghe thông tin về thời gian, vật dụng và địa điểm trong một thông báo công sở.\n\nMở phần Nghe theo đoạn, nghe mỗi câu rồi gõ điều bạn nghe được. Có thể giảm tốc độ hoặc bật lặp. Sau lượt đầu, xem bản dịch và sửa câu.\n\nAudio giọng tổng hợp tiếng Anh Mỹ (Flite slt), không phải người thật. Bài tự biên soạn ở mức khởi đầu; không phải đề ETS hoặc thước đo trình độ chuẩn hóa.",
+    "fileName": "listening-office-meeting.mp3",
+    "bytes": 90010,
+    "sha256": "5B7841228C53B55DD9C254FB2700F6E5F08B609ABA44AA076D1CA1F85D19835F",
+    "durationMs": 7472,
+    "segments": [
+      {
+        "startMs": 250,
+        "endMs": 2355,
+        "textEn": "The meeting starts at nine.",
+        "textVi": "Cuộc họp bắt đầu lúc chín giờ.",
+        "acceptedAnswers": [
+          "The meeting starts at nine.",
+          "The meeting starts at 9."
+        ]
+      },
+      {
+        "startMs": 2654,
+        "endMs": 4666,
+        "textEn": "Please bring your notebook.",
+        "textVi": "Vui lòng mang theo sổ ghi chép.",
+        "acceptedAnswers": [
+          "Please bring your notebook."
+        ]
+      },
+      {
+        "startMs": 4965,
+        "endMs": 7131,
+        "textEn": "We will meet in the main office.",
+        "textVi": "Chúng ta sẽ gặp nhau ở văn phòng chính.",
+        "acceptedAnswers": [
+          "We will meet in the main office."
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "prompt": "What time does the meeting start?",
+        "correct": "At nine.",
+        "distractors": [
+          "At eight.",
+          "At ten.",
+          "At noon."
+        ],
+        "explanation": "Câu đầu nói 'The meeting starts at nine.' → Cuộc họp bắt đầu lúc chín giờ."
+      },
+      {
+        "prompt": "What should listeners bring?",
+        "correct": "A notebook.",
+        "distractors": [
+          "A ticket.",
+          "An umbrella.",
+          "A room key."
+        ],
+        "explanation": "'Please bring your notebook.' nhắc người nghe mang theo sổ ghi chép."
+      }
+    ]
+  },
+  {
+    "slug": "listening-hotel-room",
+    "rootId": "d3d12bbc-78ff-526a-8b0f-1ca1c4c73916",
+    "versionId": "dccd4a30-050d-58f1-9ff3-a9255c9fe4fc",
+    "assetId": "c8230cd2-cf12-5486-b380-a85fc2b94873",
+    "title": "Listen & type · Booking a hotel room",
+    "summary": "Nghe yêu cầu đặt phòng, số đêm và bữa sáng · 3 câu ngắn có audio tổng hợp.",
+    "body": "Mục tiêu: nhận ra lời yêu cầu lịch sự và thông tin khi đặt phòng khách sạn.\n\nNghe cả bài một lần, sau đó luyện từng câu. Tự gõ đáp án trước khi xem transcript để phân biệt lượt tự nghe và lượt có trợ giúp.\n\nAudio giọng tổng hợp tiếng Anh Mỹ (Flite slt), không phải người thật. Bài tự biên soạn ở mức khởi đầu; không phải đề ETS hoặc thước đo trình độ chuẩn hóa.",
+    "fileName": "listening-hotel-room.mp3",
+    "bytes": 98160,
+    "sha256": "D4D0E4D7E443B2FC44B35E14EE092E4DF19838DE3DCAD963B63A7562FE3CAEED",
+    "durationMs": 8151,
+    "segments": [
+      {
+        "startMs": 250,
+        "endMs": 2290,
+        "textEn": "I would like to book a room.",
+        "textVi": "Tôi muốn đặt một phòng.",
+        "acceptedAnswers": [
+          "I would like to book a room."
+        ]
+      },
+      {
+        "startMs": 2589,
+        "endMs": 4858,
+        "textEn": "Do you have a room for two nights?",
+        "textVi": "Khách sạn có phòng cho hai đêm không?",
+        "acceptedAnswers": [
+          "Do you have a room for two nights?",
+          "Do you have a room for 2 nights?"
+        ]
+      },
+      {
+        "startMs": 5157,
+        "endMs": 7801,
+        "textEn": "Breakfast is included in the price.",
+        "textVi": "Bữa sáng đã được bao gồm trong giá.",
+        "acceptedAnswers": [
+          "Breakfast is included in the price."
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "prompt": "How long does the guest want to stay?",
+        "correct": "Two nights.",
+        "distractors": [
+          "One night.",
+          "Three nights.",
+          "One week."
+        ],
+        "explanation": "'For two nights' là trong hai đêm; không phải ba đêm hay một tuần."
+      },
+      {
+        "prompt": "What is included in the price?",
+        "correct": "Breakfast.",
+        "distractors": [
+          "A train ticket.",
+          "Dinner.",
+          "Airport transport."
+        ],
+        "explanation": "Câu cuối xác nhận 'Breakfast is included in the price.' → Giá đã gồm bữa sáng."
+      }
+    ]
+  },
+  {
+    "slug": "listening-train-platform",
+    "rootId": "9c4e92a6-46b6-54c6-b56e-b3f6da4f7221",
+    "versionId": "0c824dd0-9a0d-5b11-8e3b-b9a1974c6af3",
+    "assetId": "5b4701dd-c212-50e0-9dd0-09a83c1f16ef",
+    "title": "Listen & type · At the train station",
+    "summary": "Nghe giờ tàu chạy, sân ga và lời nhắc giữ vé · 3 câu ngắn có audio tổng hợp.",
+    "body": "Mục tiêu: nghe thời gian khởi hành và các chỉ dẫn ngắn tại ga tàu.\n\nChú ý cụm chỉ thời gian và các động từ trong lời nhắc. Nghe từng đoạn, lặp khi cần và kiểm tra câu đã gõ. Quiz cuối bài kiểm tra ý chính riêng với bài dictation.\n\nAudio giọng tổng hợp tiếng Anh Mỹ (Flite slt), không phải người thật. Bài tự biên soạn ở mức khởi đầu; không phải đề ETS hoặc thước đo trình độ chuẩn hóa.",
+    "fileName": "listening-train-platform.mp3",
+    "bytes": 111953,
+    "sha256": "1A9024BD4497979B21EE53A7C397E968231B1FA842BE31CA7699E2EFD5299C15",
+    "durationMs": 9300,
+    "segments": [
+      {
+        "startMs": 250,
+        "endMs": 2986,
+        "textEn": "The next train leaves at ten thirty.",
+        "textVi": "Chuyến tàu tiếp theo rời ga lúc mười giờ ba mươi.",
+        "acceptedAnswers": [
+          "The next train leaves at ten thirty.",
+          "The next train leaves at 10:30."
+        ]
+      },
+      {
+        "startMs": 3285,
+        "endMs": 5947,
+        "textEn": "Please check the platform number.",
+        "textVi": "Vui lòng kiểm tra số sân ga.",
+        "acceptedAnswers": [
+          "Please check the platform number."
+        ]
+      },
+      {
+        "startMs": 6246,
+        "endMs": 8962,
+        "textEn": "Keep your ticket until the end of the trip.",
+        "textVi": "Hãy giữ vé cho đến cuối chuyến đi.",
+        "acceptedAnswers": [
+          "Keep your ticket until the end of the trip."
+        ]
+      }
+    ],
+    "questions": [
+      {
+        "prompt": "When does the next train leave?",
+        "correct": "At ten thirty.",
+        "distractors": [
+          "At ten fifteen.",
+          "At nine thirty.",
+          "At eleven."
+        ],
+        "explanation": "'Ten thirty' là mười giờ ba mươi; phân biệt thirty với fifteen."
+      },
+      {
+        "prompt": "What should passengers keep until the end of the trip?",
+        "correct": "Their tickets.",
+        "distractors": [
+          "The platform sign.",
+          "A hotel bill.",
+          "A notebook."
+        ],
+        "explanation": "'Keep your ticket until the end of the trip.' nhắc giữ vé đến cuối chuyến đi."
+      }
+    ]
+  }
+]

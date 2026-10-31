@@ -60,6 +60,14 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
         await DemoPathSeed.Ensure(db);
         await DemoCoreSeed.Ensure(db);
         await DemoExamSeed.Ensure(db);
+        // VI: Chỉ opt-in demo có storage; test thường không tạo Ready audio giả. EN: Audio seed is explicitly enabled with real storage, never fabricated in ordinary database fixtures.
+        if (app.Configuration.GetValue<bool>("Seed:ListeningAudio"))
+        {
+            var admin = await scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>().FindByEmailAsync("admin@englishhub.local")
+                ?? throw new InvalidOperationException("Demo audio owner missing.");
+            await DemoListeningSeed.Ensure(db, scope.ServiceProvider.GetRequiredService<EnglishHub.Application.Media.IObjectStorage>(), admin.Id,
+                scope.ServiceProvider.GetRequiredService<IClock>());
+        }
     }
 }
 app.MapIdentity();

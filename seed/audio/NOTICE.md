@@ -1,0 +1,11 @@
+# Starter listening audio / Audio nghe khởi đầu
+
+These three MP3 files contain **synthetic US English speech**, not human recordings. The nine English sentences, Vietnamese translations, lesson instructions and six quiz questions are original EnglishHub material, dedicated under CC0. They are illustrative beginner practice, not ETS material or a validated proficiency assessment.
+
+The files were generated offline with **CMU Flite**, voice **slt**, FFmpeg's `flite` filter, `atempo=0.9`, mono44.1kHz and96kbps MP3. The voice is synthetic; no person's endorsement or participation is implied. The app makes no TTS, STT or AI API requests. Source scripts are in [listening-scripts.json](../listening-scripts.json); measured boundaries, byte counts and SHA-256 are in [listening-curriculum.json](../listening-curriculum.json). Each clip has a250ms lead-in and400ms gaps; segment ends include100ms of the following silence.
+
+Preserve [FLITE-NOTICE.txt](FLITE-NOTICE.txt), copied in full from the generating Debian `libflite1` package. It contains the CMU notices and the separately listed packaging/build-file notices; generated MP3s do not contain that software or its build scripts. The original upstream notice is [Flite COPYING](https://github.com/festvox/flite/blob/master/COPYING). Flite and voice software are not relicensed as CC0. The notices are embedded with the assets when publishing .NET assemblies.
+
+Regeneration requires Python3 and an FFmpeg build containing Flite/slt. Run `python3 scripts/generate-listening-audio.py` from a Linux environment. Audio bytes may differ across package builds; the committed manifest and files are the versioned artifact. Review new bytes, timing, hashes and content together before publication. The generator's `/v1/` identities belong to this frozen corpus: later published material must receive new version/asset identities through CMS or a new seed version; do not regenerate and silently reuse them for a different published payload. Timings and decodeability are checked programmatically; native listening/educator review remains open.
+
+VI: Đây là ba bài tự biên soạn với giọng máy, ghi rõ nguồn và không giả là hội thoại người thật. Bản dịch và câu hỏi cần được rà soát biên tập thêm trước khi dùng như học liệu đã kiểm định.

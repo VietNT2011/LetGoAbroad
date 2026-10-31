@@ -14,6 +14,7 @@ COPY src/EnglishHub.Application/ ./src/EnglishHub.Application/
 COPY src/EnglishHub.Infrastructure/ ./src/EnglishHub.Infrastructure/
 COPY src/EnglishHub.Api/ ./src/EnglishHub.Api/
 COPY seed/*.json ./seed/
+COPY seed/audio/ ./seed/audio/
 RUN --mount=type=cache,id=englishhub-build-nuget,target=/root/.nuget/packages,sharing=locked dotnet publish src/EnglishHub.Api -c Release -o /out -p:RestoreLockedMode=true
 FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:1a48394b6f29d3a32c79d9edecd4abda0ecbe8776d567dbfc4590ed6979c740c
 WORKDIR /app

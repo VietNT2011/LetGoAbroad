@@ -12,4 +12,6 @@ DemoPathSeed ghim 14 bài hiện có và 4 mốc practice thành 3 stage của l
 
 Full mock 200 câu là **fixture kỹ thuật** có counts 6/25/39/30/30/16/54 và nhóm câu nguyên vẹn. Nó kiểm thử blueprint, timer section, autosave và grading; các câu grammar được dùng lại để kiểm tra kỹ thuật, không phải bản mô phỏng nội dung TOEIC LR. `IsFixture=true` loại kết quả khỏi thống kê thành tích.
 
-Synthetic WAV tones in integration tests are technical fixtures only. No tone is shipped as learning speech. Audio/video with authored transcripts and source/redistribution rights still need to be added for the rich listening curriculum.
+`listening-scripts.json` chứa3 bài nghe nguyên gốc (9 câu song ngữ,6 câu hỏi). `listening-curriculum.json` ghim timing/hash/bytes; `audio/` chứa MP3 giọng tổng hợp Flite slt cùng thông tin nguồn và notices. Demo Docker opt-in upload thật trước khi publish; không đổi các lộ trình đã ghim. Xem [bộ nghe khởi đầu](../docs/listening-curriculum.md) và [nguồn audio](audio/NOTICE.md). Bản nghe tự nhiên đa giọng và rà soát chuyên môn vẫn còn cần bổ sung.
+
+Synthetic WAV tones in integration tests are technical fixtures only. No tone is shipped as learning speech. Video and a broader reviewed listening corpus remain future work.

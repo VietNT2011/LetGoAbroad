@@ -86,6 +86,8 @@ Thư viện có 14 bài nền tảng và quiz, 20 câu grammar khác nhau, mini 
 
 Full mock 200 câu là **dữ liệu demo kỹ thuật**, kiểm thử counts/group/timer/grading. Nó có Listening 45 phút rồi Reading 75 phút theo giờ server, nhưng không phải bộ đề TOEIC LR thực đã biên soạn/kiểm định. Fixture không tham gia thống kê thành tích. Chỉ raw score, không quy đổi điểm 990.
 
+Demo Docker bổ sung [3 bài Listen & type](docs/listening-curriculum.md) ở bộ lọc Nghe:9 câu có audio giọng tổng hợp Anh Mỹ, transcript Anh–Việt và6 câu hỏi nghe hiểu. Audio có file thật, nguồn/notice và hash; chỉ công bố sau khi upload thành công. Không tự đổi lộ trình hoặc tạo tiến độ người học.
+
 ## Kiểm thử
 
 ```powershell
