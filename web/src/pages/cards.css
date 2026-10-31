@@ -169,6 +169,10 @@
   margin-top: 20px;
   padding-top: 10px;
 }
+.card-version-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .card-pagination {
   justify-content: space-between;
   margin: 16px 0;

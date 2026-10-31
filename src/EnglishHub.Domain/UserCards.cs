@@ -7,6 +7,7 @@ public sealed class UserCard : VersionedEntity
     public string CustomKey { get; set; } = "";
     public string Front { get; set; } = "";
     public string Back { get; set; } = "";
+    public int ContentVersion { get; set; } = 1;
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     public DateTimeOffset DueAt { get; set; }
@@ -15,6 +16,16 @@ public sealed class UserCard : VersionedEntity
     public int SchedulerVersion { get; set; } = 1;
     public DateTimeOffset? ArchivedAt { get; set; }
     public List<CardSourceContext> Contexts { get; set; } = [];
+}
+
+/// <summary>VI: Nội dung chỉ thêm phiên bản; lượt ôn luôn ghim đúng hai mặt đã học. EN: Append-only text versions preserve what each historical review actually presented.</summary>
+public sealed class UserCardVersion
+{
+    public Guid UserCardId { get; set; }
+    public int Number { get; set; }
+    public string Front { get; set; } = "";
+    public string Back { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
 }
 
 public sealed class CardSourceContext
@@ -32,6 +43,8 @@ public sealed class CardReview
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid UserCardId { get; set; }
     public UserCard Card { get; set; } = null!;
+    public int ContentVersion { get; set; } = 1;
+    public UserCardVersion Content { get; set; } = null!;
     public Guid ReviewEventId { get; set; }
     public CardRating Rating { get; set; }
     public int SchedulerVersion { get; set; }

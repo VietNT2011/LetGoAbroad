@@ -10,7 +10,8 @@ namespace EnglishHub.Infrastructure.Learning;
 public sealed record CreateCard(Guid ClientRequestId, string Front, string Back, string? SourceContext = null);
 public sealed record ReviewCard(Guid ReviewEventId, string ExpectedEtag, CardRating Rating);
 public sealed record ArchiveCard(Guid ClientRequestId, string ExpectedEtag, bool Archived);
-public sealed record CardView(Guid Id, string Front, string Back, string[] Contexts, DateTimeOffset DueAt, int IntervalDays, int SuccessStep, int SchedulerVersion, DateTimeOffset? ArchivedAt, string Etag, bool CanReview);
+public sealed record EditCard(Guid ClientRequestId, string ExpectedEtag, string Front, string Back);
+public sealed record CardView(Guid Id, string Front, string Back, string[] Contexts, DateTimeOffset DueAt, int IntervalDays, int SuccessStep, int SchedulerVersion, DateTimeOffset? ArchivedAt, string Etag, bool CanReview, int ContentVersion = 1);
 public sealed record CardPage(CardView[] Items, int DueCount, int? NextOffset);
 public sealed record CardReviewAck(Guid ReviewId, Guid ReviewEventId, CardView Card);
 
@@ -35,8 +36,15 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
         ValidateOffset(offset); await Owned(user, id, false);
         var page = await db.CardReviews.AsNoTracking().Where(x => x.UserCardId == id && x.Card.UserId == user)
             .OrderByDescending(x => x.ReviewedAt).ThenBy(x => x.Id).Skip(offset).Take(31)
-            .Select(x => new { x.Id, x.ReviewEventId, x.Rating, x.SchedulerVersion, x.ReviewedAt, x.BeforeDueAt, x.AfterDueAt, x.BeforeIntervalDays, x.AfterIntervalDays, x.BeforeSuccessStep, x.AfterSuccessStep }).ToArrayAsync();
+            .Select(x => new { x.Id, x.ReviewEventId, x.Rating, x.SchedulerVersion, x.ReviewedAt, x.BeforeDueAt, x.AfterDueAt, x.BeforeIntervalDays, x.AfterIntervalDays, x.BeforeSuccessStep, x.AfterSuccessStep, x.ContentVersion, x.Content.Front, x.Content.Back }).ToArrayAsync();
         return new { items = page.Take(30).ToArray(), nextOffset = page.Length > 30 ? offset + 30 : (int?)null };
+    }
+
+    public async Task<object> Versions(Guid user, Guid id, int offset = 0)
+    {
+        ValidateOffset(offset); await Owned(user, id, false);
+        var page = await db.UserCardVersions.AsNoTracking().Where(x => x.UserCardId == id).OrderByDescending(x => x.Number).Skip(offset).Take(31).ToArrayAsync();
+        return new { items = page.Take(30).Select(x => new { x.Number, x.Front, x.Back, x.CreatedAt }).ToArray(), nextOffset = page.Length > 30 ? offset + 30 : (int?)null };
     }
 
     public Task<CardView> Create(Guid user, CreateCard input) => tx.Run($"learning:{user}", async () =>
@@ -45,7 +53,7 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
         var duplicate = await receipts.Find(user, scope, input.ClientRequestId, hash);
         if (duplicate is not null) return JsonSerializer.Deserialize<CardView>(duplicate.ResponseJson)!;
         DomainError.Require(!string.IsNullOrWhiteSpace(input.Front) && input.Front.Length <= 500 && !string.IsNullOrWhiteSpace(input.Back) && input.Back.Length <= 2000 && (input.SourceContext?.Length ?? 0) <= 2000, 422, "invalid_card_text", "Mặt trước tối đa500, mặt sau/ngữ cảnh tối đa2000 ký tự và hai mặt không được trống.");
-        var front = input.Front.Trim().Normalize(NormalizationForm.FormC); var back = input.Back.Trim().Normalize(NormalizationForm.FormC);
+        var (front, back) = NormalizeText(input.Front, input.Back);
         var key = Receipts.Hash(new { front, back });
         var card = await Full.SingleOrDefaultAsync(x => x.UserId == user && x.CustomKey == key);
         // VI: Lưu lại thẻ đã cất cần thao tác khôi phục rõ ràng; không reset lịch hay tạo bản sao để né lịch sử. EN: Re-adding an archived card requires explicit restore rather than resetting its schedule or duplicating history.
@@ -54,6 +62,7 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
         {
             card = new UserCard { UserId = user, CustomKey = key, Front = front, Back = back, CreatedAt = clock.UtcNow, UpdatedAt = clock.UtcNow, DueAt = clock.UtcNow };
             db.UserCards.Add(card);
+            db.UserCardVersions.Add(new UserCardVersion { UserCardId = card.Id, Number = 1, Front = front, Back = back, CreatedAt = card.CreatedAt });
         }
         var context = input.SourceContext?.Trim().Normalize(NormalizationForm.FormC);
         if (!string.IsNullOrEmpty(context) && !card.Contexts.Any(x => x.Text == context))
@@ -67,6 +76,28 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
         var view = View(card); receipts.Save(user, scope, input.ClientRequestId, hash, card.Id, view); return view;
     });
 
+    public Task<CardView> Edit(Guid user, Guid id, EditCard input) => tx.Run($"learning:{user}", async () =>
+    {
+        const string scope = "card-edit"; var hash = Receipts.Hash(new { id, input });
+        var duplicate = await receipts.Find(user, scope, input.ClientRequestId, hash);
+        if (duplicate is not null) return JsonSerializer.Deserialize<CardView>(duplicate.ResponseJson)!;
+        var card = await Owned(user, id); Etags.Check(card, input.ExpectedEtag);
+        var (front, back) = NormalizeText(input.Front, input.Back);
+        if (front != card.Front || back != card.Back)
+        {
+            var key = Receipts.Hash(new { front, back });
+            DomainError.Require(!await db.UserCards.AnyAsync(x => x.UserId == user && x.Id != id && x.CustomKey == key), 409, "card_duplicate", "Hai mặt này trùng một thẻ khác của bạn, kể cả thẻ đã cất. Không tự gộp lịch sử.");
+            DomainError.Require(card.ContentVersion < int.MaxValue, 409, "card_version_limit", "Thẻ đã đạt giới hạn phiên bản.");
+            // VI: Đổi nội dung bắt đầu lịch nhớ mới; giữ ID, ngữ cảnh và mọi lượt ôn gắn phiên bản cũ. EN: Changed text restarts recall scheduling, preserving identity, contexts and old version-bound reviews.
+            card.Front = front; card.Back = back; card.CustomKey = key; card.ContentVersion++;
+            card.DueAt = clock.UtcNow; card.IntervalDays = 0; card.SuccessStep = 0; card.SchedulerVersion = CardScheduler.Version; card.UpdatedAt = clock.UtcNow;
+            db.UserCardVersions.Add(new UserCardVersion { UserCardId = id, Number = card.ContentVersion, Front = front, Back = back, CreatedAt = clock.UtcNow });
+            db.OutboxEvents.Add(new OutboxEvent { Type = "review.card_edited", AggregateId = id, OccurredAt = clock.UtcNow, PayloadJson = JsonSerializer.Serialize(new { userId = user, cardId = id, contentVersion = card.ContentVersion }) });
+            await db.SaveChangesAsync();
+        }
+        var view = View(card); receipts.Save(user, scope, input.ClientRequestId, hash, id, view); return view;
+    });
+
     public Task<CardReviewAck> Review(Guid user, Guid id, ReviewCard input) => tx.Run($"learning:{user}", async () =>
     {
         // VI: Event ID duy nhất theo owner, kể cả khi đổi card; retry lấy ACK gốc trước khi kiểm tra lịch mới. EN: Bind each owner's event to its card/payload and replay before checking the subsequently changed schedule.
@@ -78,7 +109,7 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
         var now = clock.UtcNow;
         DomainError.Require(card.DueAt <= now, 409, "card_not_due", "Thẻ chưa đến hạn ôn. Hãy tải danh sách mới.");
         var next = CardScheduler.Next(card.IntervalDays, card.SuccessStep, input.Rating, now);
-        var review = new CardReview { UserCardId = id, ReviewEventId = input.ReviewEventId, Rating = input.Rating, SchedulerVersion = CardScheduler.Version, ReviewedAt = now,
+        var review = new CardReview { UserCardId = id, ContentVersion = card.ContentVersion, ReviewEventId = input.ReviewEventId, Rating = input.Rating, SchedulerVersion = CardScheduler.Version, ReviewedAt = now,
             BeforeDueAt = card.DueAt, AfterDueAt = next.DueAt, BeforeIntervalDays = card.IntervalDays, AfterIntervalDays = next.IntervalDays, BeforeSuccessStep = card.SuccessStep, AfterSuccessStep = next.SuccessStep };
         card.DueAt = next.DueAt; card.IntervalDays = next.IntervalDays; card.SuccessStep = next.SuccessStep; card.SchedulerVersion = CardScheduler.Version; card.UpdatedAt = now;
         db.CardReviews.Add(review);
@@ -100,6 +131,13 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
 
     private async Task<UserCard> Owned(Guid user, Guid id, bool tracking = true) => await (tracking ? Full : Full.AsNoTracking()).SingleOrDefaultAsync(x => x.Id == id && x.UserId == user)
         ?? throw new DomainError(404, "card_not_found", "Không tìm thấy thẻ của bạn.");
-    private CardView View(UserCard card) => new(card.Id, card.Front, card.Back, card.Contexts.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Select(x => x.Text).ToArray(), card.DueAt, card.IntervalDays, card.SuccessStep, card.SchedulerVersion, card.ArchivedAt, Etags.Of(card), card.ArchivedAt is null && card.DueAt <= clock.UtcNow);
+    private CardView View(UserCard card) => new(card.Id, card.Front, card.Back, card.Contexts.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Select(x => x.Text).ToArray(), card.DueAt, card.IntervalDays, card.SuccessStep, card.SchedulerVersion, card.ArchivedAt, Etags.Of(card), card.ArchivedAt is null && card.DueAt <= clock.UtcNow, card.ContentVersion);
+    private static (string Front, string Back) NormalizeText(string front, string back)
+    {
+        DomainError.Require(!string.IsNullOrWhiteSpace(front) && front.Length <= 500 && !string.IsNullOrWhiteSpace(back) && back.Length <= 2000, 422, "invalid_card_text", "Hai mặt không được trống; tối đa500/2000 ký tự.");
+        front = front.Trim().Normalize(NormalizationForm.FormC); back = back.Trim().Normalize(NormalizationForm.FormC);
+        DomainError.Require(front.Length <= 500 && back.Length <= 2000, 422, "invalid_card_text", "Nội dung chuẩn hóa vượt giới hạn500/2000 ký tự.");
+        return (front, back);
+    }
     private static void ValidateOffset(int offset) => DomainError.Require(offset is >= 0 and <= 100000, 422, "invalid_offset", "Vị trí trang không hợp lệ.");
 }

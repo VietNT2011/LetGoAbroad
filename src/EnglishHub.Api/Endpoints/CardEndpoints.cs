@@ -13,6 +13,8 @@ public static class CardEndpoints
         group.MapGet("/", (ClaimsPrincipal user, CardService service, bool dueOnly = false, bool archived = false, int offset = 0) => service.List(user.UserId(), dueOnly, archived, offset));
         group.MapGet("/{id:guid}", (Guid id, ClaimsPrincipal user, CardService service) => service.Get(user.UserId(), id));
         group.MapGet("/{id:guid}/reviews", (Guid id, ClaimsPrincipal user, CardService service, int offset = 0) => service.History(user.UserId(), id, offset));
+        group.MapGet("/{id:guid}/versions", (Guid id, ClaimsPrincipal user, CardService service, int offset = 0) => service.Versions(user.UserId(), id, offset));
+        group.MapPut("/{id:guid}", (Guid id, EditCard input, ClaimsPrincipal user, CardService service) => service.Edit(user.UserId(), id, input));
         group.MapPost("/", (CreateCard input, ClaimsPrincipal user, CardService service) => service.Create(user.UserId(), input));
         group.MapPost("/{id:guid}/reviews", (Guid id, ReviewCard input, ClaimsPrincipal user, CardService service) => service.Review(user.UserId(), id, input));
         group.MapPost("/{id:guid}/archive", (Guid id, ArchiveCard input, ClaimsPrincipal user, CardService service) => service.Archive(user.UserId(), id, input));

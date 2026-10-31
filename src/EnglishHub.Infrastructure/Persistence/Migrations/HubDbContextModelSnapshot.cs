@@ -390,6 +390,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<int>("BeforeSuccessStep")
                         .HasColumnType("int");
 
+                    b.Property<int>("ContentVersion")
+                        .HasColumnType("int");
+
                     b.Property<int>("Rating")
                         .HasColumnType("int");
 
@@ -406,6 +409,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserCardId", "ContentVersion");
 
                     b.HasIndex("UserCardId", "ReviewEventId")
                         .IsUnique();
@@ -1685,6 +1690,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int>("ContentVersion")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -1731,7 +1739,38 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
                     b.ToTable("UserCards", t =>
                         {
+                            t.HasCheckConstraint("CK_UserCard_ContentVersion", "[ContentVersion] > 0");
+
                             t.HasCheckConstraint("CK_UserCard_Schedule", "[IntervalDays] >= 0 AND [IntervalDays] <= 180 AND [SuccessStep] >= 0 AND [SchedulerVersion] = 1");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.UserCardVersion", b =>
+                {
+                    b.Property<Guid>("UserCardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Back")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Front")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("UserCardId", "Number");
+
+                    b.ToTable("UserCardVersions", t =>
+                        {
+                            t.HasCheckConstraint("CK_UserCardVersion_Number", "[Number] > 0");
                         });
                 });
 
@@ -2069,7 +2108,15 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("EnglishHub.Domain.UserCardVersion", "Content")
+                        .WithMany()
+                        .HasForeignKey("UserCardId", "ContentVersion")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
                     b.Navigation("Card");
+
+                    b.Navigation("Content");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.CardSourceContext", b =>
@@ -2463,6 +2510,15 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.UserCardVersion", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.UserCard", null)
+                        .WithMany()
+                        .HasForeignKey("UserCardId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });

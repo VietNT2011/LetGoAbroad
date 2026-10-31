@@ -7,6 +7,7 @@ public sealed partial class HubDbContext
 {
     public DbSet<QuestionAnnotation> QuestionAnnotations => Set<QuestionAnnotation>();
     public DbSet<UserCard> UserCards => Set<UserCard>();
+    public DbSet<UserCardVersion> UserCardVersions => Set<UserCardVersion>();
     public DbSet<CardSourceContext> CardSourceContexts => Set<CardSourceContext>();
     public DbSet<CardReview> CardReviews => Set<CardReview>();
     public DbSet<DailyReviewBatch> DailyReviewBatches => Set<DailyReviewBatch>();
@@ -35,6 +36,13 @@ public sealed partial class HubDbContext
         b.Entity<UserCard>().Property(x => x.CustomKey).HasMaxLength(64);
         b.Entity<UserCard>().Property(x => x.Front).HasMaxLength(500);
         b.Entity<UserCard>().Property(x => x.Back).HasMaxLength(2000);
+        b.Entity<UserCard>().ToTable(t => t.HasCheckConstraint("CK_UserCard_ContentVersion", "[ContentVersion] > 0"));
+        b.Entity<UserCardVersion>().HasKey(x => new { x.UserCardId, x.Number });
+        b.Entity<UserCardVersion>().HasOne<UserCard>().WithMany().HasForeignKey(x => x.UserCardId);
+        b.Entity<UserCardVersion>().Property(x => x.Front).HasMaxLength(500);
+        b.Entity<UserCardVersion>().Property(x => x.Back).HasMaxLength(2000);
+        b.Entity<UserCardVersion>().ToTable(t => t.HasCheckConstraint("CK_UserCardVersion_Number", "[Number] > 0"));
+        b.Entity<CardReview>().HasOne(x => x.Content).WithMany().HasForeignKey(x => new { x.UserCardId, x.ContentVersion }).HasPrincipalKey(x => new { x.UserCardId, x.Number });
         b.Entity<UserCard>().HasIndex(x => new { x.UserId, x.CustomKey }).IsUnique();
         b.Entity<UserCard>().HasIndex(x => new { x.UserId, x.ArchivedAt, x.DueAt, x.Id });
         b.Entity<UserCard>().ToTable(t => t.HasCheckConstraint("CK_UserCard_Schedule", "[IntervalDays] >= 0 AND [IntervalDays] <= 180 AND [SuccessStep] >= 0 AND [SchedulerVersion] = 1"));

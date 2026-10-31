@@ -52,12 +52,14 @@ The [disjoint skill-sample comparison](skill-comparison.md) adds ten relational 
 
 The packaged read-only comparison endpoint matched the existing recent-evidence response for all three demo accounts. The main account retained grammar3/25 (12%,22 blanks) and reading1/4 (insufficient); previous samples were empty. Both other accounts returned no groups. Anonymous access returned401. Native verification opened a dedicated incognito Chrome window, but Computer Use stopped during local navigation because it could not determine the current URL confidently enough to enforce policy. No further UI inputs were issued, no browser login or learning submission was performed, and visual/keyboard/mobile acceptance for this panel remains unverified.
 
+The [versioned card editor](card-editing.md) adds nine relational cases and six frontend cases on **18/11/2026**. The complete local suites passed282 SQLite/288 SQL-media and54 frontend cases, with no failures/skips; production TypeScript/Vite build passed. Reviews retain their original text version, real edits restart scheduling, no-op edits preserve it, stale/concurrent commands cannot rate unseen new text, and duplicate text is rejected without merging histories. The migration binds previously immutable card text/reviews to version1. Native browser verification was not used, following the user's preference. Runtime upgrade preservation is checked separately in the local handover.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **279 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **273 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **288 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **282 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **48 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment and skill-sample comparison contracts |
+| `npm --prefix web test` | **54 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment, skill-sample comparison and card-editor contracts |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

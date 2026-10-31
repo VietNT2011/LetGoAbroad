@@ -5,6 +5,7 @@ import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAuth } from "../Auth";
 import { useStudyActivity } from "../useStudyActivity";
 import "./cards.css";
+import { CardEditor } from "./CardEditor";
 
 type Card = {
   id: string;
@@ -18,6 +19,7 @@ type Card = {
   archivedAt: string | null;
   canReview: boolean;
   etag: string;
+  contentVersion: number;
 };
 type CardPage = { items: Card[]; dueCount: number; nextOffset: number | null };
 type Rating = "again" | "hard" | "good" | "easy";
@@ -318,6 +320,7 @@ function CardStudy({ id, changed }: { id: string; changed: () => void }) {
   const [error, setError] = useState<Error>();
   const [notice, setNotice] = useState("");
   const [stale, setStale] = useState(false);
+  const [editing, setEditing] = useState(false);
   const pending = useRef<
     { reviewEventId: string; expectedEtag: string; rating: Rating } | undefined
   >(undefined);
@@ -493,7 +496,11 @@ function CardStudy({ id, changed }: { id: string; changed: () => void }) {
                   type="button"
                   key={rating.value}
                   disabled={
-                    busy || stale || !!retryRating || !!archiveCommand.current
+                    busy ||
+                    editing ||
+                    stale ||
+                    !!retryRating ||
+                    !!archiveCommand.current
                   }
                   onClick={() => review(rating.value)}
                 >
@@ -521,12 +528,42 @@ function CardStudy({ id, changed }: { id: string; changed: () => void }) {
           <button
             className="link-button"
             type="button"
-            disabled={busy || stale || !!retryRating}
+            disabled={busy || editing || stale || !!retryRating}
             onClick={archive}
           >
             {card.archivedAt ? "Khôi phục thẻ" : "Cất thẻ"}
           </button>
+          <button
+            type="button"
+            className="link-button"
+            disabled={
+              busy ||
+              editing ||
+              stale ||
+              !!retryRating ||
+              !!archiveCommand.current
+            }
+            onClick={() => setEditing(true)}
+          >
+            Sửa nội dung thẻ
+          </button>
+          {editing ? (
+            <CardEditor
+              card={card}
+              cancel={() => setEditing(false)}
+              saved={() => {
+                setEditing(false);
+                setRevealed(false);
+                setNotice(
+                  "Đã lưu nội dung thẻ. Lịch ôn thay đổi nếu hai mặt đã đổi.",
+                );
+                resource.reload();
+                changed();
+              }}
+            />
+          ) : null}
           <CardHistory key={`${id}:${card.etag}`} id={id} />
+          <CardVersions key={`versions:${id}:${card.etag}`} id={id} />
         </>
       ) : null}
     </section>
@@ -546,6 +583,9 @@ function CardHistory({ id }: { id: string }) {
       beforeSuccessStep: number;
       afterSuccessStep: number;
       schedulerVersion: number;
+      contentVersion: number;
+      front: string;
+      back: string;
     }[];
     nextOffset: number | null;
   }>(open ? `/cards/${id}/reviews?offset=${offset}` : null);
@@ -577,6 +617,13 @@ function CardHistory({ id }: { id: string }) {
                       {item.afterIntervalDays} ngày; bước{" "}
                       {item.beforeSuccessStep} → {item.afterSuccessStep}; lịch v
                       {item.schedulerVersion}.
+                      <details>
+                        <summary>
+                          Nội dung đã ôn · phiên bản {item.contentVersion}
+                        </summary>
+                        <p className="card-version-text">{item.front}</p>
+                        <p className="card-version-text">{item.back}</p>
+                      </details>
                     </li>
                   ))}
                 </ol>
@@ -595,6 +642,62 @@ function CardHistory({ id }: { id: string }) {
                   onClick={() => setOffset(resource.data!.nextOffset!)}
                 >
                   Lịch sử sau
+                </button>
+              </div>
+            </>
+          ) : null}
+        </>
+      ) : null}
+    </details>
+  );
+}
+
+function CardVersions({ id }: { id: string }) {
+  const [open, setOpen] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const resource = useResource<{
+    items: { number: number; front: string; back: string; createdAt: string }[];
+    nextOffset: number | null;
+  }>(open ? `/cards/${id}/versions?offset=${offset}` : null);
+  return (
+    <details
+      className="card-history"
+      onToggle={(e) => setOpen(e.currentTarget.open)}
+    >
+      <summary>Lịch sử nội dung thẻ</summary>
+      {open ? (
+        <>
+          <ErrorNotice error={resource.error} retry={resource.reload} />
+          {resource.loading ? (
+            <Loading />
+          ) : resource.data ? (
+            <>
+              <ol>
+                {resource.data.items.map((version) => (
+                  <li key={version.number}>
+                    <b>Phiên bản {version.number}</b> ·{" "}
+                    <time dateTime={version.createdAt}>
+                      {formatTime(version.createdAt)}
+                    </time>
+                    <p className="card-version-text">{version.front}</p>
+                    <p className="card-version-text">{version.back}</p>
+                  </li>
+                ))}
+              </ol>
+              <div className="card-pagination">
+                <button
+                  type="button"
+                  disabled={!offset}
+                  onClick={() => setOffset(Math.max(0, offset - 30))}
+                >
+                  Phiên bản mới hơn
+                </button>
+                <button
+                  type="button"
+                  disabled={resource.data.nextOffset === null}
+                  onClick={() => setOffset(resource.data!.nextOffset!)}
+                >
+                  Phiên bản cũ hơn
                 </button>
               </div>
             </>
