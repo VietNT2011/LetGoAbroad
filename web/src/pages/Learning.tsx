@@ -415,6 +415,20 @@ export function PathsPage() {
 }
 export function SettingsPage() {
   const { user, refresh } = useAuth();
+  const history = useResource<{
+    activeRevisionId: string | null;
+    revisions: {
+      id: string;
+      number: number;
+      targetScore: number;
+      minutesPerDay: number;
+      effectiveAt: string;
+      effectiveOn: string;
+      schedulingTimeZoneId: string;
+      status: "active" | "scheduled" | "past" | "superseded";
+      reason: string;
+    }[];
+  }>("/learning/plan-revisions");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
@@ -436,6 +450,7 @@ export function SettingsPage() {
         }),
       });
       await refresh();
+      history.reload();
       setSaved(true);
     } catch (e) {
       setError(e as Error);
@@ -456,7 +471,9 @@ export function SettingsPage() {
         <ErrorNotice error={error} />
         {saved ? (
           <div className="notice success">
-            <CheckCircle2 size={17} /> Đã lưu cấu hình của bạn.
+            <CheckCircle2 size={17} /> Đã lưu cấu hình. Thay đổi mục tiêu và
+            ngân sách phút áp dụng cho ngày học tiếp theo; lịch đang có được
+            giữ.
           </div>
         ) : null}
         <form onSubmit={submit}>
@@ -518,6 +535,64 @@ export function SettingsPage() {
             {busy ? "Đang lưu…" : "Lưu nhịp học"}
           </button>
         </form>
+      </section>
+      <section className="lesson goal-history">
+        <h2>Lịch sử mục tiêu và thời gian học</h2>
+        <p className="muted">
+          Mục tiêu là ý định của bạn; số điểm này không phải điểm TOEIC được dự
+          đoán. Mốc áp dụng dùng múi giờ tại lúc yêu cầu đổi mục tiêu.
+        </p>
+        <ErrorNotice error={history.error} retry={history.reload} />
+        {history.loading ? (
+          <Loading />
+        ) : history.data?.revisions.length ? (
+          <div className="goal-history-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phiên bản</th>
+                  <th>Mục tiêu</th>
+                  <th>Phút/ngày</th>
+                  <th>Áp dụng từ</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.data.revisions.map((revision) => (
+                  <tr key={revision.id}>
+                    <td>v{revision.number}</td>
+                    <td>{revision.targetScore}</td>
+                    <td>{revision.minutesPerDay}</td>
+                    <td>
+                      {new Intl.DateTimeFormat("vi-VN", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                        timeZone: revision.schedulingTimeZoneId,
+                      }).format(new Date(revision.effectiveAt))}
+                      <br />
+                      <small>{revision.schedulingTimeZoneId}</small>
+                    </td>
+                    <td>
+                      {
+                        {
+                          active: "Đang áp dụng",
+                          scheduled: "Chờ ngày học tiếp theo",
+                          past: "Đã áp dụng trước đây",
+                          superseded: "Đã được thay thế",
+                        }[revision.status]
+                      }
+                      {revision.reason === "observed_baseline" ? (
+                        <small> · Cấu hình được ghi nhận khi nâng cấp</small>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>Tạo lộ trình để bắt đầu ghi lại lịch sử mục tiêu.</p>
+        )}
       </section>
     </>
   );

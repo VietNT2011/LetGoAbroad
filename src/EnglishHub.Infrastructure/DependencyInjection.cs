@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<AnnotationService>();
         services.AddScoped<LearningService>();
         services.AddScoped<PathService>();
+        services.AddScoped<GoalPlanService>();
         services.AddSingleton<IObjectStorage, AzureObjectStorage>();
         services.AddSingleton<IMediaProcessor, FfmpegProcessor>();
         services.AddScoped<MediaService>();

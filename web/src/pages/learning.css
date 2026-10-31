@@ -132,6 +132,28 @@
   border-radius: 10px;
   font-size: 12px;
 }
+.goal-history {
+  margin-top: 28px;
+}
+.goal-history-scroll {
+  overflow-x: auto;
+}
+.goal-history table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}
+.goal-history th,
+.goal-history td {
+  text-align: left;
+  padding: 14px 12px;
+  border-bottom: 1px solid #e3e8da;
+  line-height: 1.7;
+}
+.goal-history small {
+  font-size: 11px;
+  color: #64735a;
+}
 .path-banner {
   display: flex;
   align-items: center;

@@ -27,7 +27,7 @@ public sealed partial class LearningService
         DomainError.Require(enrollment.PathVersionId is null, 409, "path_already_pinned", "Enrollment đã ghim một version; không tự chuyển sang mẫu mới.");
         var version = await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == input.PathVersionId && x.Status == PublicationStatus.Published) ?? throw new DomainError(422, "path_unavailable", "Mẫu chưa được publish.");
         var user = await db.Users.SingleAsync(x => x.Id == userId);
-        PinPath(enrollment, version, user); enrollment.PlanRevision++; enrollment.SelectionReason = "legacy_adoption";
+        PinPath(enrollment, version, user); enrollment.SelectionReason = "legacy_adoption";
         receipts.Save(userId, "adopt-path", input.ClientRequestId, hash, version.Id, new { version.Id }); return version.Id;
     });
 
@@ -76,13 +76,13 @@ public sealed partial class LearningService
         return new(version, nodes, completed, day, missed);
     }
 
-    private async Task GeneratePathTasks(Enrollment enrollment, AppUser user, DateOnly today)
+    private async Task GeneratePathTasks(Enrollment enrollment, AppUser user, DateOnly today, Guid goalRevision)
     {
         var state = await ReadPathState(enrollment);
         var pending = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && x.PathNodeId != null && x.Status == "pending").Select(x => x.PathNodeId!.Value).ToArrayAsync();
         var candidates = state.Nodes.Select((node, order) => (node, order)).Where(x => !state.Completed.Contains(x.node.Id) && !pending.Contains(x.node.Id) && x.node.StudyDay <= state.StudyDay && x.node.Prerequisites.All(p => state.Completed.Contains(p.PrerequisiteNodeId)))
             .Select(x => new PathCandidate(x.node.Id, x.node.ContentVersionId, x.node.ContentVersion.Root.Kind == ContentKind.Lesson ? "lesson" : "assessment", x.node.ContentVersion.Minutes, x.node.StudyDay, x.order, state.Missed.GetValueOrDefault(x.node.Id)?.Id));
-        var selected = PathScheduler.Select(candidates, user.MinutesPerDay);
+        var selected = PathScheduler.Select(candidates, enrollment.MinutesPerDay);
         foreach (var (item, slot) in selected.Select((item, slot) => (item, slot)))
         {
             var node = state.Nodes.Single(x => x.Id == item.NodeId);
@@ -98,6 +98,7 @@ public sealed partial class LearningService
                 SourceTaskId = item.SourceTaskId,
                 EstimatedMinutes = item.Minutes,
                 TimeZoneId = user.TimeZoneId,
+                GoalRevisionId = goalRevision,
                 CreatedAt = clock.UtcNow,
                 ReasonCode = item.SourceTaskId is not null ? "PATH_CARRYOVER" : item.Kind == "lesson" ? "PREREQUISITE_READY" : "PATH_PRACTICE",
                 ReasonText = item.SourceTaskId is not null ? $"Tiếp tục nhiệm vụ từ {state.Missed[node.Id].LocalDate:dd/MM}; giữ nội dung và version lộ trình." : $"{node.Stage.Title} · ngày học gợi ý {node.StudyDay}, lộ trình v{state.Version.Version}; đã đủ điều kiện tiên quyết."

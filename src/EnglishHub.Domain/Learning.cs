@@ -38,6 +38,8 @@ public sealed class DailyTask : VersionedEntity
     public PathNode? PathNode { get; set; }
     public Guid? SourceTaskId { get; set; }
     public string? TimeZoneId { get; set; }
+    public Guid? GoalRevisionId { get; set; }
+    public PlanGoalRevision? GoalRevision { get; set; }
 }
 public sealed class LessonProgress : VersionedEntity
 {

@@ -14,7 +14,7 @@ public sealed record LessonFeedback(Guid QuestionId, bool IsCorrect, Guid? Corre
 public sealed record LessonCheck(bool Completed, LessonFeedback[] Feedback);
 
 /// <summary>VI: Tiến độ dựa trên quiz/kết quả đã lưu. EN: Completion comes from persisted quiz evidence, never from simply opening a page.</summary>
-public sealed partial class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, PathService paths)
+public sealed partial class LearningService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, PathService paths, GoalPlanService goals)
 {
     /// <summary>VI: Khóa theo user ngăn hai enrollment từ nhiều tab. EN: A user-level lock prevents duplicate enrollment across tabs or API instances.</summary>
     public Task<Enrollment> Enroll(Guid userId, EnrollInput input) => tx.Run($"learning:{userId}", async () =>
@@ -41,7 +41,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         enrollment.PlacementAttemptId = input.StartFromBasics ? null : input.PlacementAttemptId;
         enrollment.SelectionReason = input.PathVersionId is not null ? "manual_template" : input.StartFromBasics ? "learner_basics" : "placement_demo_v1";
         if (path is not null) PinPath(enrollment, path, user);
-        db.Enrollments.Add(enrollment); return enrollment;
+        db.Enrollments.Add(enrollment); await goals.Initialize(enrollment); return enrollment;
     });
 
     /// <summary>VI: Ngày học tính trong timezone hồ sơ và được ghim vào task. EN: Resolve the local study date from the profile timezone and pin it to generated tasks.</summary>
@@ -52,21 +52,21 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId);
         if (enrollment is not null)
         {
-            if (enrollment.TargetScore != user.TargetScore || enrollment.MinutesPerDay != user.MinutesPerDay || enrollment.TimeZoneId != user.TimeZoneId)
-            { enrollment.PlanRevision++; enrollment.TargetScore = user.TargetScore; enrollment.MinutesPerDay = user.MinutesPerDay; enrollment.TimeZoneId = user.TimeZoneId; }
+            var goal = await goals.Resolve(enrollment, user);
+            enrollment.TimeZoneId = user.TimeZoneId;
             await SyncCompleted(userId, today, user.TimeZoneId);
             await MarkMissed(userId, user.TimeZoneId);
             var tasksExist = await db.DailyTasks.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending" && x.LocalDate < today));
             if (!tasksExist && user.StudyDays.Split(',').Contains(((int)today.DayOfWeek).ToString()))
             {
-                if (enrollment.PathVersionId is not null) await GeneratePathTasks(enrollment, user, today);
+                if (enrollment.PathVersionId is not null) await GeneratePathTasks(enrollment, user, today, goal.Id);
                 else
                 {
                     var doneRoots = await db.LessonProgress.Where(x => x.UserId == userId).Select(x => x.ContentVersion.RootId).Distinct().ToArrayAsync();
                     var versions = await db.ContentVersions.Include(x => x.Root).Where(x => x.Status == PublicationStatus.Published && x.Root.CurrentPublishedVersionId == x.Id && !x.IsFixture).OrderBy(x => x.Root.Slug).ToListAsync();
                     var lessons = versions.Where(x => x.Root.Kind == ContentKind.Lesson && !doneRoots.Contains(x.RootId)).Select(x => new PlanCandidate(x.Id, x.Minutes, "lesson", x.CurriculumOrder));
                     var practices = versions.Where(x => x.Root.Kind == ContentKind.Assessment && x.Root.Slug != "placement-demo").Select((x, i) => new PlanCandidate(x.Id, x.Minutes, "practice", i));
-                    var selected = Planner.Select(lessons, practices, user.MinutesPerDay);
+                    var selected = Planner.Select(lessons, practices, enrollment.MinutesPerDay);
                     foreach (var (item, slot) in selected.Select((item, slot) => (item, slot)))
                         db.DailyTasks.Add(new DailyTask
                         {
@@ -78,6 +78,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
                             EstimatedMinutes = item.Minutes,
                             CreatedAt = clock.UtcNow,
                             TimeZoneId = user.TimeZoneId,
+                            GoalRevisionId = goal.Id,
                             ReasonCode = item.Kind == "lesson" ? "FOUNDATION_NEXT" : "SHORT_PRACTICE",
                             ReasonText = item.Kind == "lesson" ? "Bài tiếp theo chưa hoàn thành trong lộ trình; quy tắc v1." : "Luyện ngắn để củng cố kiến thức, vừa ngân sách thời gian; quy tắc v1."
                         });
@@ -99,6 +100,8 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             x.PathVersionId,
             x.PathNodeId,
             x.SourceTaskId,
+            x.GoalRevisionId,
+            goalRevisionNumber = x.GoalRevision == null ? (int?)null : x.GoalRevision.Number,
             x.TimeZoneId,
             x.LocalDate,
             carriedFromPreviousDate = x.LocalDate < today,

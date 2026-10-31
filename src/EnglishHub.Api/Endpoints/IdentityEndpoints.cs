@@ -2,6 +2,7 @@ using System.Security.Claims;
 using EnglishHub.Domain;
 using EnglishHub.Infrastructure.Identity;
 using EnglishHub.Infrastructure.Persistence;
+using EnglishHub.Infrastructure.Learning;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -63,17 +64,24 @@ public static class IdentityEndpoints
             Check(await users.ResetPasswordAsync(user, input.Token, input.NewPassword));
             return Results.NoContent();
         }).RequireRateLimiting("auth");
-        app.MapPut("/api/v1/profile", async (ProfileInput input, ClaimsPrincipal principal, UserManager<AppUser> users) =>
+        app.MapPut("/api/v1/profile", async (ProfileInput input, ClaimsPrincipal principal, UserManager<AppUser> users, HubDbContext db, Transactions tx, GoalPlanService goals) =>
         {
             DomainError.Require(input.TargetScore is 450 or 650 or 800 && input.MinutesPerDay is 20 or 30 or 45 && input.StudyDays.Length is >= 1 and <= 7 && input.StudyDays.All(x => x is >= 0 and <= 6) && !string.IsNullOrWhiteSpace(input.DisplayName) && input.DisplayName.Length <= 120, 422, "invalid_profile", "Cấu hình học không hợp lệ.");
-            DomainError.Require(!string.IsNullOrWhiteSpace(input.TimeZoneId) && input.TimeZoneId.Length<=80,422,"invalid_timezone","Múi giờ không hợp lệ.");
+            DomainError.Require(!string.IsNullOrWhiteSpace(input.TimeZoneId) && input.TimeZoneId.Length <= 80, 422, "invalid_timezone", "Múi giờ không hợp lệ.");
             try { TimeZoneInfo.FindSystemTimeZoneById(input.TimeZoneId); }
-            catch (Exception error) when(error is TimeZoneNotFoundException or InvalidTimeZoneException) { throw new DomainError(422, "invalid_timezone", "Múi giờ không hợp lệ."); }
-            var user = (await users.GetUserAsync(principal))!;
-            user.DisplayName = input.DisplayName.Trim(); user.TimeZoneId = TimeZoneInfo.TryConvertWindowsIdToIanaId(input.TimeZoneId, out var canonicalZone) ? canonicalZone : input.TimeZoneId; user.TargetScore = input.TargetScore;
-            user.MinutesPerDay = input.MinutesPerDay; user.StudyDays = string.Join(',', input.StudyDays.Distinct().Order());
-            Check(await users.UpdateAsync(user));
-            return Results.NoContent();
+            catch (Exception error) when (error is TimeZoneNotFoundException or InvalidTimeZoneException) { throw new DomainError(422, "invalid_timezone", "Múi giờ không hợp lệ."); }
+            return await tx.Run($"learning:{principal.UserId()}", async () =>
+            {
+                var user = (await users.GetUserAsync(principal))!;
+                var zoneBeforeChange = user.TimeZoneId;
+                var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == user.Id);
+                if (enrollment is not null) await goals.Resolve(enrollment, user);
+                user.DisplayName = input.DisplayName.Trim(); user.TimeZoneId = TimeZoneInfo.TryConvertWindowsIdToIanaId(input.TimeZoneId, out var canonicalZone) ? canonicalZone : input.TimeZoneId; user.TargetScore = input.TargetScore;
+                user.MinutesPerDay = input.MinutesPerDay; user.StudyDays = string.Join(',', input.StudyDays.Distinct().Order());
+                Check(await users.UpdateAsync(user));
+                if (enrollment is not null) await goals.Schedule(enrollment, input.TargetScore, input.MinutesPerDay, zoneBeforeChange);
+                return Results.NoContent();
+            });
         }).RequireAuthorization();
         // VI: Không có route hộp thư trong production. EN: The local mailbox is never mapped in production.
         if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

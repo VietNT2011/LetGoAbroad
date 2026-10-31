@@ -401,6 +401,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<int>("EstimatedMinutes")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("GoalRevisionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateOnly>("LocalDate")
                         .HasColumnType("date");
 
@@ -452,6 +455,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasFilter("[PathNodeId] IS NOT NULL AND [Status] = 'pending'");
 
                     b.HasIndex("EnrollmentId", "UserId");
+
+                    b.HasIndex("GoalRevisionId", "EnrollmentId");
 
                     b.HasIndex("PathNodeId", "ContentVersionId");
 
@@ -917,6 +922,54 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("PathVersions");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PlanGoalRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("EffectiveAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateOnly>("EffectiveOn")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EnrollmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("MinutesPerDay")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTimeOffset>("RecordedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("SchedulingTimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("TargetScore")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnrollmentId", "Number")
+                        .IsUnique();
+
+                    b.ToTable("PlanGoalRevisions", t =>
+                        {
+                            t.HasCheckConstraint("CK_PlanGoalRevision_Values", "[Number] >= 1 AND [TargetScore] IN (450,650,800) AND [MinutesPerDay] IN (20,30,45) AND [EffectiveAt] >= [RecordedAt]");
+                        });
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
@@ -1442,6 +1495,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("EnglishHub.Domain.PlanGoalRevision", "GoalRevision")
+                        .WithMany()
+                        .HasForeignKey("GoalRevisionId", "EnrollmentId")
+                        .HasPrincipalKey("Id", "EnrollmentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("EnglishHub.Domain.PathNode", null)
                         .WithMany()
                         .HasForeignKey("PathNodeId", "ContentVersionId")
@@ -1463,6 +1522,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Navigation("ContentVersion");
 
                     b.Navigation("Enrollment");
+
+                    b.Navigation("GoalRevision");
 
                     b.Navigation("PathNode");
                 });
@@ -1595,6 +1656,17 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PlanGoalRevision", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.Enrollment", "Enrollment")
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Enrollment");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
