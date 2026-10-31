@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using EnglishHub.Application;
 using EnglishHub.Application.Learning;
 using EnglishHub.Domain;
@@ -12,9 +13,11 @@ public sealed record PathStageInput(string Key, string Title, PathNodeInput[] No
 public sealed record PathInput(string Title, string Summary, string Attribution, PathStageInput[] Stages);
 public sealed record CreatePathInput(string Slug, string Level, PathInput Content);
 public sealed record AdoptPathInput(Guid PathVersionId, Guid ClientRequestId);
+public sealed record PathLifecycleInput(Guid ClientRequestId, string ExpectedEtag);
+public sealed record PathLifecycleAck(Guid Id, DateTimeOffset? RetiredAt, string Etag);
 
 /// <summary>VI: Chỉ sửa draft; publish kiểm tra DAG và bằng chứng completion. EN: Only drafts are editable; publication validates the DAG and evidence-based rules.</summary>
-public sealed class PathService(HubDbContext db, Transactions tx, IClock clock)
+public sealed class PathService(HubDbContext db, Transactions tx, IClock clock, Receipts receipts)
 {
     public IQueryable<PathVersion> Full => db.PathVersions.Include(x => x.Template).Include(x => x.Stages).ThenInclude(x => x.Nodes).ThenInclude(x => x.Prerequisites).Include(x => x.Stages).ThenInclude(x => x.Nodes).ThenInclude(x => x.ContentVersion).ThenInclude(x => x.Root).AsSplitQuery();
 
@@ -64,8 +67,26 @@ public sealed class PathService(HubDbContext db, Transactions tx, IClock clock)
     {
         var version = await Full.SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "path_not_found", "Không tìm thấy version.");
         Etags.Check(version, etag); DomainError.Require(version.Status == PublicationStatus.Draft, 409, "immutable_path", "Bản publish bất biến.");
+        DomainError.Require(version.Template.RetiredAt is null, 409, "path_retired", "Hãy mở lại đăng ký trước khi publish version mới.");
         await Validate(version); version.Status = PublicationStatus.Published; version.PublishedAt = clock.UtcNow;
         version.Template.CurrentPublishedVersionId = version.Id; Audit(actor, "path.published", id); return version;
+    });
+
+    /// <summary>VI: Chỉ đổi admission metadata; receipt cũ không tái ngừng mẫu đã mở lại. EN: Change admission metadata only; replaying an old receipt cannot retire a restored template again.</summary>
+    public Task<PathLifecycleAck> SetRetired(Guid templateId, bool retired, PathLifecycleInput input, Guid actor) => tx.Run("path-catalog", async () =>
+    {
+        var scope = $"path-lifecycle:{templateId}"; var hash = Receipts.Hash(new { retired, input }); var replay = await receipts.Find(actor, scope, input.ClientRequestId, hash);
+        if (replay is not null) return JsonSerializer.Deserialize<PathLifecycleAck>(replay.ResponseJson)!;
+        var template = await db.PathTemplates.SingleOrDefaultAsync(x => x.Id == templateId) ?? throw new DomainError(404, "path_not_found", "Không tìm thấy template.");
+        Etags.Check(template, input.ExpectedEtag);
+        if ((template.RetiredAt is not null) != retired)
+        {
+            template.RetiredAt = retired ? clock.UtcNow : null;
+            Audit(actor, retired ? "path.retired" : "path.restored", template.Id);
+            await db.SaveChangesAsync();
+        }
+        var ack = new PathLifecycleAck(template.Id, template.RetiredAt, Etags.Of(template));
+        receipts.Save(actor, scope, input.ClientRequestId, hash, template.Id, ack); return ack;
     });
 
     public async Task<string[]> Validate(PathVersion version)

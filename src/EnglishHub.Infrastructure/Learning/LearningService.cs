@@ -25,6 +25,7 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             DomainError.Require(input.PathVersionId is null || input.PathVersionId == existing.PathVersionId, 409, "path_already_pinned", "Enrollment đang có không tự chuyển mẫu; người học cũ có thể chọn thao tác áp dụng mẫu riêng.");
             return existing;
         }
+        await tx.Lock("path-catalog");
         var user = await db.Users.SingleAsync(x => x.Id == userId);
         var level = "foundation";
         if (!input.StartFromBasics)
@@ -35,8 +36,8 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
         }
         var enrollment = new Enrollment { UserId = userId, Level = level, TargetScore = user.TargetScore, MinutesPerDay = user.MinutesPerDay, TimeZoneId = user.TimeZoneId, CreatedAt = clock.UtcNow };
         var path = input.PathVersionId is { } requested
-            ? await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == requested && x.Status == PublicationStatus.Published)
-            : await db.PathVersions.Include(x => x.Template).Where(x => x.Template.Level == level && x.Status == PublicationStatus.Published && x.Template.CurrentPublishedVersionId == x.Id).OrderBy(x => x.Template.Slug).FirstOrDefaultAsync();
+            ? await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == requested && x.Status == PublicationStatus.Published && x.Template.RetiredAt == null)
+            : await db.PathVersions.Include(x => x.Template).Where(x => x.Template.Level == level && x.Status == PublicationStatus.Published && x.Template.CurrentPublishedVersionId == x.Id && x.Template.RetiredAt == null).OrderBy(x => x.Template.Slug).FirstOrDefaultAsync();
         DomainError.Require(input.PathVersionId is null || path is not null, 422, "path_unavailable", "Chọn một version lộ trình đã publish.");
         enrollment.PlacementAttemptId = input.StartFromBasics ? null : input.PlacementAttemptId;
         enrollment.SelectionReason = input.PathVersionId is not null ? "manual_template" : input.StartFromBasics ? "learner_basics" : "placement_demo_v1";

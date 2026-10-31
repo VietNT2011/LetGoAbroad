@@ -10,14 +10,19 @@ public sealed class Transactions(HubDbContext db)
     public async Task<T> Run<T>(string resource, Func<Task<T>> action, CancellationToken ct = default)
     {
         await using var tx = await db.Database.BeginTransactionAsync(db.Database.IsSqlServer() ? IsolationLevel.ReadCommitted : IsolationLevel.Serializable, ct);
-        if (db.Database.IsSqlServer())
-        {
-            await db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @r int; EXEC @r = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r < 0 THROW 51000, 'resource_busy', 1;", ct);
-        }
+        await Lock(resource, ct);
         var result = await action();
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
         return result;
+    }
+
+    /// <summary>VI: Enrollment lấy learning trước catalog; CMS chỉ lấy catalog, không đảo thứ tự. EN: Admissions take learning then catalog; CMS takes catalog only to avoid lock-order cycles.</summary>
+    public async Task Lock(string resource, CancellationToken ct = default)
+    {
+        if (db.Database.CurrentTransaction is null) throw new InvalidOperationException("A resource lock requires an active transaction.");
+        if (db.Database.IsSqlServer())
+            await db.Database.ExecuteSqlInterpolatedAsync($"DECLARE @r int; EXEC @r = sys.sp_getapplock @Resource={resource}, @LockMode='Exclusive', @LockOwner='Transaction', @LockTimeout=10000; IF @r < 0 THROW 51000, 'resource_busy', 1;", ct);
     }
 }
 

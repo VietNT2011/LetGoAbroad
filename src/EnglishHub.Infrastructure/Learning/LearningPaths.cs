@@ -23,9 +23,10 @@ public sealed partial class LearningService
     {
         var hash = Receipts.Hash(input); var duplicate = await receipts.Find(userId, "adopt-path", input.ClientRequestId, hash);
         if (duplicate is not null) return duplicate.ResourceId;
+        await tx.Lock("path-catalog");
         var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == userId) ?? throw new DomainError(409, "enrollment_required", "Hãy tạo enrollment trước.");
         DomainError.Require(enrollment.PathVersionId is null, 409, "path_already_pinned", "Enrollment đã ghim một version; không tự chuyển sang mẫu mới.");
-        var version = await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == input.PathVersionId && x.Status == PublicationStatus.Published) ?? throw new DomainError(422, "path_unavailable", "Mẫu chưa được publish.");
+        var version = await db.PathVersions.Include(x => x.Template).SingleOrDefaultAsync(x => x.Id == input.PathVersionId && x.Status == PublicationStatus.Published && x.Template.RetiredAt == null) ?? throw new DomainError(422, "path_unavailable", "Mẫu chưa được publish hoặc đã ngừng nhận đăng ký mới.");
         var user = await db.Users.SingleAsync(x => x.Id == userId);
         PinPath(enrollment, version, user); enrollment.SelectionReason = "legacy_adoption";
         receipts.Save(userId, "adopt-path", input.ClientRequestId, hash, version.Id, new { version.Id }); return version.Id;

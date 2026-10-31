@@ -5,6 +5,8 @@ public sealed class PathTemplate : VersionedEntity
 {
     public string Slug { get; set; } = "";
     public string Level { get; set; } = "foundation";
+    // VI: Ngừng đăng ký mới, không viết lại version đã ghim. EN: Close new admissions without rewriting pinned versions.
+    public DateTimeOffset? RetiredAt { get; set; }
     public Guid? CurrentPublishedVersionId { get; set; }
     public PathVersion? CurrentPublishedVersion { get; set; }
     public List<PathVersion> Versions { get; set; } = [];

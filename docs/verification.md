@@ -1,11 +1,11 @@
 # Verification record / Báo cáo kiểm thử
 
-Baseline verified locally on **09/11/2026** at `eb0e46eca6fc841ad78568a10669fa7eabac661c`. Typed answers, private question annotations, versioned learning paths and future goal revisions verified on **09–10/11/2026**. Lesson-body notes, recent-skill evidence, profile conflict recovery and protected daily-plan regeneration were added on **16/11/2026**, including migration of the existing local SQL database and browser recovery after restarting Docker.
+Baseline verified locally on **09/11/2026** at `eb0e46eca6fc841ad78568a10669fa7eabac661c`. Typed answers, private question annotations, versioned learning paths and future goal revisions verified on **09–10/11/2026**. Lesson-body notes, recent-skill evidence, profile conflict recovery, daily-plan regeneration and reversible template admissions were added on **16/11/2026**, including migrations of the existing local SQL database.
 
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **112 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **106 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **117 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **111 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |
@@ -31,6 +31,7 @@ SDK: 10.0.403. Runtime: 10.0.14. Core image digests and the observed FFmpeg pack
 11. After applying the disclosure migration to the existing local SQL database, the dashboard showed grammar **3/25 (12%)**, including 22 blanks, and reading **1/4** labelled **Chưa đủ dữ liệu** without a percentage. Expanding grammar's Part details showed Part 5: 3/25. The full-mock track was explicitly empty; the technical 200-question fixture did not create achievement evidence.
 12. Opened Settings in two tabs from the same profile version. Tab B changed the demo display name and saved. Tab A's distinct draft was rejected with 412 and remained in the form. Comparison showed Tab B's persisted name, 650/30, timezone and study days. Explicitly adopting the compared version allowed the retained draft to save. Restoring `Minh Anh`, then reloading, confirmed the original demo profile; goal history remained unchanged.
 13. With the existing learner's unstarted Present simple assignment, changed Monday availability in a second tab. The stale dashboard's regeneration returned 412 and required refresh. After refresh, regeneration superseded the one unstarted assignment and showed no suitable task. Restored Monday–Friday availability, refreshed and explicitly regenerated one new assignment. Opening its card recorded **Đã bắt đầu**. Returning to the dashboard and regenerating kept that assignment; the completed-lesson count stayed **1** throughout. Goal values remained 650/30, and goal history was unchanged. The two actual plan changes remain in local history.
+14. In Admin CMS, selected the existing technical **CMS kiểm thử · Một bước** template. Added an unsaved trailing newline to the JSON, retired admissions and observed the retired badge, explanatory message and Restore control. The editor retained the exact unsaved text. Restoring admissions removed the retired state and still retained that draft. Signed back in as Learner; its started assignment, one completed lesson and original statistics remained visible. The technical template was restored after the check.
 
 ## Coverage and limits
 
@@ -44,6 +45,8 @@ Profile coverage includes two different concurrent writes with exactly one winne
 
 Regeneration coverage adds owner/CSRF checks, task starts without completion, unchanged IDs on a no-op, prerequisite changes, protected rowversions/budget/deadlines, direct assessment starts, two regeneration commands racing, start versus replacement, exact replay after midnight, rolling-limit rollback, empty content, legacy plans and a user profile tracked before the lock. See [regeneration](regeneration.md).
 
+Template lifecycle coverage includes hidden discovery, direct-ID enrollment/adoption rejection, continued quiz-backed progress on existing pins, unchanged published graph/ETag, restore, replay after restore, publication guards, Admin/CSRF enforcement, ETag races and enrollment versus retirement. See [path retirement](path-retirement.md).
+
 These observations are not a full P0–P3 acceptance claim. Broader multi-device/offline browser automation, effective-date calendar revisions, transcript/segment notes, richer listening/video, SRS, chat, calls and load benchmarks remain as listed in [status.md](status.md). Both remote GitHub Actions jobs passed for [baseline `8f7a642`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42649802535), [typed answers `f09dba6`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42726293233), [fixture disposal `596cde1`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42727668195), [private notes `e2fce48`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42728331978), [versioned paths `f0a57ac`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42733786173) and [goal revisions `7e70790`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42735832481); later pushes require separate checks.
 
-Both jobs also passed for [lesson-body notes `dcdd441`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43831559459), [skill evidence `e63b018`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43833465095) and [query/profile protection `7f8770b`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43836279959). The regeneration push requires its own CI result.
+Both jobs also passed for [lesson-body notes `dcdd441`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43831559459), [skill evidence `e63b018`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43833465095), [query/profile protection `7f8770b`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43836279959) and [regeneration `04e0759`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43841018651). The template lifecycle push requires its own CI result.

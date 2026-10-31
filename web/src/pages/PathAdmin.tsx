@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, post, type Content } from "../api";
 import { ErrorNotice, useResource } from "../hooks";
 import { useAuth } from "../Auth";
@@ -15,6 +15,8 @@ type PathDraft = PathContent & {
   status: string;
   version: number;
   etag: string;
+  templateEtag: string;
+  retiredAt: string | null;
 };
 type PathRow = {
   id: string;
@@ -24,6 +26,7 @@ type PathRow = {
   level: string;
   version: number;
   status: string;
+  retiredAt: string | null;
 };
 
 /** VI: CMS graph giữ ETag; chỉ Admin publish sau kiểm tra DAG. EN: The graph editor uses ETags, server DAG validation and administrator-only publication. */
@@ -38,6 +41,48 @@ export function PathAdmin() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [message, setMessage] = useState("");
+  const lifecycleCommand = useRef<
+    { key: string; clientRequestId: string } | undefined
+  >(undefined);
+  const setRetired = async () => {
+    if (!selected || busy) return;
+    const action = selected.retiredAt ? "restore" : "retire";
+    const key = `${selected.templateId}:${action}:${selected.templateEtag}`;
+    if (lifecycleCommand.current?.key !== key)
+      lifecycleCommand.current = { key, clientRequestId: crypto.randomUUID() };
+    setBusy(true);
+    setError(undefined);
+    setMessage("");
+    try {
+      await post<{ retiredAt: string | null; etag: string }>(
+        `/admin/paths/${selected.templateId}/${action}`,
+        {
+          clientRequestId: lifecycleCommand.current.clientRequestId,
+          expectedEtag: selected.templateEtag,
+        },
+      );
+      const current = await api<PathDraft>(
+        `/admin/path-versions/${selected.id}`,
+      );
+      // VI: Chỉ cập nhật metadata, giữ nguyên JSON đang soạn. EN: Update lifecycle metadata without replacing an unsaved graph draft.
+      setSelected({
+        ...selected,
+        retiredAt: current.retiredAt,
+        templateEtag: current.templateEtag,
+      });
+      lifecycleCommand.current = undefined;
+      list.reload();
+      setMessage(
+        current.retiredAt
+          ? "Đã ngừng nhận đăng ký mới. Người đã ghim mẫu vẫn tiếp tục học."
+          : "Đã mở lại đăng ký. Các version và tiến độ được giữ nguyên.",
+      );
+    } catch (error) {
+      setError(error as Error);
+    } finally {
+      setBusy(false);
+    }
+  };
   const load = async (id: string) => {
     const draft = await api<PathDraft>(`/admin/path-versions/${id}`);
     setSelected(draft);
@@ -176,6 +221,7 @@ export function PathAdmin() {
             }}
           >
             {item.title} · v{item.version} · {item.status}
+            {item.retiredAt ? " · Ngừng đăng ký mới" : ""}
           </button>
         ))}
       </div>
@@ -197,6 +243,9 @@ export function PathAdmin() {
       ) : (
         <p>
           Version {selected.version} · {selected.status}
+          {selected.retiredAt
+            ? " · Mẫu đã ngừng nhận đăng ký mới; người đã ghim vẫn học tiếp."
+            : ""}
         </p>
       )}
       <label className="editor-label">
@@ -236,10 +285,23 @@ export function PathAdmin() {
             {user?.roles.includes("Admin") ? (
               <button
                 className="primary"
-                disabled={busy || selected.status !== "draft"}
+                disabled={
+                  busy || selected.status !== "draft" || !!selected.retiredAt
+                }
                 onClick={() => perform("publish")}
               >
                 Publish lộ trình
+              </button>
+            ) : null}
+            {user?.roles.includes("Admin") ? (
+              <button
+                className="secondary"
+                disabled={busy}
+                onClick={setRetired}
+              >
+                {selected.retiredAt
+                  ? "Mở lại đăng ký mẫu"
+                  : "Ngừng đăng ký mẫu mới"}
               </button>
             ) : null}
           </>
