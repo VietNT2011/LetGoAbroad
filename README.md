@@ -4,6 +4,7 @@ Thẻ riêng và lịch ôn SRS: [quy tắc, quyền riêng tư và API](docs/pe
 Lịch ngày dành [tối đa30% ngân sách cho thẻ đến hạn](docs/daily-review.md), chung giới hạn ba nhiệm vụ với bài học/bài luyện.
 Dashboard có [thời gian học ước tính](docs/estimated-study-time.md) từ heartbeat có sequence, giới hạn30 giây/lần và hợp nhất các tab trùng giờ.
 Có [biểu đồ thời gian theo ngày Hồ sơ](docs/study-time-calendar.md), xử lý ngày đổi giờ và giữ phần giây lẻ trong tổng; vẫn chọn được cửa sổ UTC cũ.
+Các tab [xác minh lại tài khoản và chặn request từ phiên cũ](docs/session-consistency.md); bản nháp cùng tài khoản được giữ khi kiểm tra lại.
 
 Nền tảng tự học tiếng Anh bằng ASP.NET Core 10, EF Core 10, SQL Server 2022 và React + TypeScript. Có một hành trình học/luyện chạy được cục bộ, với dữ liệu bền vững và integration test trên database/blob/FFmpeg thật.
 
@@ -92,6 +93,7 @@ pwsh -NoProfile -File .\scripts\test.ps1 -SqlServer -Storage
 
 # Frontend
 npm --prefix web ci
+npm --prefix web test
 npm --prefix web run build
 ```
 

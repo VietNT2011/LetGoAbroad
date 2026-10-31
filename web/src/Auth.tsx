@@ -2,53 +2,180 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
   useState,
   type ReactNode,
   type FormEvent,
 } from "react";
 import { Navigate, useLocation, Link } from "react-router-dom";
-import { api, post, resetCsrf, type User } from "./api";
+import { ApiError, currentUser, post, resetCsrf, type User } from "./api";
+import {
+  authSignals,
+  confirmSession,
+  onSessionInvalidated,
+  suspendSession,
+} from "./authSession";
 import { ErrorNotice, Loading } from "./hooks";
 import { ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
 type AuthState = {
   user?: User;
   loading: boolean;
+  error?: Error;
+  scope: number;
   refresh: () => Promise<void>;
+  afterLogin: () => Promise<void>;
   logout: () => Promise<void>;
 };
 const Auth = createContext<AuthState | null>(null);
 export const useAuth = () => useContext(Auth)!;
-/** VI: Chia sẻ một trạng thái đăng nhập toàn app. EN: Share one identity request across the application. */
+/** VI: Response cũ không được khôi phục danh tính; đổi tab khóa request trước khi xác minh. EN: Obsolete probes cannot restore identity; cross-tab changes suspend requests before revalidation. */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User>();
-  const [loading, setLoading] = useState(true);
-  const refresh = async () => {
+  const [view, setView] = useState<{
+    user?: User;
+    loading: boolean;
+    error?: Error;
+    generation: number;
+    scope: number;
+  }>({ loading: true, generation: 0, scope: 0 });
+  const generation = useRef(0);
+  const controller = useRef<AbortController | undefined>(undefined);
+  const signals = useRef<ReturnType<typeof authSignals> | undefined>(undefined);
+  const revalidate = useCallback(async (clear = false) => {
+    const request = ++generation.current;
+    controller.current?.abort();
+    const abort = new AbortController();
+    controller.current = abort;
+    suspendSession(clear);
     resetCsrf();
-    setUser(await api<User>("/auth/me"));
-  };
-  useEffect(() => {
-    api<User>("/auth/me")
-      .then(setUser)
-      .catch(() => setUser(undefined))
-      .finally(() => setLoading(false));
+    setView((previous) => ({
+      user: clear ? undefined : previous.user,
+      loading: true,
+      generation: request,
+      scope: previous.scope + (clear ? 1 : 0),
+    }));
+    try {
+      const user = await currentUser(abort.signal);
+      if (abort.signal.aborted || generation.current !== request) return;
+      setView((previous) => ({
+        ...previous,
+        user,
+        loading: false,
+        error: undefined,
+        generation: request,
+      }));
+    } catch (error) {
+      if (abort.signal.aborted || generation.current !== request) return;
+      if (error instanceof ApiError && error.status === 401) {
+        setView((previous) => ({
+          ...previous,
+          user: undefined,
+          loading: false,
+          error: undefined,
+          generation: request,
+        }));
+      } else {
+        // VI: Lỗi mạng không chứng minh đã logout; giữ draft ẩn tới khi xác minh lại. EN: A network error is not a logout; retain the hidden draft until verification succeeds.
+        setView((previous) => ({
+          ...previous,
+          loading: true,
+          error: error as Error,
+          generation: request,
+        }));
+        throw error;
+      }
+    }
   }, []);
+  const refresh = useCallback(() => revalidate(), [revalidate]);
+  // VI: Chỉ mở transport sau commit React đã bỏ subtree của actor/role cũ. EN: Unlock transport only after React commits the correct actor/role subtree.
+  useLayoutEffect(() => {
+    if (!view.loading && view.generation === generation.current)
+      confirmSession(view.user?.id ?? null);
+  }, [view]);
+  useEffect(() => {
+    const check = () => {
+      void revalidate().catch(() => {});
+    };
+    const changed = () => {
+      void revalidate(true).catch(() => {});
+    };
+    signals.current = authSignals(changed);
+    const unsubscribe = onSessionInvalidated(changed);
+    const visible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    const restored = (event: PageTransitionEvent) => {
+      if (event.persisted) check();
+    };
+    window.addEventListener("focus", check);
+    window.addEventListener("pageshow", restored);
+    document.addEventListener("visibilitychange", visible);
+    check();
+    return () => {
+      ++generation.current;
+      controller.current?.abort();
+      suspendSession(true);
+      signals.current?.dispose();
+      signals.current = undefined;
+      unsubscribe();
+      window.removeEventListener("focus", check);
+      window.removeEventListener("pageshow", restored);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [revalidate]);
+  const afterLogin = async () => {
+    signals.current?.publish();
+    await revalidate(true);
+  };
   const logout = async () => {
     await post("/auth/logout");
-    resetCsrf();
-    setUser(undefined);
+    signals.current?.publish();
+    await revalidate(true);
   };
   return (
-    <Auth.Provider value={{ user, loading, refresh, logout }}>
+    <Auth.Provider
+      value={{
+        user: view.user,
+        loading: view.loading,
+        error: view.error,
+        scope: view.scope,
+        refresh,
+        afterLogin,
+        logout,
+      }}
+    >
       {children}
     </Auth.Provider>
   );
 }
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, error, scope, refresh } = useAuth();
   const location = useLocation();
-  if (loading) return <Loading />;
+  const gate = error ? (
+    <ErrorNotice
+      error={error}
+      retry={() => {
+        void refresh().catch(() => {});
+      }}
+    />
+  ) : (
+    <Loading />
+  );
+  if (!user && loading) return gate;
   return user ? (
-    children
+    <>
+      {loading ? gate : null}
+      {/* VI: Focus cùng tài khoản giữ draft; đổi ID/role hoặc signal rõ ràng tạo cây riêng mới. EN: Same-actor focus checks retain drafts; actor/role changes or explicit signals create a fresh private tree. */}
+      <div
+        key={`${scope}:${user.id}:${[...user.roles].sort().join(",")}`}
+        hidden={loading}
+        inert={loading}
+        style={loading ? { display: "none" } : undefined}
+      >
+        {children}
+      </div>
+    </>
   ) : (
     // VI: Đăng nhập xong trở về cả bộ lọc và anchor của liên kết đã mở. EN: Preserve filters and anchors when returning from sign-in to the requested deep link.
     <Navigate
@@ -68,7 +195,7 @@ export function AuthPage({
     | "reset-password"
     | "verify-email";
 }) {
-  const { user, refresh } = useAuth();
+  const { user, afterLogin, loading, error: sessionError, refresh } = useAuth();
   const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -76,6 +203,17 @@ export function AuthPage({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [message, setMessage] = useState("");
+  if (mode === "login" && loading)
+    return sessionError ? (
+      <ErrorNotice
+        error={sessionError}
+        retry={() => {
+          void refresh().catch(() => {});
+        }}
+      />
+    ) : (
+      <Loading />
+    );
   if (user && mode === "login")
     return <Navigate to={location.state?.from ?? "/dashboard"} replace />;
   const submit = async (event?: FormEvent, demo = false) => {
@@ -88,7 +226,7 @@ export function AuthPage({
           email: demo ? "learner@englishhub.local" : email,
           password: demo ? "EnglishHub@2026" : password,
         });
-        await refresh();
+        await afterLogin();
       } else if (mode === "register") {
         await post("/auth/register", { email, password, displayName: name });
         setMessage(

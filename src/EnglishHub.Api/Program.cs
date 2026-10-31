@@ -1,4 +1,5 @@
 using EnglishHub.Application;
+using EnglishHub.Api;
 using EnglishHub.Domain;
 using Microsoft.AspNetCore.Diagnostics;
 using EnglishHub.Api.Endpoints;
@@ -28,6 +29,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.Use(ActorPrecondition.Invoke);
 // VI: Mọi thao tác ghi browser đều cần CSRF, kể cả login. EN: Every unsafe browser API request, including login, needs an antiforgery token.
 app.Use(async (context, next) =>
 {
