@@ -23,7 +23,9 @@ export function useStudyActivity(
     let busy = false;
     let dirty = false;
     let stopped = false;
+    let pageHidden = false;
     const isActive = () =>
+      !pageHidden &&
       document.visibilityState === "visible" &&
       document.hasFocus() &&
       (performance.now() - lastInput < 90_000 ||
@@ -69,7 +71,8 @@ export function useStudyActivity(
           sequence = session.lastSequence;
         }
         // VI: Chỉ một request đang gửi; lỗi mạng giữ nguyên sequence/payload để retry. EN: One in-flight request retains the exact pending sequence and payload after an unknown network outcome.
-        pending ??= { sequence: sequence + 1, isActive: active };
+        // VI: Tab có thể nghỉ trong lúc tạo session; chỉ payload retry mới phải giữ nguyên. EN: Recheck activity after asynchronous session creation; only an existing retry payload is immutable.
+        pending ??= { sequence: sequence + 1, isActive: isActive() };
         const sent = pending;
         const ack = await pulse(sent);
         sequence = ack.sequence;
@@ -91,7 +94,13 @@ export function useStudyActivity(
       } finally {
         busy = false;
         if (stopped) close();
-        else if (acknowledged && dirty && !pending) void tick();
+        // VI: ACK của retry có thể mang trạng thái cũ; lập tức gửi mốc hiện tại, không chờ thêm timer. EN: A retried receipt may acknowledge an older activity state; reconcile it immediately without spinning on failures.
+        else if (
+          acknowledged &&
+          !pending &&
+          (dirty || lastActive !== isActive())
+        )
+          void tick();
       }
     };
     const input = () => {
@@ -101,10 +110,23 @@ export function useStudyActivity(
     const stateChanged = () => {
       void tick();
     };
+    // VI: Pagehide không đảm bảo React unmount; giữ cùng hàng đợi sequence khi gửi mốc nghỉ. EN: Pagehide need not unmount React; serialize its best-effort inactive boundary through the same sequence queue.
+    const hide = () => {
+      pageHidden = true;
+      void tick();
+    };
+    const show = () => {
+      if (pageHidden) {
+        pageHidden = false;
+        void tick();
+      }
+    };
     window.addEventListener("pointerdown", input, { passive: true });
     window.addEventListener("keydown", input, { passive: true });
     window.addEventListener("focus", stateChanged);
     window.addEventListener("blur", stateChanged);
+    window.addEventListener("pagehide", hide);
+    window.addEventListener("pageshow", show);
     document.addEventListener("visibilitychange", stateChanged);
     const timer = window.setInterval(stateChanged, 15_000);
     void tick();
@@ -115,6 +137,8 @@ export function useStudyActivity(
       window.removeEventListener("keydown", input);
       window.removeEventListener("focus", stateChanged);
       window.removeEventListener("blur", stateChanged);
+      window.removeEventListener("pagehide", hide);
+      window.removeEventListener("pageshow", show);
       document.removeEventListener("visibilitychange", stateChanged);
       if (!busy) close();
     };

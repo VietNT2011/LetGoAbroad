@@ -42,12 +42,14 @@ The [frontend dependency checkpoint](frontend-dependencies.md) pins Vite7.3.8/Vi
 
 The same-owner editor-focus follow-up adds two DOM cases: restore focus/selection after a retained private tree is revealed, and never focus a removed old-actor editor. All22 frontend cases and the production build pass; native focus behavior remains unverified.
 
+The study-time browser lifecycle follow-up adds twelve frontend cases. It rechecks activity after asynchronous session creation, reconciles changed activity immediately after a retried ACK, and serializes best-effort pagehide/persisted-page resume through the existing heartbeat queue. All34 frontend tests pass. Backend source is unchanged from the263/269 local suites. These mocked decisions supplement, and do not replace, native focus/visibility/media acceptance.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **269 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
 | `scripts/test.ps1` | **263 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **22 passed, 0 failed**; simulated DOM/transport session and focus races |
+| `npm --prefix web test` | **34 passed, 0 failed**; simulated DOM/transport session, focus and activity lifecycle races |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

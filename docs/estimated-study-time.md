@@ -24,6 +24,10 @@ The hook mounts only after the learner's lesson, attempt/result or personal-card
 
 One request is in flight per hook and a failed heartbeat retains its exact pending sequence/payload for retry. Expired/conflicting sessions restart without an unbounded offline queue. Measurement errors do not block learning controls. Strict-mode cleanup removes listeners/timers; opening hidden pages does not create a session until active. Missing delivery, throttling, long gaps, focus/idle heuristics and media buffering can make this estimate differ from actual engagement. It is not a validated attention/learning metric.
 
+VI: Sau khi tạo session bất đồng bộ, hook đọc lại visibility/focus thay vì gửi cờ active đã cũ. Retry giữ nguyên payload đã gửi; khi nhận ACK, nếu trạng thái hiện tại khác ACK thì gửi mốc mới ngay, không đợi thêm15 giây. `pagehide` đi qua cùng hàng đợi sequence để gửi mốc nghỉ best-effort, vì đóng/đưa trang vào back-forward cache không đảm bảo React unmount. `pageshow` chỉ khôi phục đánh giá hoạt động sau một lần hide, không tự tạo tương tác mới. Trang bị đóng băng hoặc mạng mất trước khi gửi xong vẫn có thể thiếu mốc; keepalive không bảo đảm giao nhận.
+
+Twelve additional frontend cases simulate hidden/focused pages, missing owner/data,15-second ordering,90-second idle, native-media state, asynchronous-start visibility changes, identical receipt retries with immediate state reconciliation, failure/no-spin, expiry restart, pagehide/pageshow, cleanup and StrictMode disposal. Payload checks reject typed text, owner IDs and private page keys in activity bodies. These JSDOM/fake-clock cases verify client decisions and request contracts; they do not establish native browser lifecycle/delivery or actual media playback behavior.
+
 ## API and verification
 
 - `POST /api/v1/learning/study-sessions` — ClientSessionId, Kind
