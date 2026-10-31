@@ -4,6 +4,7 @@ Thẻ riêng và lịch ôn SRS: [quy tắc, quyền riêng tư và API](docs/pe
 Sửa thẻ có phiên bản và giữ nguyên nội dung lịch sử ôn: [chính sách chỉnh sửa](docs/card-editing.md).
 Sổ câu sai, nhập lịch sử và ôn trọn nhóm câu: [nguồn dữ liệu và quy tắc đã nắm](docs/mistakes.md).
 Gửi audio theo block, tạm dừng/gửi lại trong cùng tab: [phạm vi phục hồi upload](docs/block-uploads.md).
+Mic, nghe bản nháp và thư viện ghi âm riêng: [quyền riêng tư và vòng đời ghi âm](docs/recordings.md).
 Lịch ngày dành [tối đa30% ngân sách cho thẻ đến hạn](docs/daily-review.md), chung giới hạn ba nhiệm vụ với bài học/bài luyện.
 Dashboard có [thời gian học ước tính](docs/estimated-study-time.md) từ heartbeat có sequence, giới hạn30 giây/lần và hợp nhất các tab trùng giờ.
 Có [biểu đồ thời gian theo ngày Hồ sơ](docs/study-time-calendar.md), xử lý ngày đổi giờ và giữ phần giây lẻ trong tổng; vẫn chọn được cửa sổ UTC cũ.

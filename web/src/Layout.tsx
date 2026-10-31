@@ -20,6 +20,7 @@ import {
   Bookmark,
   Menu,
   X,
+  Mic,
 } from "lucide-react";
 import { useAuth } from "./Auth";
 import { useEffect, useRef, useState } from "react";
@@ -74,6 +75,7 @@ export function Layout() {
     { to: "/saved", title: "Câu đã lưu & ghi chú", icon: Bookmark },
     { to: "/review/mistakes", title: "Sổ câu sai", icon: ClipboardList },
     { to: "/vocabulary", title: "Từ vựng & ôn tập", icon: Layers },
+    { to: "/recordings", title: "Ghi âm của tôi", icon: Mic },
     { to: "/groups", title: "Cộng đồng học tập", icon: Users },
   ];
   return (

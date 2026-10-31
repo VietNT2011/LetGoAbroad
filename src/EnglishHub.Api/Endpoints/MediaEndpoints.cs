@@ -9,6 +9,15 @@ public static class MediaEndpoints
     public static void MapMedia(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/media").RequireAuthorization().WithTags("Media");
+        app.MapGet("/api/v1/me/recordings", async (HttpContext ctx, HubDbContext db, int offset = 0) =>
+        {
+            DomainError.Require(offset is >= 0 and <= 100000, 422, "invalid_offset", "Vị trí trang không hợp lệ.");
+            // VI: Admin cũng chỉ thấy ghi âm của chính mình; danh sách không cấp SAS hoặc mở kho blob. EN: Even Admin lists only their own recordings; metadata reads neither issue grants nor initialize blob storage.
+            var owner = ctx.User.UserId();
+            var rows = await db.MediaAssets.AsNoTracking().Where(x => x.OwnerId == owner && x.Purpose == "recording" && x.Status != MediaStatus.Deleted)
+                .OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id).Skip(offset).Take(31).Select(x => new { x.Id, x.FileName, x.Status, x.FailureCode, x.DurationMs, x.Attribution, x.CreatedAt }).ToArrayAsync();
+            return new { items = rows.Take(30).ToArray(), nextOffset = rows.Length > 30 ? offset + 30 : (int?)null };
+        }).RequireAuthorization().WithTags("Personal recording");
         group.MapPost("/uploads", (CreateUpload input, HttpContext ctx, MediaService service) => service.Create(ctx.User.UserId(), ctx.User.IsInRole("Admin") || ctx.User.IsInRole("ContentEditor"), input));
         group.MapPost("/{id:guid}/complete", async (Guid id, HttpContext ctx, MediaService service) => { await service.Complete(ctx.User.UserId(), id); return Results.Accepted(); });
         group.MapGet("/{id:guid}", async (Guid id, HttpContext ctx, MediaService service) => { var a = await service.Owned(ctx.User.UserId(), id, ctx.User.IsInRole("Admin")); return new { a.Id, a.FileName, a.Status, a.FailureCode, a.DurationMs, a.Attribution, a.CreatedAt }; });

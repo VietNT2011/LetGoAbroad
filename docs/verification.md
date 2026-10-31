@@ -58,12 +58,14 @@ The [mistake notebook](mistakes.md) adds fourteen relational cases and six front
 
 The [same-tab audio block uploader](block-uploads.md) adds thirteen frontend cases and one real SQL/Azurite/FFmpeg Storage case on **18/11/2026**. All73 frontend cases, production build and the focused real integration case passed. Application C# source is unchanged from the296/302 complete local notebook suites; the full SQL row below records that retained run, while the added Storage case is recorded separately here and runs with the full current-head CI suite. The new case verifies block/commit retries, one processing job, actual decoding and private-recording ACLs. No user audio was recorded or uploaded for this technical fixture.
 
+The [private recording UI/library](recordings.md) adds four metadata cases, fifteen simulated capture cases and five page cases on **18/11/2026**. Browser APIs are mocked: no human microphone or permission prompt was used. A live-mode WebM probe exposed absent format duration; two real FFmpeg cases now verify bounded PCM measurement, successful conversion and rejection rather than truncation of overlong input. After this processing fix, both complete local suites were rerun successfully:300 SQLite/309 SQL-media,0 failed/skipped, plus93 frontend tests and a successful production build. Earlier300/307 results before the streaming fix are retained separately and are not the final source verification.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **302 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **296 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **309 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **300 passed, 0 failed, 0 skipped**; the nine Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **73 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment, skill-sample comparison, card-editor, mistake-notebook and block-upload contracts |
+| `npm --prefix web test` | **93 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment, skill-sample comparison, card-editor, mistake-notebook, block-upload and private-capture/library contracts |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

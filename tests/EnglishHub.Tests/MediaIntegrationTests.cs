@@ -10,11 +10,11 @@ using Microsoft.Extensions.DependencyInjection;
 public sealed class MediaIntegrationTests(TestApp app) : IClassFixture<TestApp>
 {
     // VI: Tone kỹ thuật do test sinh, không giả là audio bài học. EN: An authored technical tone fixture, never presented as learning speech.
-    private static byte[] Wave()
+    private static byte[] Wave(int seconds = 1)
     {
         const int rate = 16000; using var buffer = new MemoryStream(); using var writer = new BinaryWriter(buffer);
-        writer.Write("RIFF"u8.ToArray()); writer.Write(36 + rate * 2); writer.Write("WAVEfmt "u8.ToArray()); writer.Write(16); writer.Write((short)1); writer.Write((short)1); writer.Write(rate); writer.Write(rate * 2); writer.Write((short)2); writer.Write((short)16); writer.Write("data"u8.ToArray()); writer.Write(rate * 2);
-        for (var i = 0; i < rate; i++) writer.Write((short)(Math.Sin(2 * Math.PI * 440 * i / rate) * 5000));
+        writer.Write("RIFF"u8.ToArray()); writer.Write(36 + rate * seconds * 2); writer.Write("WAVEfmt "u8.ToArray()); writer.Write(16); writer.Write((short)1); writer.Write((short)1); writer.Write(rate); writer.Write(rate * 2); writer.Write((short)2); writer.Write((short)16); writer.Write("data"u8.ToArray()); writer.Write(rate * seconds * 2);
+        for (var i = 0; i < rate * seconds; i++) writer.Write((short)(Math.Sin(2 * Math.PI * 440 * i / rate) * 5000));
         return buffer.ToArray();
     }
     private async Task<(HttpClient Client, UploadGrant Grant, byte[] Bytes)> Upload(byte[]? bytes = null)
@@ -37,6 +37,24 @@ public sealed class MediaIntegrationTests(TestApp app) : IClassFixture<TestApp>
     {
         await using var scope = app.Services.CreateAsyncScope();
         Assert.True(await scope.ServiceProvider.GetRequiredService<MediaPipeline>().RunOne(CancellationToken.None));
+    }
+    [Theory]
+    [InlineData(1, 180, true)]
+    [InlineData(2, 1, false)]
+    public async Task Streaming_webm_without_duration_is_measured_after_bounded_decode_and_rejects_overlong_audio(int seconds, int limit, bool accepted)
+    {
+        var folder=Path.Combine(Path.GetTempPath(),$"englishhub-streaming-{Guid.NewGuid():N}");Directory.CreateDirectory(folder);
+        try
+        {
+            var wave=Path.Combine(folder,"technical-tone.wav");var input=Path.Combine(folder,"streaming.webm");var output=Path.Combine(folder,"output.mp3");await File.WriteAllBytesAsync(wave,Wave(seconds));
+            var create=new System.Diagnostics.ProcessStartInfo("ffmpeg"){RedirectStandardError=true,UseShellExecute=false};foreach(var arg in new[]{"-nostdin","-hide_banner","-v","error","-i",wave,"-c:a","libopus","-f","webm","-live","1","-y",input})create.ArgumentList.Add(arg);
+            using(var process=System.Diagnostics.Process.Start(create)!){var error=process.StandardError.ReadToEndAsync();await process.WaitForExitAsync();Assert.Equal(0,process.ExitCode);Assert.Empty(await error);}
+            var probe=new System.Diagnostics.ProcessStartInfo("ffprobe"){RedirectStandardOutput=true,RedirectStandardError=true,UseShellExecute=false};foreach(var arg in new[]{"-v","error","-show_entries","format=duration","-of","json",input})probe.ArgumentList.Add(arg);
+            using(var process=System.Diagnostics.Process.Start(probe)!){var json=process.StandardOutput.ReadToEndAsync();var error=process.StandardError.ReadToEndAsync();await process.WaitForExitAsync();Assert.Equal(0,process.ExitCode);Assert.Empty(await error);Assert.False(JsonDocument.Parse(await json).RootElement.GetProperty("format").TryGetProperty("duration",out _));}
+            var processor=new FfmpegProcessor();if(accepted){var result=await processor.Process(input,output,limit,CancellationToken.None);Assert.InRange(result.DurationMs,900,1100);Assert.True(File.Exists(output));}else{var error=await Assert.ThrowsAsync<EnglishHub.Domain.DomainError>(()=>processor.Process(input,output,limit,CancellationToken.None));Assert.Equal("invalid_duration",error.Code);}
+            Assert.False(File.Exists(output+".decoded.wav"));
+        }
+        finally{Directory.Delete(folder,true);}
     }
     [Fact]
     public async Task Retried_ordered_blocks_commit_to_a_valid_private_recording_with_one_processing_job()
