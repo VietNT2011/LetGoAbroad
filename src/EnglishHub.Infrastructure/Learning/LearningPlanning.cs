@@ -44,26 +44,38 @@ public sealed partial class LearningService
         DomainError.Require(input.LocalDate == today, 409, "plan_day_changed", "Ngày học đã đổi. Hãy tải lịch mới trước khi lập lại.");
         var goal = await goals.Resolve(enrollment, user);
         await SyncCompleted(userId, today, user.TimeZoneId); await MarkMissed(userId, user.TimeZoneId);
+        await MarkReviewsMissed(userId);
         DomainError.Require(input.ExpectedEtag == await PlanEtag(enrollment, today, user.TimeZoneId, user.StudyDays), 412, "plan_conflict", "Nhiệm vụ đã đổi ở phiên khác. Hãy tải lại để xem trước khi lập lại.");
         var current = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && x.Status != "superseded" && (x.LocalDate == today || x.Status == "pending")).OrderBy(x => x.LocalDate).ThenBy(x => x.SlotKey).ToArrayAsync();
         var attempted = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && db.Attempts.Any(a => a.UserId == userId && a.ContentVersionId == x.ContentVersionId && a.StartedAt >= x.CreatedAt)).Select(x => x.Id).ToArrayAsync();
         var retained = current.Where(x => x.Status == "completed" || x.StartedAt is not null || attempted.Contains(x.Id) || x.LocalDate != today).ToArray();
         var replace = current.Except(retained).ToArray();
-        var remaining = Math.Max(0, enrollment.MinutesPerDay - retained.Sum(x => x.EstimatedMinutes)); var limit = Math.Max(0, 3 - retained.Length);
+        var reviews = await CurrentReviews(enrollment, today);
+        var retainedReviews = reviews.Where(x => x.Status == "completed" || x.StartedAt is not null || x.LocalDate != today).ToArray();
+        var replaceReviews = reviews.Except(retainedReviews).ToArray();
+        var remaining = Math.Max(0, enrollment.MinutesPerDay - retained.Sum(x => x.EstimatedMinutes) - retainedReviews.Sum(x => x.EstimatedMinutes)); var limit = Math.Max(0, 3 - retained.Length - retainedReviews.Length);
         var lastSlot = await db.DailyTasks.Where(x => x.EnrollmentId == enrollment.Id && x.LocalDate == today).Select(x => (int?)x.SlotKey).MaxAsync() ?? -1;
-        var proposed = user.StudyDays.Split(',').Contains(((int)today.DayOfWeek).ToString()) && remaining > 0 && limit > 0
-            ? await BuildDailyTasks(enrollment, user, today, goal.Id, remaining, limit, checked(lastSlot + 1), retained.Select(x => x.ContentVersionId).ToArray(), replace.Select(x => x.Id).ToArray()) : [];
+        var proposal = user.StudyDays.Split(',').Contains(((int)today.DayOfWeek).ToString()) && remaining > 0 && limit > 0
+            ? await BuildDailyProposal(enrollment, user, today, goal.Id, remaining, limit, checked(lastSlot + 1), retained.Select(x => x.ContentVersionId).ToArray(), replace.Select(x => x.Id).ToArray(), retainedReviews.Length == 0) : new DailyProposal([], null);
+        var proposed = proposal.Tasks;
         // VI: Cùng lựa chọn giữ nguyên ID, timestamp và ngân sách; không ghi lịch sử thay vô ích. EN: Identical assignments retain their IDs/timestamps without a needless replacement effect.
-        var changed = !replace.Select(Assignment).Order().SequenceEqual(proposed.Select(Assignment).Order());
+        var changed = !replace.Select(Assignment).Order().SequenceEqual(proposed.Select(Assignment).Order())
+            || !replaceReviews.Select(ReviewAssignment).Order().SequenceEqual(proposal.Review is null ? [] : new[] { ReviewAssignment(proposal.Review) });
         if (changed)
         {
             DomainError.Require(await db.OutboxEvents.CountAsync(x => x.Type == "learning.plan_regenerated" && x.AggregateId == enrollment.Id && x.OccurredAt >= clock.UtcNow.AddHours(-24)) < 5, 429, "regeneration_limit", "Tối đa 5 lần thay nhiệm vụ trong 24 giờ. Lịch đang có vẫn dùng được.");
             foreach (var task in replace) task.Status = "superseded";
+            foreach (var batch in replaceReviews) batch.Status = "superseded";
             // VI: Giải phóng unique pending-node trước khi thêm phiên bản thay thế, vẫn trong một transaction. EN: Release pending-node uniqueness before inserting replacements in the same transaction.
-            await db.SaveChangesAsync(); db.DailyTasks.AddRange(proposed); await db.SaveChangesAsync();
-            db.OutboxEvents.Add(new OutboxEvent { Type = "learning.plan_regenerated", AggregateId = enrollment.Id, OccurredAt = clock.UtcNow, PayloadJson = JsonSerializer.Serialize(new { userId, localDate = today, retained = retained.Select(x => x.Id), superseded = replace.Select(x => x.Id), created = proposed.Select(x => x.Id) }) });
+            await db.SaveChangesAsync(); db.DailyTasks.AddRange(proposed);
+            if (proposal.Review is not null) db.DailyReviewBatches.Add(proposal.Review);
+            await db.SaveChangesAsync();
+            db.OutboxEvents.Add(new OutboxEvent { Type = "learning.plan_regenerated", AggregateId = enrollment.Id, OccurredAt = clock.UtcNow, PayloadJson = JsonSerializer.Serialize(new { userId, localDate = today,
+                retained = retained.Select(x => x.Id).Concat(retainedReviews.Select(x => x.Id)),
+                superseded = replace.Select(x => x.Id).Concat(replaceReviews.Select(x => x.Id)),
+                created = proposed.Select(x => x.Id).Concat(proposal.Review is null ? [] : new[] { proposal.Review.Id }) }) });
         }
-        var ack = new RegenerationAck(today, await PlanEtag(enrollment, today, user.TimeZoneId, user.StudyDays), changed ? retained.Select(x => x.Id).ToArray() : current.Select(x => x.Id).ToArray(), changed ? replace.Select(x => x.Id).ToArray() : [], changed ? proposed.Select(x => x.Id).ToArray() : [], changed);
+        var ack = new RegenerationAck(today, await PlanEtag(enrollment, today, user.TimeZoneId, user.StudyDays), changed ? retained.Select(x => x.Id).Concat(retainedReviews.Select(x => x.Id)).ToArray() : current.Select(x => x.Id).Concat(reviews.Select(x => x.Id)).ToArray(), changed ? replace.Select(x => x.Id).Concat(replaceReviews.Select(x => x.Id)).ToArray() : [], changed ? proposed.Select(x => x.Id).Concat(proposal.Review is null ? [] : new[] { proposal.Review.Id }).ToArray() : [], changed);
         receipts.Save(userId, scope, input.ClientRequestId, hash, enrollment.Id, ack); return ack;
     });
 
@@ -75,7 +87,9 @@ public sealed partial class LearningService
         var tasks = await db.DailyTasks.AsNoTracking().Where(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending")).Select(x => new { x.Id, x.RowVersion }).ToArrayAsync();
         // VI: Kết quả ngoài task cũng có thể đổi ưu tiên; token phải ràng buộc mẫu luyện hiện tại. EN: Unassigned results can change priorities too; bind the current practice aggregates into the token.
         var practice = await PlanningObservations(enrollment.UserId);
-        return $"\"plan-{Receipts.Hash(new { today, zone, studyDays, enrollment.Id, enrollment.PathVersionId, enrollment.PathRevisionNumber, enrollment.PlanRevision, reinforcementPolicy = WeakSkillPolicy.Version, practice, tasks = tasks.OrderBy(x => x.Id).ToArray() })}\"";
+        var due = await db.UserCards.AsNoTracking().Where(x => x.UserId == enrollment.UserId && x.ArchivedAt == null && x.DueAt <= clock.UtcNow).Select(x => new { x.Id, x.DueAt, x.RowVersion }).ToArrayAsync();
+        var reviews = await db.DailyReviewBatches.AsNoTracking().Where(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending")).Select(x => new { x.Id, x.RowVersion }).ToArrayAsync();
+        return $"\"plan-{Receipts.Hash(new { today, zone, studyDays, enrollment.Id, enrollment.PathVersionId, enrollment.PathRevisionNumber, enrollment.PlanRevision, reinforcementPolicy = WeakSkillPolicy.Version, practice, tasks = tasks.OrderBy(x => x.Id).ToArray(), reviewPolicy = 1, due = due.OrderBy(x => x.Id).ToArray(), reviews = reviews.OrderBy(x => x.Id).ToArray() })}\"";
     }
 
     // VI: Không trộn full mock với luyện tập; nguồn này giữ nguyên window/normalization của thống kê. EN: Keep full mocks separate and reuse the statistics window and pinned correctness policy.

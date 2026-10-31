@@ -15,7 +15,7 @@ public sealed record CardPage(CardView[] Items, int DueCount, int? NextOffset);
 public sealed record CardReviewAck(Guid ReviewId, Guid ReviewEventId, CardView Card);
 
 /// <summary>VI: Mọi truy vấn và lệnh đều theo owner, cả với Admin; dùng cùng khóa learning để nối planner an toàn. EN: Owner-scoped cards share the learning lock so future plan allocation cannot race a review.</summary>
-public sealed class CardService(HubDbContext db, Transactions tx, Receipts receipts, IClock clock)
+public sealed class CardService(HubDbContext db, Transactions tx, Receipts receipts, IClock clock, DailyReviewService dailyReviews)
 {
     private IQueryable<UserCard> Full => db.UserCards.Include(x => x.Contexts);
     public async Task<CardPage> List(Guid user, bool dueOnly = false, bool archived = false, int offset = 0)
@@ -82,6 +82,7 @@ public sealed class CardService(HubDbContext db, Transactions tx, Receipts recei
             BeforeDueAt = card.DueAt, AfterDueAt = next.DueAt, BeforeIntervalDays = card.IntervalDays, AfterIntervalDays = next.IntervalDays, BeforeSuccessStep = card.SuccessStep, AfterSuccessStep = next.SuccessStep };
         card.DueAt = next.DueAt; card.IntervalDays = next.IntervalDays; card.SuccessStep = next.SuccessStep; card.SchedulerVersion = CardScheduler.Version; card.UpdatedAt = now;
         db.CardReviews.Add(review);
+        await dailyReviews.Record(user, review);
         db.OutboxEvents.Add(new OutboxEvent { Type = "review.card_reviewed", AggregateId = review.Id, OccurredAt = now, PayloadJson = JsonSerializer.Serialize(new { userId = user, cardId = id, reviewId = review.Id, schedulerVersion = CardScheduler.Version }) });
         await db.SaveChangesAsync();
         var ack = new CardReviewAck(review.Id, input.ReviewEventId, View(card)); receipts.Save(user, scope, input.ReviewEventId, hash, id, ack); return ack;

@@ -473,6 +473,131 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("ContentVersions");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.DailyReviewBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("EnrollmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("EstimatedMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("GoalRevisionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("LocalDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PlanningPolicyVersion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReasonCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ReasonText")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnrollmentId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'pending'");
+
+                    b.HasIndex("EnrollmentId", "UserId");
+
+                    b.HasIndex("GoalRevisionId", "EnrollmentId");
+
+                    b.HasIndex("EnrollmentId", "LocalDate", "Number")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "Status", "LocalDate");
+
+                    b.ToTable("DailyReviewBatches", t =>
+                        {
+                            t.HasCheckConstraint("CK_ReviewBatch_Values", "[Number] > 0 AND [EstimatedMinutes] > 0 AND [Status] IN ('pending','completed','missed','superseded')");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.DailyReviewItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CardReviewId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("DueAtWhenAssigned")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UserCardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CardReviewId")
+                        .IsUnique()
+                        .HasFilter("[CardReviewId] IS NOT NULL");
+
+                    b.HasIndex("BatchId", "UserCardId")
+                        .IsUnique();
+
+                    b.HasIndex("BatchId", "UserId");
+
+                    b.HasIndex("CardReviewId", "UserCardId");
+
+                    b.HasIndex("UserCardId", "UserId");
+
+                    b.ToTable("DailyReviewItems");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.DailyTask", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1836,6 +1961,48 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Navigation("Root");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.DailyReviewBatch", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.Enrollment", null)
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.PlanGoalRevision", null)
+                        .WithMany()
+                        .HasForeignKey("GoalRevisionId", "EnrollmentId")
+                        .HasPrincipalKey("Id", "EnrollmentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.DailyReviewItem", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.DailyReviewBatch", null)
+                        .WithMany("Items")
+                        .HasForeignKey("BatchId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.CardReview", null)
+                        .WithMany()
+                        .HasForeignKey("CardReviewId", "UserCardId")
+                        .HasPrincipalKey("Id", "UserCardId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.UserCard", "Card")
+                        .WithMany()
+                        .HasForeignKey("UserCardId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Card");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.DailyTask", b =>
                 {
                     b.HasOne("EnglishHub.Domain.ContentVersion", "ContentVersion")
@@ -2225,6 +2392,11 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("EnglishHub.Domain.ContentVersion", b =>
                 {
                     b.Navigation("Groups");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.DailyReviewBatch", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.PathNode", b =>

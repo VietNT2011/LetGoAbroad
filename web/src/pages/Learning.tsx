@@ -26,6 +26,17 @@ export type DashboardData = {
   timeZoneId: string;
   usesPathCalendar: boolean;
   planEtag: string | null;
+  reviewBatches: {
+    id: string;
+    status: string;
+    estimatedMinutes: number;
+    startedAt: string | null;
+    totalCards: number;
+    completedCards: number;
+    localDate: string;
+    timeZoneId: string;
+    reasonText: string;
+  }[];
   enrollment: null | {
     id: string;
     level: string;
@@ -204,8 +215,8 @@ export function TodayPanel() {
         {data.enrollment ? (
           <p className="muted plan-policy">
             Mở nhiệm vụ để ghi nhận bắt đầu. Lập lại giữ bài đang làm, bài đã
-            xong và ngân sách hôm nay; hoàn thành vẫn cần quiz hoặc kết quả hợp
-            lệ.
+            xong và ngân sách hôm nay. Bài học/bài luyện cần quiz hoặc kết quả
+            hợp lệ; nhiệm vụ ôn cần đủ lượt tự đánh giá đã được xác nhận.
           </p>
         ) : null}
         {!data.enrollment ? (
@@ -219,8 +230,59 @@ export function TodayPanel() {
               Tạo lộ trình <ArrowRight size={15} />
             </Link>
           </div>
-        ) : data.tasks.length ? (
+        ) : data.tasks.length || data.reviewBatches.length ? (
           <div className="daily-tasks">
+            {data.reviewBatches.map((batch, index) => (
+              <button
+                type="button"
+                className={`daily-task ${batch.status}`}
+                key={batch.id}
+                disabled={busy}
+                onClick={async () => {
+                  if (busy) return;
+                  setBusy(true);
+                  setActionError(undefined);
+                  try {
+                    if (batch.status === "pending")
+                      await post(`/review-batches/${batch.id}/start`);
+                    navigate(`/vocabulary?batch=${batch.id}`);
+                  } catch (error) {
+                    setActionError(error as Error);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                <span className="task-order">
+                  {batch.status === "completed" ? (
+                    <CheckCircle2 size={22} />
+                  ) : (
+                    `0${index + 1}`
+                  )}
+                </span>
+                <div>
+                  <h3>
+                    Ôn {batch.totalCards} thẻ đến hạn{" "}
+                    {batch.status === "completed" ? (
+                      <small className="task-completed">Đã ôn xong</small>
+                    ) : batch.startedAt ? (
+                      <small className="task-completed task-started">
+                        Đã bắt đầu
+                      </small>
+                    ) : null}
+                  </h3>
+                  <p>{batch.reasonText}</p>
+                  <small>
+                    {batch.completedCards}/{batch.totalCards} thẻ đã ôn · lịch{" "}
+                    {batch.localDate} · {batch.timeZoneId}
+                  </small>
+                </div>
+                <span className="task-time">
+                  <Clock3 size={15} />
+                  {batch.estimatedMinutes} phút
+                </span>
+              </button>
+            ))}
             {data.tasks.map((task, i) => (
               <button
                 type="button"
@@ -234,7 +296,7 @@ export function TodayPanel() {
                   {task.status === "completed" ? (
                     <CheckCircle2 size={22} />
                   ) : (
-                    `0${i + 1}`
+                    `0${i + 1 + data.reviewBatches.length}`
                   )}
                 </span>
                 <div>

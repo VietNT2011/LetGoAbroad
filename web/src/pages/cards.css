@@ -15,6 +15,7 @@
 .card-create,
 .card-study,
 .card-policy {
+  overflow-wrap: anywhere;
   margin: 24px 0;
   padding: 24px;
   background: var(--surface);

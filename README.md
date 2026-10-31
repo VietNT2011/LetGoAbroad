@@ -1,6 +1,7 @@
 # EnglishHub · LetGoAbroad
 
 Thẻ riêng và lịch ôn SRS: [quy tắc, quyền riêng tư và API](docs/personal-cards.md).
+Lịch ngày dành [tối đa30% ngân sách cho thẻ đến hạn](docs/daily-review.md), chung giới hạn ba nhiệm vụ với bài học/bài luyện.
 
 Nền tảng tự học tiếng Anh bằng ASP.NET Core 10, EF Core 10, SQL Server 2022 và React + TypeScript. Có một hành trình học/luyện chạy được cục bộ, với dữ liệu bền vững và integration test trên database/blob/FFmpeg thật.
 

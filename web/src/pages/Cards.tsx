@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ApiError, post } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import "./cards.css";
@@ -31,6 +32,25 @@ export default function CardsPage() {
   const [filter, setFilter] = useState("due");
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string>();
+  const [params] = useSearchParams();
+  const batchId = params.get("batch");
+  const batch = useResource<{
+    id: string;
+    status: string;
+    items: {
+      cardId: string;
+      front: string;
+      completed: boolean;
+      archived: boolean;
+    }[];
+  }>(batchId ? `/review-batches/${encodeURIComponent(batchId)}` : null);
+  const studyId =
+    selected ?? batch.data?.items.find((item) => !item.completed)?.cardId;
+  const changed = () => {
+    resource.reload();
+    batch.reload();
+    if (batchId) setSelected(undefined);
+  };
   const resource = useResource<CardPage>(
     `/cards/?dueOnly=${filter === "due"}&archived=${filter === "archived"}&offset=${offset}`,
   );
@@ -49,6 +69,48 @@ export default function CardsPage() {
           mức nhớ sau khi mở mặt sau.
         </p>
       </header>
+      {batchId ? (
+        <section className="card-policy" aria-label="Nhiệm vụ ôn hôm nay">
+          <h2>Thẻ trong nhiệm vụ của bạn</h2>
+          <ErrorNotice error={batch.error} retry={batch.reload} />
+          {batch.loading ? (
+            <Loading />
+          ) : batch.data ? (
+            <>
+              <p role="status">
+                {batch.data.items.filter((item) => item.completed).length}/
+                {batch.data.items.length} thẻ đã ôn ·{" "}
+                {batch.data.status === "completed"
+                  ? "Đã hoàn thành nhiệm vụ"
+                  : batch.data.status === "pending"
+                    ? "Đang ôn"
+                    : "Nhiệm vụ đã đóng"}
+              </p>
+              <ul>
+                {batch.data.items.map((item) => (
+                  <li key={item.cardId}>
+                    {item.completed ? "✓ " : ""}
+                    <button
+                      type="button"
+                      className="link-button"
+                      onClick={() => setSelected(item.cardId)}
+                    >
+                      {item.front}
+                    </button>
+                    {item.archived
+                      ? " · Thẻ đã cất: khôi phục để tiếp tục ôn."
+                      : ""}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Mỗi mức tự đánh giá được chấp nhận tính là một lượt ôn thẻ;
+                không phải điểm đúng của bài thi.
+              </p>
+            </>
+          ) : null}
+        </section>
+      ) : null}
       <CreateCardForm
         saved={(id) => {
           setSelected(id);
@@ -135,8 +197,8 @@ export default function CardsPage() {
           </div>
         </>
       ) : null}
-      {selected ? (
-        <CardStudy key={selected} id={selected} changed={resource.reload} />
+      {studyId ? (
+        <CardStudy key={studyId} id={studyId} changed={changed} />
       ) : null}
       <aside className="card-policy">
         <h2>Lịch ôn v1 hoạt động thế nào?</h2>
@@ -148,8 +210,9 @@ export default function CardsPage() {
         </p>
         <p>
           Thẻ và lịch sử là riêng tư. Cất thẻ tạm dừng ôn; khôi phục giữ nguyên
-          lịch sử và hạn ôn. Từ điển, deck dùng chung và phân bổ thẻ vào ngân
-          sách lịch học sẽ được triển khai riêng.
+          lịch sử và hạn ôn. Lịch ngày dành tối đa30% ngân sách cho thẻ đến hạn,
+          một phút ước lượng mỗi thẻ. Từ điển và deck dùng chung sẽ được triển
+          khai riêng.
         </p>
       </aside>
     </section>

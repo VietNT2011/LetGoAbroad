@@ -22,16 +22,18 @@ The [7/30-day learning activity view](learning-activity.md) was verified on **17
 
 Packaged activity UI checks switched 7→30→7→30 and refreshed without mixing window labels, opened/closed the daily table with Enter, and retained 30 data rows plus scoped headers. At a 320px viewport, client/scroll width were both 305px and the table was 239px wide; the viewport was reset afterward. The main learner's 30-day view showed 1 completed lesson, 3 graded practice attempts, 0 full mocks and 2 active days; all three learners had zero activities in the latest 7 days. Read-only API probes checked 401/422 responses and unchanged path/attempt payloads, statistics and pins: Foundation 1/18, Exam 0/8, Core 0/10. No learner was graded during this verification. Screenshot and probe JSON are included in the handover outputs.
 
-| Check | Observed result |
-|---|---|
 The [personal-card/SRS foundation](personal-cards.md) was verified on **18/11/2026** with 22 new cases: schedule steps/rounding/cap, canonical creation/context merging, exact due ticks, later-state replay, concurrent events/ETags, owner/Admin/CSRF isolation, archive/restore, bounded pages and unchanged learning evidence. Initial compilation flagged an xUnit analyzer rule; its predicate overload was used before the successful runs. A Docker engine interruption aborted an earlier full run; after startup, the local SQL process stopped responding to logins, so the SQL suite was interrupted before completion. Restarting only the EnglishHub SQL container restored queries; no fixture databases remained. The final completed runs are below.
 
 The packaged API created one explicitly marked technical card for the secondary demo learner, rated Good once, retried the same event, rejected a competing stale rating with412 and a foreign-owner read with404, checked one history row, and archived/restored/re-archived the card without changing its schedule or lesson/attempt statistics. The migration was confirmed in the existing local SQL database; no cards/reviews are seeded. The frontend TypeScript/Vite and Docker builds passed. Native browser verification was stopped by the user's Escape key before navigating to the card page; no visual, keyboard or responsive acceptance for the new card screen is claimed in this checkpoint.
 
+The [daily due-review allocation](daily-review.md) adds 12 cases on **18/11/2026** for all supported budgets, owner/due filtering, three-slot protection, stale/no-op/replayed regeneration, archival replacement, real review-source completion, rollover, racing commands and composite FK/CSRF boundaries. Both new migrations were applied to the existing local SQL database. The whole suites below passed. A final audit-payload correction includes review-batch IDs alongside content-task IDs in regeneration outbox arrays, with an additional assertion in the same targeted SQL cases.
+
+A packaged API probe used an explicitly named new local technical QA account, created two original cards, generated a two-minute review batch within a30-minute budget, started it, reviewed one card, regenerated while preserving partial work, reviewed the other card and replayed the first event. The batch completed with two actual sources and exactly one completion outbox. Lesson/attempt statistics stayed zero. Both cards were archived afterward; the three existing learner accounts were not used for this batch probe. Browser visual/keyboard/mobile acceptance remains unverified after the user's Escape interruption.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **219 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **213 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **231 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **225 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

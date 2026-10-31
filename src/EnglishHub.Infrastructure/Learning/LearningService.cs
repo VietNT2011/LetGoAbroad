@@ -61,10 +61,14 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             enrollment.TimeZoneId = user.TimeZoneId;
             await SyncCompleted(userId, today, user.TimeZoneId);
             await MarkMissed(userId, user.TimeZoneId);
-            var tasksExist = await db.DailyTasks.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending"));
+            await MarkReviewsMissed(userId);
+            var tasksExist = await db.DailyTasks.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending"))
+                || await db.DailyReviewBatches.AnyAsync(x => x.EnrollmentId == enrollment.Id && (x.LocalDate == today || x.Status == "pending"));
             if (!tasksExist && user.StudyDays.Split(',').Contains(((int)today.DayOfWeek).ToString()))
             {
-                db.DailyTasks.AddRange(await BuildDailyTasks(enrollment, user, today, goal.Id, enrollment.MinutesPerDay, 3, 0, [], []));
+                var proposal = await BuildDailyProposal(enrollment, user, today, goal.Id, enrollment.MinutesPerDay, 3, 0, [], [], true);
+                db.DailyTasks.AddRange(proposal.Tasks);
+                if (proposal.Review is not null) db.DailyReviewBatches.Add(proposal.Review);
                 await db.SaveChangesAsync();
             }
             await SyncCompleted(userId, today, user.TimeZoneId);
@@ -103,6 +107,8 @@ public sealed partial class LearningService(HubDbContext db, Transactions tx, Re
             planEtag,
             enrollment = enrollment is null ? null : new { enrollment.Id, enrollment.Level, enrollment.TargetScore, enrollment.MinutesPerDay, enrollment.RuleVersion, enrollment.PlanRevision, enrollment.PathVersionId, enrollment.SelectionReason, enrollment.PathStartedOn },
             tasks,
+            reviewBatches = await db.DailyReviewBatches.AsNoTracking().Where(x => x.UserId == userId && x.Status != "superseded" && (x.LocalDate == today || x.Status == "pending"))
+                .OrderBy(x => x.CreatedAt).Select(x => new { x.Id, x.Status, x.EstimatedMinutes, x.StartedAt, x.LocalDate, x.TimeZoneId, x.PlanningPolicyVersion, totalCards = x.Items.Count, completedCards = x.Items.Count(i => i.CardReviewId != null), x.ReasonCode, x.ReasonText }).ToArrayAsync(),
             statistics = new { lessonsCompleted, attemptsCompleted = attempts.Count, questionsCorrect = attempts.Sum(x => x.CorrectCount), questionsObserved = attempts.Sum(x => x.TotalCount) }
         };
     });

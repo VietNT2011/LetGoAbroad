@@ -9,9 +9,29 @@ public sealed partial class HubDbContext
     public DbSet<UserCard> UserCards => Set<UserCard>();
     public DbSet<CardSourceContext> CardSourceContexts => Set<CardSourceContext>();
     public DbSet<CardReview> CardReviews => Set<CardReview>();
+    public DbSet<DailyReviewBatch> DailyReviewBatches => Set<DailyReviewBatch>();
+    public DbSet<DailyReviewItem> DailyReviewItems => Set<DailyReviewItem>();
     partial void ConfigureReview(ModelBuilder b)
     {
         b.Entity<UserCard>().HasOne<AppUser>().WithMany().HasForeignKey(x => x.UserId);
+        b.Entity<UserCard>().HasAlternateKey(x => new { x.Id, x.UserId });
+        b.Entity<CardReview>().HasAlternateKey(x => new { x.Id, x.UserCardId });
+        b.Entity<DailyReviewBatch>().HasAlternateKey(x => new { x.Id, x.UserId });
+        b.Entity<DailyReviewBatch>().HasOne<Enrollment>().WithMany().HasForeignKey(x => new { x.EnrollmentId, x.UserId }).HasPrincipalKey(x => new { x.Id, x.UserId });
+        b.Entity<DailyReviewBatch>().HasOne<PlanGoalRevision>().WithMany().HasForeignKey(x => new { x.GoalRevisionId, x.EnrollmentId }).HasPrincipalKey(x => new { x.Id, x.EnrollmentId });
+        b.Entity<DailyReviewBatch>().HasIndex(x => new { x.EnrollmentId, x.LocalDate, x.Number }).IsUnique();
+        b.Entity<DailyReviewBatch>().HasIndex(x => x.EnrollmentId).IsUnique().HasFilter("[Status] = 'pending'");
+        b.Entity<DailyReviewBatch>().Property(x => x.Status).HasMaxLength(25);
+        b.Entity<DailyReviewBatch>().Property(x => x.TimeZoneId).HasMaxLength(80);
+        b.Entity<DailyReviewBatch>().Property(x => x.ReasonCode).HasMaxLength(50);
+        b.Entity<DailyReviewBatch>().Property(x => x.ReasonText).HasMaxLength(2000);
+        b.Entity<DailyReviewBatch>().HasIndex(x => new { x.UserId, x.Status, x.LocalDate });
+        b.Entity<DailyReviewBatch>().ToTable(t => t.HasCheckConstraint("CK_ReviewBatch_Values", "[Number] > 0 AND [EstimatedMinutes] > 0 AND [Status] IN ('pending','completed','missed','superseded')"));
+        b.Entity<DailyReviewItem>().HasOne<DailyReviewBatch>().WithMany(x => x.Items).HasForeignKey(x => new { x.BatchId, x.UserId }).HasPrincipalKey(x => new { x.Id, x.UserId });
+        b.Entity<DailyReviewItem>().HasOne(x => x.Card).WithMany().HasForeignKey(x => new { x.UserCardId, x.UserId }).HasPrincipalKey(x => new { x.Id, x.UserId });
+        b.Entity<DailyReviewItem>().HasOne<CardReview>().WithMany().HasForeignKey(x => new { x.CardReviewId, x.UserCardId }).HasPrincipalKey(x => new { x.Id, x.UserCardId });
+        b.Entity<DailyReviewItem>().HasIndex(x => new { x.BatchId, x.UserCardId }).IsUnique();
+        b.Entity<DailyReviewItem>().HasIndex(x => x.CardReviewId).IsUnique().HasFilter("[CardReviewId] IS NOT NULL");
         b.Entity<UserCard>().Property(x => x.CustomKey).HasMaxLength(64);
         b.Entity<UserCard>().Property(x => x.Front).HasMaxLength(500);
         b.Entity<UserCard>().Property(x => x.Back).HasMaxLength(2000);

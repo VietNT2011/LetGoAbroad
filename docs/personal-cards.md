@@ -38,4 +38,4 @@ The client retains an unacknowledged review event for explicit retry. A stale re
 
 Twenty-two relational/policy cases cover all schedule steps, rounding/cap/reset, normalized creation/context merging, receipt replay after later reviews/archival, exact due ticks, concurrent event/version races, owner/Admin/CSRF boundaries, reversible archival, invalid text/rating, cross-card event reuse, bounded pages and unchanged learning evidence. Both SQLite and SQL Server profiles run these cases. Actual full-suite and packaged-browser results are recorded in [verification](verification.md).
 
-Dictionary senses/pronunciation, shared versioned decks, card editing, transcript anchors, offline queues and integration into the planner's 30% review budget are still open. Manual custom cards are the initial source of due-review state; this change alone does not close PATH-03 or all M06 acceptance.
+Manual custom cards now supply the [daily planner's due-review budget](daily-review.md). Dictionary senses/pronunciation, shared versioned decks, card editing, transcript anchors and offline queues remain open; this does not close all M06 acceptance.
