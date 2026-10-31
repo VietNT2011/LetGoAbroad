@@ -63,6 +63,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
    Settings có [lịch sử mục tiêu/ngân sách](docs/goal-revisions.md): cấu hình mới được lưu ngay nhưng chỉ áp dụng khi lập lịch cho ngày học tiếp theo, giữ nguyên các nhiệm vụ đang có.
    Khi hai tab sửa cấu hình, tab cũ giữ bản đang nhập và yêu cầu [so sánh với server](docs/profile-concurrency.md) trước khi lưu lại.
    Dashboard hiển thị [dữ liệu kỹ năng gần đây](docs/skill-evidence.md): tối đa 50 câu khác nhau, luôn có số mẫu, dưới 5 câu ghi chưa đủ dữ liệu; tách bài luyện và full mock theo lịch sử mở lời giải.
+   Có thể [so sánh mẫu 50 câu mới nhất với 50 câu liền trước](docs/skill-comparison.md), xem số đúng/trống và theo Part. Chỉ hiện chênh lệch khi cả hai mẫu đủ ít nhất5 câu; đây là hai nhóm câu khác nhau, không suy điểm thi hay kết luận trình độ.
    [Hoạt động 7/30 ngày](docs/learning-activity.md) có biểu đồ và bảng theo ngày cho bài hoàn thành, lượt luyện và full mock đã chấm. Đọc theo múi giờ Hồ sơ hiện tại, chỉ tính nguồn đã lưu; mở trang hoặc refresh không cộng thêm hoạt động.
    [Ưu tiên củng cố kỹ năng](docs/weak-skill-planning.md) dùng chính mẫu luyện đó khi có ít nhất 5 câu và đúng dưới 60%, vẫn giữ prerequisite, carryover và ngân sách; mỗi task ghi số mẫu/lý do. Ngưỡng này là quy tắc sản phẩm, không phải đánh giá trình độ.
    Có thể [lập lại nhiệm vụ hôm nay](docs/regeneration.md): giữ bài đã bắt đầu/hoàn thành, thay phần chưa bắt đầu trong ngân sách còn lại; hai tab dùng snapshot cũ sẽ được yêu cầu tải lại.

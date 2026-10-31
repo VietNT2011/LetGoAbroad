@@ -16,6 +16,7 @@ public static class LearningEndpoints
         group.MapPost("/plan/regenerate", (RegeneratePlanInput input, ClaimsPrincipal user, LearningService service) => service.Regenerate(user.UserId(), input));
         group.MapGet("/plan-revisions", (ClaimsPrincipal user, LearningService service) => service.GoalHistory(user.UserId()));
         group.MapGet("/skill-evidence", (ClaimsPrincipal user, SkillEvidenceService service) => service.Read(user.UserId()));
+        group.MapGet("/skill-comparison", (ClaimsPrincipal user, SkillEvidenceService service) => service.ReadComparison(user.UserId()));
         group.MapGet("/activity", (int? days, ClaimsPrincipal user, LearningActivityService service, CancellationToken ct) => service.Read(user.UserId(), days ?? 7, ct));
         group.MapGet("/path", async (ClaimsPrincipal user, HubDbContext db) =>
         {

@@ -14,6 +14,7 @@ import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAuth } from "../Auth";
 import "./learning.css";
 import { SkillEvidence } from "./SkillEvidence";
+import { SkillComparison } from "./SkillComparison";
 import { LearningActivity } from "./LearningActivity";
 import { StudyTime } from "./StudyTime";
 import { PathChoices } from "./PathChoices";
@@ -340,6 +341,7 @@ export function TodayPanel() {
         )}
       </section>
       <SkillEvidence />
+      <SkillComparison />
       <LearningActivity />
       <StudyTime />
     </>

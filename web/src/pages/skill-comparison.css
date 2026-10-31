@@ -1,0 +1,86 @@
+.sample-track {
+  margin-top: 24px;
+}
+.sample-track > h3 {
+  font-size: 17px;
+  margin-bottom: 14px;
+}
+.sample-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.sample-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+.sample-card > h4 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.sample-windows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.sample-window {
+  min-width: 0;
+}
+.sample-window h5 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.sample-window strong {
+  display: block;
+  color: var(--primary-dark);
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+.sample-window p,
+.sample-window small {
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.sample-window small {
+  color: var(--text-muted);
+}
+.sample-bar {
+  display: block;
+  height: 8px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--surface-subtle);
+  margin: 12px 0;
+}
+.sample-bar i {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+.sample-window:nth-child(2) .sample-bar i {
+  background: var(--success);
+}
+.sample-difference {
+  font-weight: 650;
+  line-height: 1.65;
+  margin: 16px 0 0;
+  color: var(--ink);
+}
+@media (max-width: 1050px) {
+  .sample-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 440px) {
+  .sample-windows {
+    grid-template-columns: 1fr;
+  }
+  .sample-card {
+    padding: 14px;
+  }
+}
