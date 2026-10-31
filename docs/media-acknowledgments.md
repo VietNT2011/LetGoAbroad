@@ -1,0 +1,9 @@
+# Media acknowledgments / Xác nhận lệnh media
+
+VI: API complete-upload và delete-media trả **202 Accepted không có body** sau khi nhận lệnh bền vững. Client trước đây luôn parse JSON cho mọi success khác204, nên hiển thị lỗi mặc dù server đã nhận lệnh. Transport nay chấp nhận202 rỗng; upload chuyển sang “Worker đang xác minh và xử lý”, delete chuyển sang “Đã yêu cầu xóa” và tải lại trạng thái server.
+
+This follows [HTTP202 semantics](https://www.rfc-editor.org/rfc/rfc9110.html#name-202-accepted): acceptance does not mean processing succeeded or completed. The UI continues polling Uploaded/Processing/DeletePending and only uses actual Ready state for playback/publication. No worker, grant, quota, deletion or retry policy is changed.
+
+The response body is read once. A nonempty accepted JSON response is retained; malformed nonempty success responses and unexpectedly empty ordinary GETs still raise `invalid_response`.204/205 and HEAD can be bodyless. Non-JSON error bodies preserve the HTTP failure status with a generic message, while structured Problem Details retain their codes/details. The confirmed-actor/epoch check runs after body consumption, including empty202, so old responses cannot acknowledge a later identity. Success is never retried merely because its accepted body is empty.
+
+Eight additional transport cases cover empty POST/DELETE acceptance without replay, JSON acceptance, malformed200/202 success, empty ordinary GET rejection, bodyless HEAD and non-JSON gateway failure. All42 frontend cases and the production build pass locally. The existing263 SQLite /269 SQL+storage suites cover unchanged backend source; exact-head CI reruns both jobs. Native media-upload UI has not been exercised after the user's Escape interruption, and no production media is created/deleted to demonstrate this parser change.

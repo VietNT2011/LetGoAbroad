@@ -156,6 +156,84 @@ describe("actor-bound transport", () => {
     },
   );
 
+  it.each(["POST", "DELETE"])(
+    "accepts an empty media 202 for %s without replaying the command",
+    async (method) => {
+      const fetcher = vi.fn(async (url: string) =>
+        url.endsWith("/csrf")
+          ? json({ requestToken: "A" })
+          : new Response(null, { status: 202 }),
+      );
+      vi.stubGlobal("fetch", fetcher);
+      await expect(
+        api<void>("/media/asset/complete", { method }),
+      ).resolves.toBeUndefined();
+      expect(
+        fetcher.mock.calls.filter(([url]) => !url.endsWith("/csrf")),
+      ).toHaveLength(1);
+    },
+  );
+
+  it("preserves a valid accepted JSON job response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) =>
+        url.endsWith("/csrf")
+          ? json({ requestToken: "A" })
+          : json({ jobId: "queued" }, 202),
+      ),
+    );
+    await expect(post("/media/asset/complete")).resolves.toEqual({
+      jobId: "queued",
+    });
+  });
+
+  it.each([200, 202])(
+    "rejects malformed success bodies (%s) instead of reporting queued success",
+    async (status) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => new Response("<html>proxy error</html>", { status })),
+      );
+      await expect(api("/cards/")).rejects.toMatchObject({
+        code: "invalid_response",
+        status,
+      });
+    },
+  );
+
+  it("continues to reject an unexpectedly empty ordinary GET", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 200 })),
+    );
+    await expect(api("/cards/")).rejects.toMatchObject({
+      code: "invalid_response",
+      status: 200,
+    });
+  });
+
+  it("accepts HEAD without requiring a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 200 })),
+    );
+    await expect(
+      api<void>("/cards/", { method: "HEAD" }),
+    ).resolves.toBeUndefined();
+  });
+
+  it("retains the HTTP error for an empty or non-JSON gateway response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Gateway error", { status: 502 })),
+    );
+    await expect(api("/cards/")).rejects.toMatchObject({
+      code: "request_failed",
+      status: 502,
+    });
+  });
+
   it("guards logout too and leaves unrelated validation errors intact", async () => {
     const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
       if (url.endsWith("/csrf")) return json({ requestToken: "A" });

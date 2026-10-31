@@ -90,30 +90,49 @@ async function request<T>(
       credentials: "same-origin",
       cache: "no-store",
     });
-    const payload =
-      response.status === 204
-        ? undefined
-        : await response.json().catch(() => undefined);
+    const text =
+      response.status === 204 || method === "HEAD" ? "" : await response.text();
+    let payload: unknown;
+    let malformed = false;
+    if (text.trim()) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        malformed = true;
+      }
+    }
+    const problem =
+      payload && typeof payload === "object"
+        ? (payload as { code?: unknown; detail?: unknown })
+        : undefined;
     if (guarded) assertSession(expected, false);
     if (!response.ok) {
       if (
         guarded &&
-        (response.status === 401 || payload?.code === "session_changed")
+        (response.status === 401 || problem?.code === "session_changed")
       ) {
         invalidateSession(expected);
         throw sessionError();
       }
-      if (payload?.code === "invalid_csrf" && attempt === 0) {
+      if (problem?.code === "invalid_csrf" && attempt === 0) {
         resetCsrf();
         continue;
       }
       throw new ApiError(
         response.status,
-        payload?.code ?? "request_failed",
-        payload?.detail ?? "Không thể thực hiện. Vui lòng thử lại.",
+        typeof problem?.code === "string" ? problem.code : "request_failed",
+        typeof problem?.detail === "string"
+          ? problem.detail
+          : "Không thể thực hiện. Vui lòng thử lại.",
       );
     }
-    if (response.status !== 204 && payload === undefined)
+    // VI: Media complete/delete nhận 202 không body: chỉ xác nhận đã nhận lệnh, không giả Ready. EN: Empty media 202 acknowledges queued work; malformed/nonempty responses must still fail.
+    const bodyless =
+      method === "HEAD" ||
+      response.status === 204 ||
+      response.status === 205 ||
+      (response.status === 202 && !text.trim());
+    if (malformed || (!bodyless && payload === undefined))
       throw new ApiError(
         response.status,
         "invalid_response",

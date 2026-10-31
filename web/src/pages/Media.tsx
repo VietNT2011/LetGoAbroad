@@ -34,7 +34,7 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
   const remove = async (id: string) => {
     setBusy(true);
     try {
-      await api(`/media/${id}`, { method: "DELETE" });
+      await api<void>(`/media/${id}`, { method: "DELETE" });
       setDeleteId(undefined);
       setProgress("Đã yêu cầu xóa. Quyền phát mới đã bị chặn.");
       assets.reload();
@@ -91,7 +91,7 @@ export function MediaAdmin({ admin }: { admin: boolean }) {
         throw new Error(
           "Upload chưa thành công. Hãy thử lại trước khi phiên hết hạn.",
         );
-      await post(`/media/${grant.assetId}/complete`);
+      await post<void>(`/media/${grant.assetId}/complete`);
       command.current = crypto.randomUUID();
       setProgress(
         `Đã nhận file. Worker đang xác minh và xử lý. Mã media: ${grant.assetId}`,

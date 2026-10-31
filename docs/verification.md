@@ -44,12 +44,14 @@ The same-owner editor-focus follow-up adds two DOM cases: restore focus/selectio
 
 The study-time browser lifecycle follow-up adds twelve frontend cases. It rechecks activity after asynchronous session creation, reconciles changed activity immediately after a retried ACK, and serializes best-effort pagehide/persisted-page resume through the existing heartbeat queue. All34 frontend tests pass. Backend source is unchanged from the263/269 local suites. These mocked decisions supplement, and do not replace, native focus/visibility/media acceptance.
 
+The [empty media202 acknowledgment fix](media-acknowledgments.md) adds eight transport cases, for42 frontend tests total. Complete/delete acceptance now advances the existing queued-work UI without pretending the asset is Ready. Malformed success bodies and ordinary empty GETs still fail; no production media is created/deleted for the parser check. Backend source and the263/269 local suite coverage are unchanged.
+
 | Check | Observed result |
 |---|---|
 | `scripts/test.ps1 -SqlServer -Storage` | **269 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
 | `scripts/test.ps1` | **263 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **34 passed, 0 failed**; simulated DOM/transport session, focus and activity lifecycle races |
+| `npm --prefix web test` | **42 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle and media acknowledgment contracts |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

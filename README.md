@@ -74,6 +74,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
    CMS lộ trình có [ngừng/mở lại đăng ký mẫu](docs/path-retirement.md); người đã ghim vẫn tiếp tục học trên version cũ.
 6. Trong CMS, upload audio có nguồn/quyền sử dụng, theo dõi Uploaded → Processing → Ready hoặc Failed. Chỉ Ready `lesson_audio` được gắn vào `mediaAssetId` của một bản nội dung rồi publish.
 7. Phát audio, seek/tốc độ; xem job và retry lỗi. Xóa media chưa còn tham chiếu Published sẽ chặn quyền phát mới và đưa vào hàng đợi xóa bền vững.
+   Upload/xóa phân biệt [lệnh đã được nhận và xử lý đã hoàn tất](docs/media-acknowledgments.md); phản hồi202 rỗng không còn bị báo thành lỗi parse JSON.
 
 Thư viện có 14 bài nền tảng và quiz, 20 câu grammar khác nhau, mini reading 5 email × 4 câu và bài gõ đáp án 5 câu. Câu điền đáp án có autosave, biến thể biên soạn và [policy chuẩn hóa v1](docs/answer-policy.md), áp dụng được cả trong lesson quiz. Nội dung tự biên soạn được ghi nguồn trong [seed](seed/README.md).
 
