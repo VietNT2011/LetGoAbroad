@@ -14,7 +14,7 @@ public sealed record Registration(string Email, string Password, string DisplayN
 public sealed record ConfirmEmail(Guid UserId, string Token);
 public sealed record ResetPassword(Guid UserId, string Token, string NewPassword);
 public sealed record EmailInput(string Email);
-public sealed record ProfileInput(string DisplayName, string TimeZoneId, int TargetScore, int MinutesPerDay, int[] StudyDays);
+public sealed record ProfileInput(string DisplayName, string TimeZoneId, int TargetScore, int MinutesPerDay, int[] StudyDays, string? ExpectedEtag = null);
 
 /// <summary>VI: Cookie + antiforgery; không trả JWT vào localStorage. EN: Cookie sessions and CSRF protection avoid browser-managed access secrets.</summary>
 public static class IdentityEndpoints
@@ -44,7 +44,7 @@ public static class IdentityEndpoints
         auth.MapGet("/me", async (ClaimsPrincipal principal, UserManager<AppUser> users) =>
         {
             var user = await users.GetUserAsync(principal) ?? throw new DomainError(401, "unauthenticated", "Vui lòng đăng nhập.");
-            return new { user.Id, user.Email, user.DisplayName, user.TimeZoneId, user.TargetScore, user.MinutesPerDay, user.StudyDays, roles = await users.GetRolesAsync(user) };
+            return new { user.Id, user.Email, user.DisplayName, user.TimeZoneId, user.TargetScore, user.MinutesPerDay, user.StudyDays, profileEtag = ProfileEtag(user), roles = await users.GetRolesAsync(user) };
         }).RequireAuthorization();
         auth.MapPost("/verify-email", async (ConfirmEmail input, UserManager<AppUser> users) =>
         {
@@ -66,21 +66,32 @@ public static class IdentityEndpoints
         }).RequireRateLimiting("auth");
         app.MapPut("/api/v1/profile", async (ProfileInput input, ClaimsPrincipal principal, UserManager<AppUser> users, HubDbContext db, Transactions tx, GoalPlanService goals) =>
         {
-            DomainError.Require(input.TargetScore is 450 or 650 or 800 && input.MinutesPerDay is 20 or 30 or 45 && input.StudyDays.Length is >= 1 and <= 7 && input.StudyDays.All(x => x is >= 0 and <= 6) && !string.IsNullOrWhiteSpace(input.DisplayName) && input.DisplayName.Length <= 120, 422, "invalid_profile", "Cấu hình học không hợp lệ.");
+            DomainError.Require(input.TargetScore is 450 or 650 or 800 && input.MinutesPerDay is 20 or 30 or 45 && input.StudyDays is { Length: >= 1 and <= 7 } && input.StudyDays.All(x => x is >= 0 and <= 6) && !string.IsNullOrWhiteSpace(input.DisplayName) && input.DisplayName.Length <= 120, 422, "invalid_profile", "Cấu hình học không hợp lệ.");
             DomainError.Require(!string.IsNullOrWhiteSpace(input.TimeZoneId) && input.TimeZoneId.Length <= 80, 422, "invalid_timezone", "Múi giờ không hợp lệ.");
             try { TimeZoneInfo.FindSystemTimeZoneById(input.TimeZoneId); }
             catch (Exception error) when (error is TimeZoneNotFoundException or InvalidTimeZoneException) { throw new DomainError(422, "invalid_timezone", "Múi giờ không hợp lệ."); }
             return await tx.Run($"learning:{principal.UserId()}", async () =>
             {
                 var user = (await users.GetUserAsync(principal))!;
+                // VI: Cookie validation có thể đã track user trước khi lấy khóa. EN: Refresh any user tracked before the transaction acquired its lock.
+                await db.Entry(user).ReloadAsync();
+                var zone = TimeZoneInfo.TryConvertWindowsIdToIanaId(input.TimeZoneId, out var canonicalZone) ? canonicalZone : input.TimeZoneId;
+                var days = string.Join(',', input.StudyDays.Distinct().Order());
+                var unchanged = user.DisplayName == input.DisplayName.Trim() && user.TimeZoneId == zone && user.TargetScore == input.TargetScore && user.MinutesPerDay == input.MinutesPerDay && user.StudyDays == days;
+                DomainError.Require(!string.IsNullOrWhiteSpace(input.ExpectedEtag), 428, "profile_version_required", "Hãy tải cấu hình hiện tại trước khi lưu.");
+                // VI: Retry trùng toàn bộ là no-op; mọi thay đổi từ tab cũ bị chặn trước khi tạo revision. EN: Exact retries are no-ops; stale edits fail before any profile or plan side effects.
+                DomainError.Require(input.ExpectedEtag == ProfileEtag(user) || unchanged, 412, "profile_conflict", "Cấu hình đã đổi ở phiên khác. Bản đang nhập được giữ để bạn so sánh.");
+                if (unchanged) return Results.Ok(new { etag = ProfileEtag(user) });
                 var zoneBeforeChange = user.TimeZoneId;
                 var enrollment = await db.Enrollments.SingleOrDefaultAsync(x => x.UserId == user.Id);
                 if (enrollment is not null) await goals.Resolve(enrollment, user);
-                user.DisplayName = input.DisplayName.Trim(); user.TimeZoneId = TimeZoneInfo.TryConvertWindowsIdToIanaId(input.TimeZoneId, out var canonicalZone) ? canonicalZone : input.TimeZoneId; user.TargetScore = input.TargetScore;
-                user.MinutesPerDay = input.MinutesPerDay; user.StudyDays = string.Join(',', input.StudyDays.Distinct().Order());
-                Check(await users.UpdateAsync(user));
+                user.DisplayName = input.DisplayName.Trim(); user.TimeZoneId = zone; user.TargetScore = input.TargetScore;
+                user.MinutesPerDay = input.MinutesPerDay; user.StudyDays = days;
+                var update = await users.UpdateAsync(user);
+                DomainError.Require(!update.Errors.Any(x => x.Code == "ConcurrencyFailure"), 412, "profile_conflict", "Cấu hình đã đổi ở phiên khác. Hãy so sánh trước khi lưu lại.");
+                Check(update);
                 if (enrollment is not null) await goals.Schedule(enrollment, input.TargetScore, input.MinutesPerDay, zoneBeforeChange);
-                return Results.NoContent();
+                return Results.Ok(new { etag = ProfileEtag(user) });
             });
         }).RequireAuthorization();
         // VI: Không có route hộp thư trong production. EN: The local mailbox is never mapped in production.
@@ -89,4 +100,6 @@ public static class IdentityEndpoints
     }
 
     private static void Check(IdentityResult result) => DomainError.Require(result.Succeeded, 422, "identity_validation", string.Join("; ", result.Errors.Select(x => x.Description)));
+    // VI: ConcurrencyStamp là token phiên bản, không phải security stamp/session secret. EN: Use Identity's concurrency token without exposing the security stamp.
+    private static string ProfileEtag(AppUser user) => $"\"profile-{user.ConcurrencyStamp}\"";
 }

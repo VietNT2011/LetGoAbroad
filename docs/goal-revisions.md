@@ -12,7 +12,7 @@ EN: A new enrollment starts immediately with the learner's selected preferences.
 
 ## API and interface / API và giao diện
 
-- `PUT /api/v1/profile`: existing authenticated, CSRF-protected profile command; goal/time changes append a scheduled revision when needed.
+- `PUT /api/v1/profile`: authenticated, CSRF-protected profile command with the [loaded profile version](profile-concurrency.md); goal/time changes append a scheduled revision when needed.
 - `GET /api/v1/learning/plan-revisions`: owner-scoped history with active, scheduled, past and superseded status; no parameter grants access to another learner.
 - `/learning/dashboard`: active goal/minute budget and revision number; each task exposes its goal revision pin. The profile may intentionally show the newly requested values while today's dashboard retains its earlier plan.
 - Settings shows effective timestamps in the timezone recorded with the request and identifies observed upgrade baselines.

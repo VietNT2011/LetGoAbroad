@@ -95,7 +95,11 @@ public sealed class GoalRevisionTests(TestApp app) : IClassFixture<TestApp>
     }
 
     private static async Task Enroll(HttpClient learner) => (await learner.PostAsJsonAsync("/api/v1/learning/enrollment", new EnrollInput(true))).EnsureSuccessStatusCode();
-    private static async Task Profile(HttpClient learner, int target, int minutes) => (await learner.PutAsJsonAsync("/api/v1/profile", new { displayName = "Goal test", timeZoneId = "Asia/Ho_Chi_Minh", targetScore = target, minutesPerDay = minutes, studyDays = new[] { 0, 1, 2, 3, 4, 5, 6 } })).EnsureSuccessStatusCode();
+    private static async Task Profile(HttpClient learner, int target, int minutes)
+    {
+        var me = await learner.GetFromJsonAsync<JsonElement>("/api/v1/auth/me");
+        (await learner.PutAsJsonAsync("/api/v1/profile", new { displayName = "Goal test", timeZoneId = "Asia/Ho_Chi_Minh", targetScore = target, minutesPerDay = minutes, studyDays = new[] { 0, 1, 2, 3, 4, 5, 6 }, expectedEtag = me.GetProperty("profileEtag").GetString() })).EnsureSuccessStatusCode();
+    }
     private async Task<HttpClient> NewLearner()
     {
         var email = $"goal-{Guid.NewGuid():N}@example.com"; using var scope = app.Services.CreateScope(); var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();

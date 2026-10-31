@@ -71,6 +71,7 @@ export type User = {
   targetScore: number;
   minutesPerDay: number;
   studyDays: string;
+  profileEtag: string;
   roles: string[];
 };
 export type Content = {

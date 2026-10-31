@@ -9,7 +9,7 @@ import {
   Target,
   CalendarDays,
 } from "lucide-react";
-import { api, post, type Content } from "../api";
+import { api, post, ApiError, type Content, type User } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAuth } from "../Auth";
 import "./learning.css";
@@ -417,6 +417,10 @@ export function PathsPage() {
 }
 export function SettingsPage() {
   const { user, refresh } = useAuth();
+  // VI: Giữ token của bản form đã mở; auth refresh không âm thầm chấp nhận phiên bản mới. EN: Pin the loaded form's token until save or explicit conflict comparison.
+  const [profileEtag, setProfileEtag] = useState(user?.profileEtag);
+  const [conflict, setConflict] = useState(false);
+  const [serverProfile, setServerProfile] = useState<User>();
   const history = useResource<{
     activeRevisionId: string | null;
     revisions: {
@@ -434,14 +438,26 @@ export function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<Error>();
   const [saved, setSaved] = useState(false);
+  const compare = async () => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      setServerProfile(await api<User>("/auth/me"));
+    } catch (error) {
+      setError(error as Error);
+    } finally {
+      setBusy(false);
+    }
+  };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (busy || conflict) return;
     setBusy(true);
     setSaved(false);
     setError(undefined);
     const data = new FormData(event.currentTarget);
     try {
-      await api("/profile", {
+      const acknowledgement = await api<{ etag: string }>("/profile", {
         method: "PUT",
         body: JSON.stringify({
           displayName: data.get("displayName"),
@@ -449,13 +465,19 @@ export function SettingsPage() {
           targetScore: Number(data.get("targetScore")),
           minutesPerDay: Number(data.get("minutesPerDay")),
           studyDays: data.getAll("days").map(Number),
+          expectedEtag: profileEtag,
         }),
       });
+      setProfileEtag(acknowledgement.etag);
       await refresh();
       history.reload();
       setSaved(true);
     } catch (e) {
       setError(e as Error);
+      if (e instanceof ApiError && (e.status === 412 || e.status === 428)) {
+        setConflict(true);
+        setServerProfile(undefined);
+      }
     } finally {
       setBusy(false);
     }
@@ -471,6 +493,56 @@ export function SettingsPage() {
       </div>
       <section className="lesson settings-form">
         <ErrorNotice error={error} />
+        {conflict ? (
+          <div className="profile-conflict" role="status">
+            <h2>Cấu hình đã thay đổi</h2>
+            <p>
+              Bản đang nhập vẫn ở trong form. Tải cấu hình server để so sánh
+              trước khi lưu lại.
+            </p>
+            <button type="button" disabled={busy} onClick={compare}>
+              Tải cấu hình để so sánh
+            </button>
+            {serverProfile ? (
+              <>
+                <dl>
+                  <dt>Tên trên server</dt>
+                  <dd>{serverProfile.displayName}</dd>
+                  <dt>Mục tiêu / phút mỗi ngày</dt>
+                  <dd>
+                    {serverProfile.targetScore} / {serverProfile.minutesPerDay}
+                  </dd>
+                  <dt>Múi giờ</dt>
+                  <dd>{serverProfile.timeZoneId}</dd>
+                  <dt>Ngày học trên server</dt>
+                  <dd>
+                    {serverProfile.studyDays
+                      .split(",")
+                      .map(
+                        (day) =>
+                          ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][
+                            Number(day)
+                          ],
+                      )
+                      .join(", ")}
+                  </dd>
+                </dl>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setProfileEtag(serverProfile.profileEtag);
+                    setConflict(false);
+                    setServerProfile(undefined);
+                    setError(undefined);
+                  }}
+                >
+                  Dùng phiên bản mới, giữ bản đang nhập
+                </button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
         {saved ? (
           <div className="notice success">
             <CheckCircle2 size={17} /> Đã lưu cấu hình. Thay đổi mục tiêu và
@@ -533,7 +605,7 @@ export function SettingsPage() {
               ))}
             </div>
           </fieldset>
-          <button className="primary" disabled={busy}>
+          <button className="primary" disabled={busy || conflict}>
             {busy ? "Đang lưu…" : "Lưu nhịp học"}
           </button>
         </form>

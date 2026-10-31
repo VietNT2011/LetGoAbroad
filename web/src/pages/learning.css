@@ -400,3 +400,25 @@ summary {
     left: 38px;
   }
 }
+.profile-conflict {
+  border: 1px solid #a67d45;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background: #fff9ee;
+}
+.profile-conflict h2 {
+  font-size: 18px;
+}
+.profile-conflict p,
+.profile-conflict dl {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.profile-conflict dt {
+  font-weight: 600;
+}
+.profile-conflict dd {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}

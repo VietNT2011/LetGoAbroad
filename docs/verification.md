@@ -1,11 +1,11 @@
 # Verification record / Báo cáo kiểm thử
 
-Baseline verified locally on **09/11/2026** at `eb0e46eca6fc841ad78568a10669fa7eabac661c`. Typed answers, private question annotations, versioned learning paths and future goal revisions verified on **09–10/11/2026**. Lesson-body notes and recent-skill evidence were added on **16/11/2026**, including migration of the existing local SQL database and browser recovery after restarting Docker.
+Baseline verified locally on **09/11/2026** at `eb0e46eca6fc841ad78568a10669fa7eabac661c`. Typed answers, private question annotations, versioned learning paths and future goal revisions verified on **09–10/11/2026**. Lesson-body notes, recent-skill evidence and profile conflict recovery were added on **16/11/2026**, including migration of the existing local SQL database and browser recovery after restarting Docker.
 
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **96 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **90 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **101 passed, 0 failed, 0 skipped** after the query/memory correction; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **95 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |
@@ -29,6 +29,7 @@ SDK: 10.0.403. Runtime: 10.0.14. Core image digests and the observed FFmpeg pack
 9. In Settings, requested 800/20 minutes. History showed the new revision scheduled for **00:00 11/11/2026, Asia/Ho_Chi_Minh**, while the path still showed the active 650/30 plan. Restored the original demo preferences 650/30; the earlier pending choice was labelled superseded and its history remained visible. Automated clock tests verify activation at the boundary and immutable task revision pins.
 10. On **16/11/2026**, selected a 65-character passage in Everyday introductions and saved a private note/highlight. Reload retained the exact source quote and highlight. Two tabs edited it; the stale tab received 412, retained its draft and compared the server copy before explicitly saving. Removal/undo restored the same note. The saved-list link opened the exact lesson version and note. The keyboard/text-selection alternative then saved `Nice to meet you.` as a second highlighted passage.
 11. After applying the disclosure migration to the existing local SQL database, the dashboard showed grammar **3/25 (12%)**, including 22 blanks, and reading **1/4** labelled **Chưa đủ dữ liệu** without a percentage. Expanding grammar's Part details showed Part 5: 3/25. The full-mock track was explicitly empty; the technical 200-question fixture did not create achievement evidence.
+12. Opened Settings in two tabs from the same profile version. Tab B changed the demo display name and saved. Tab A's distinct draft was rejected with 412 and remained in the form. Comparison showed Tab B's persisted name, 650/30, timezone and study days. Explicitly adopting the compared version allowed the retained draft to save. Restoring `Minh Anh`, then reloading, confirmed the original demo profile; goal history remained unchanged.
 
 ## Coverage and limits
 
@@ -38,6 +39,8 @@ Path coverage also includes relational rejection of cross-version edges/mismatch
 
 Skill evidence coverage includes the 50-distinct-version window, latest-answer replacement, sparse samples, blanks, pinned FillBlank normalization, separate full-mock eligibility, first-disclosure timing, conservative legacy history and owner isolation. This does not claim completion of every PATH-04 trend/activity requirement. See [skill evidence](skill-evidence.md).
 
+Profile coverage includes two different concurrent writes with exactly one winner, rejection before profile/task/plan side effects, exact normalized retry, explicit rebase, cross-account version rejection and CSRF. An interrupted SQL run and its query/memory correction are recorded in [testing](testing.md); the table above reports the successful rerun.
+
 These observations are not a full P0–P3 acceptance claim. Broader multi-device/offline browser automation, effective-date calendar revisions, transcript/segment notes, richer listening/video, SRS, chat, calls and load benchmarks remain as listed in [status.md](status.md). Both remote GitHub Actions jobs passed for [baseline `8f7a642`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42649802535), [typed answers `f09dba6`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42726293233), [fixture disposal `596cde1`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42727668195), [private notes `e2fce48`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42728331978), [versioned paths `f0a57ac`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42733786173) and [goal revisions `7e70790`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/42735832481); later pushes require separate checks.
 
-Both jobs also passed for [lesson-body notes `dcdd441`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43831559459). The skill-evidence push requires its own CI result.
+Both jobs also passed for [lesson-body notes `dcdd441`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43831559459) and [skill evidence `e63b018`](https://github.com/VietNT2011/LetGoAbroad/actions/runs/43833465095). The subsequent query/profile push requires its own CI result.

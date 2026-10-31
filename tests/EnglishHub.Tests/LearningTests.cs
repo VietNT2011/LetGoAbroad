@@ -12,7 +12,8 @@ public sealed class LearningTests(TestApp app) : IClassFixture<TestApp>
     public async Task Enrollment_and_daily_generation_are_idempotent_and_completion_requires_quiz_evidence()
     {
         using var client = await app.Login();
-        (await client.PutAsJsonAsync("/api/v1/profile", new { displayName = "Minh Anh", timeZoneId = "Asia/Ho_Chi_Minh", targetScore = 650, minutesPerDay = 30, studyDays = new[] { 0, 1, 2, 3, 4, 5, 6 } })).EnsureSuccessStatusCode();
+        var me = await client.GetFromJsonAsync<JsonElement>("/api/v1/auth/me");
+        (await client.PutAsJsonAsync("/api/v1/profile", new { displayName = "Minh Anh", timeZoneId = "Asia/Ho_Chi_Minh", targetScore = 650, minutesPerDay = 30, studyDays = new[] { 0, 1, 2, 3, 4, 5, 6 }, expectedEtag = me.GetProperty("profileEtag").GetString() })).EnsureSuccessStatusCode();
         var enrollments = await Task.WhenAll(client.PostAsJsonAsync("/api/v1/learning/enrollment", new { startFromBasics = true }), client.PostAsJsonAsync("/api/v1/learning/enrollment", new { startFromBasics = true }));
         Assert.All(enrollments, x => x.EnsureSuccessStatusCode());
         Assert.Equal(await enrollments[0].Content.ReadAsStringAsync(), await enrollments[1].Content.ReadAsStringAsync());
