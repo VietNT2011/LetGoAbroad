@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ApiError, post } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
+import { useAuth } from "../Auth";
+import { useStudyActivity } from "../useStudyActivity";
 import "./cards.css";
 
 type Card = {
@@ -29,6 +31,7 @@ const formatTime = (value: string) => new Date(value).toLocaleString("vi-VN");
 
 /** VI: Thẻ tự viết và tự đánh giá, không thay điểm bài thi hay tự tạo nghĩa từ. EN: Personal recall ratings never modify assessment scores or fabricate dictionary senses. */
 export default function CardsPage() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState("due");
   const [offset, setOffset] = useState(0);
   const [selected, setSelected] = useState<string>();
@@ -53,6 +56,11 @@ export default function CardsPage() {
   };
   const resource = useResource<CardPage>(
     `/cards/?dueOnly=${filter === "due"}&archived=${filter === "archived"}&offset=${offset}`,
+  );
+  useStudyActivity(
+    resource.data && !resource.error ? "cards" : null,
+    batchId ?? "cards",
+    user?.id,
   );
   const changeFilter = (value: string) => {
     setFilter(value);

@@ -30,10 +30,14 @@ The [daily due-review allocation](daily-review.md) adds 12 cases on **18/11/2026
 
 A packaged API probe used an explicitly named new local technical QA account, created two original cards, generated a two-minute review batch within a30-minute budget, started it, reviewed one card, regenerated while preserving partial work, reviewed the other card and replayed the first event. The batch completed with two actual sources and exactly one completion outbox. Lesson/attempt statistics stayed zero. Both cards were archived afterward; the three existing learner accounts were not used for this batch probe. Browser visual/keyboard/mobile acceptance remains unverified after the user's Escape interruption.
 
+The [estimated study-time implementation](estimated-study-time.md) was checked on **18/11/2026** with 15 new cases for UTC interval union/clipping/offset/tick handling, owner-bound session upsert, first-pulse/no-idle-backfill,30-second caps, overlap across tabs, ordered/colliding/concurrent receipts, expiry replay, backward clocks, rolling windows independent of profile calendars, owner/Admin/CSRF boundaries and relational interval/FK guards. Both complete suites below passed with no failures/skips. Production TypeScript/Vite and Docker builds passed; the migration adds only measurement tables and no historical study-time backfill.
+
+The live API probe reused the isolated technical account, opened two sessions and waited for actual server elapsed time. Overlapping intervals produced **2 estimated seconds versus4 seconds from summing the tabs**. Inactive boundaries closed both sessions; replaying an older accepted sequence returned the original ACK and added no time. A foreign-owner read returned404, and lesson/attempt statistics stayed zero. No browser automation resumed after Escape, so actual frontend focus/visibility/idle/media transitions and the new panel's visual/mobile acceptance remain unverified.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **231 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **225 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **246 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **240 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories after updating React Router to 7.18.5 |

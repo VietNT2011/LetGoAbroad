@@ -22,6 +22,124 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("EnglishHub.Domain.ActivityHeartbeat", b =>
+                {
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<long>("CreditedTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("ReceivedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("SessionId", "Sequence");
+
+                    b.HasIndex("SessionId", "UserId");
+
+                    b.ToTable("ActivityHeartbeats", t =>
+                        {
+                            t.HasCheckConstraint("CK_ActivityHeartbeat_Values", "[Sequence] > 0 AND [Sequence] <= 1000000 AND [CreditedTicks] >= 0 AND [CreditedTicks] <= 300000000");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.ActivityInterval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("DurationTicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("EndAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("SessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("StartAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionId", "Sequence")
+                        .IsUnique();
+
+                    b.HasIndex("SessionId", "Sequence", "UserId");
+
+                    b.HasIndex("UserId", "EndAt", "StartAt");
+
+                    b.ToTable("ActivityIntervals", t =>
+                        {
+                            t.HasCheckConstraint("CK_ActivityInterval_Duration", "[EndAt] > [StartAt] AND [DurationTicks] > 0 AND [DurationTicks] <= 300000000 AND (DATEDIFF_BIG(nanosecond,[StartAt],[EndAt]) / 100 = [DurationTicks])");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.ActivitySession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ClientSessionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("nvarchar(24)");
+
+                    b.Property<DateTimeOffset>("LastSeenAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("LastSequence")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("WasActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ClientSessionId")
+                        .IsUnique();
+
+                    b.ToTable("ActivitySessions", t =>
+                        {
+                            t.HasCheckConstraint("CK_ActivitySession_Values", "[LastSequence] >= 0 AND [LastSequence] <= 1000000 AND [ExpiresAt] > [CreatedAt] AND [Kind] IN ('lesson','assessment','cards')");
+                        });
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.Attempt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1861,6 +1979,35 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.ActivityHeartbeat", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ActivitySession", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId", "UserId")
+                        .HasPrincipalKey("Id", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.ActivityInterval", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ActivityHeartbeat", null)
+                        .WithMany()
+                        .HasForeignKey("SessionId", "Sequence", "UserId")
+                        .HasPrincipalKey("SessionId", "Sequence", "UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.ActivitySession", b =>
+                {
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Attempt", b =>

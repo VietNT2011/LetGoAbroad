@@ -13,6 +13,7 @@ import {
 import { api, post, ApiError, type Content } from "../api";
 import { useResource, Loading, ErrorNotice } from "../hooks";
 import { useAuth } from "../Auth";
+import { useStudyActivity } from "../useStudyActivity";
 import "./assessment.css";
 import { useAnnotations, BookmarkButton, QuestionNote } from "./Annotations";
 type Item = {
@@ -238,6 +239,7 @@ export function AttemptPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [attempt, setAttempt] = useState<Attempt>();
+  useStudyActivity(attempt ? "assessment" : null, id ?? "", user?.id);
   const current = useRef<Attempt | undefined>(undefined);
   const pending = useRef<Record<string, string | null>>({});
   const request = useRef<Batch | undefined>(undefined);
@@ -680,9 +682,15 @@ type ResultData = {
 };
 export function ResultPage() {
   const { id } = useParams();
+  const { user } = useAuth();
   const annotations = useAnnotations(id);
   const { data, error, loading, reload } = useResource<ResultData>(
     `/attempts/${id}/result`,
+  );
+  useStudyActivity(
+    data && !error ? "assessment" : null,
+    `${id ?? ""}:result`,
+    user?.id,
   );
   const [onlyWrong, setOnlyWrong] = useState(false);
   return (

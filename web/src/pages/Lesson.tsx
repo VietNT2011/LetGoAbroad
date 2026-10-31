@@ -6,6 +6,8 @@ import { post } from "../api";
 import "./learning.css";
 import { AudioPlayer } from "./Media";
 import { LessonNotes } from "./LessonNotes";
+import { useAuth } from "../Auth";
+import { useStudyActivity } from "../useStudyActivity";
 type LessonData = {
   id: string;
   title: string;
@@ -130,9 +132,11 @@ function LessonQuiz({ lesson }: { lesson: LessonData }) {
 }
 export default function Lesson() {
   const { id } = useParams();
+  const { user } = useAuth();
   const { data, error, loading, reload } = useResource<LessonData>(
     `/lessons/${id}`,
   );
+  useStudyActivity(data && !error ? "lesson" : null, id ?? "", user?.id);
   return (
     <>
       <Link className="back-link" to="/catalog">

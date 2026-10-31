@@ -66,6 +66,7 @@ app.MapLessonAnnotations();
 app.MapAssessment();
 app.MapLearning();
 app.MapCards();
+app.MapStudyActivity();
 app.MapPaths();
 app.MapMedia();
 app.MapHealthChecks("/health/live");

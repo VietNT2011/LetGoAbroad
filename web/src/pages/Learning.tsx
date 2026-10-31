@@ -15,6 +15,7 @@ import { useAuth } from "../Auth";
 import "./learning.css";
 import { SkillEvidence } from "./SkillEvidence";
 import { LearningActivity } from "./LearningActivity";
+import { StudyTime } from "./StudyTime";
 import { PathChoices } from "./PathChoices";
 import {
   PathTimeline,
@@ -340,6 +341,7 @@ export function TodayPanel() {
       </section>
       <SkillEvidence />
       <LearningActivity />
+      <StudyTime />
     </>
   );
 }
