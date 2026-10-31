@@ -4,6 +4,8 @@ VI: **Ghi âm của tôi** ở `/recordings` cho phép mở mic sau khi bấm B�
 
 ## Capture lifecycle / Vòng đời mic
 
+Bài có audio liên kết đến [so giọng với bài mẫu](recording-comparison.md): nghe mẫu và bản nháp/bản đã lưu luân phiên trong cùng trang, không tự upload hoặc tự chấm phát âm. Mẫu hiện tại theo version trên liên kết; chưa tự lưu quan hệ mẫu vào metadata bản thu.
+
 The browser requests audio only, with no video. Supported WebM/Opus, Ogg/Opus or MP4 is selected via MediaRecorder.isTypeSupported; unsupported browsers retain file selection. Streams granted after cancellation, navigation or actor changes are stopped without constructing a recorder. Explicit stop, capture limit, hidden/pagehide, encoder failure and unmount release tracks. Same-owner hide/stop may preserve a local draft; unmount discards it. Actor/epoch checks prevent late data restoring another account's draft. More than20 MiB or an encoder failure discards partial capture.
 
 Local object URLs are revoked when previews change or unmount. Draft/transfer state is in memory, not durable offline storage. Closing/reloading loses unsaved capture. Saving uses the [actor-bound block uploader](block-uploads.md); a queued Complete acknowledgment does not imply Ready. The server retains quota, ETag freezing, actual decoding and private playback rules. Pending processing/deletion is polled through REST metadata. No microphone or browser permission was automated during development.

@@ -159,7 +159,15 @@ export default function Lesson() {
             dung bài học
           </div>
           {data.mediaAssetId ? (
-            <AudioPlayer assetId={data.mediaAssetId} />
+            <>
+              <AudioPlayer assetId={data.mediaAssetId} />
+              <Link
+                className="button secondary"
+                to={`/recordings?lesson=${data.id}`}
+              >
+                Tự thu âm và so với bài mẫu →
+              </Link>
+            </>
           ) : null}
           {data.archived ? (
             <p className="notice">

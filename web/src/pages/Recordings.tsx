@@ -4,6 +4,10 @@ import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAudioRecorder } from "../useAudioRecorder";
 import { audioUpload } from "../audioUpload";
 import { AudioPlayer } from "./Media";
+import {
+  RecordingReference,
+  pauseOtherRecordingAudio,
+} from "./RecordingReference";
 import "./cards.css";
 import "./media.css";
 
@@ -19,6 +23,7 @@ type Recording = {
 
 /** VI: Bản thu ở máy cho đến khi bấm Lưu; thư viện dùng ACL owner kể cả Admin. EN: Draft capture stays local until explicit Save; library access remains owner-only, including Admin. */
 export default function RecordingsPage() {
+  const page = useRef<HTMLElement>(null);
   const recorder = useAudioRecorder();
   const [manual, setManual] = useState<File>();
   const selected = manual ?? recorder.file;
@@ -107,7 +112,13 @@ export default function RecordingsPage() {
     }
   };
   return (
-    <section className="cards-page">
+    <section
+      className="cards-page"
+      ref={page}
+      onPlayCapture={(event) => {
+        if (page.current) pauseOtherRecordingAudio(page.current, event.target);
+      }}
+    >
       <header className="cards-heading">
         <span className="eyebrow">HEAR YOUR OWN PROGRESS</span>
         <h1>Ghi âm của tôi</h1>
@@ -116,6 +127,7 @@ export default function RecordingsPage() {
           hoặc gửi bản thu cho người khác.
         </p>
       </header>
+      <RecordingReference />
       <section className="card-create" aria-label="Tạo bản ghi âm">
         <h2>Thử nói thành tiếng</h2>
         <p>

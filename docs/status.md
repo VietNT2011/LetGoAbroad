@@ -19,6 +19,8 @@ Vocabulary navigation now opens [personal cards](personal-cards.md); Community r
 
 [Private recording administration](recording-privacy.md) applies ownership to CMS media/job catalogs and job retry as well as playback; Admin/Editor roles do not grant access to another person's private recording metadata.
 
+[Lesson-sample recording comparison](recording-comparison.md) opens an authorized lesson version alongside local capture/playback with one active page player at a time. The sample is carried by the current URL; durable sample links and self-assessment history remain open.
+
 ## Next implementation order
 
 1. Close remaining P0 acceptance gaps, especially authored listening, external editorial review and browser/device/offline verification. See [estimated study time](estimated-study-time.md), [due-review allocation](daily-review.md), [personal cards](personal-cards.md), [daily activity](learning-activity.md), [Exam Practice starter](exam-curriculum.md), [Core starter curriculum](core-curriculum.md), [path calendars](path-calendars.md), [path switching](path-switching.md), [skill evidence](skill-evidence.md), [lesson notes](lesson-notes.md), [goal revisions](goal-revisions.md), [versioned paths](paths.md), [typed answers](answer-policy.md), [question annotations](annotations.md) and [database test lifecycle](testing.md).

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { createRoot, type Root } from "react-dom/client";
 import { beforeEach, afterEach, describe, it, expect, vi } from "vitest";
 import { api } from "../src/api";
@@ -52,7 +53,13 @@ const flush = async () => {
   });
 };
 const render = async () => {
-  await act(async () => root.render(<RecordingsPage />));
+  await act(async () =>
+    root.render(
+      <MemoryRouter>
+        <RecordingsPage />
+      </MemoryRouter>,
+    ),
+  );
   await flush();
 };
 async function click(text: string) {
