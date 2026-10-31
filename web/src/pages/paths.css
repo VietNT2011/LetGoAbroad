@@ -1,0 +1,56 @@
+.path-node.locked {
+  background: #f5f7f1;
+  color: #65705b;
+}
+.path-node-copy {
+  min-width: 0;
+  flex: 1;
+}
+.path-node-copy small,
+.path-prerequisite,
+.path-locked-label {
+  font-size: 12px;
+  color: #67765e;
+  line-height: 1.8;
+}
+.path-node .back-link {
+  white-space: nowrap;
+  margin: 0;
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+}
+.path-adoption {
+  background: #fff;
+  border: 1px solid #e0e5d7;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 22px 0;
+}
+.path-template-picker {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.path-template-picker select {
+  max-width: 620px;
+}
+.cms-path-versions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+@media (max-width: 650px) {
+  .path-node {
+    flex-wrap: wrap;
+  }
+  .path-node-copy {
+    min-width: calc(100% - 70px);
+  }
+  .path-node .back-link,
+  .path-locked-label {
+    margin-left: 56px;
+  }
+}

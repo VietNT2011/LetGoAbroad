@@ -13,6 +13,7 @@ import { useAuth } from "../Auth";
 import { useResource, ErrorNotice, Loading } from "../hooks";
 import "./admin.css";
 import { MediaAdmin } from "./Media";
+import { PathAdmin } from "./PathAdmin";
 type Row = {
   id: string;
   rootId: string;
@@ -357,6 +358,7 @@ export default function AdminPage() {
         </div>
         {dryRun ? <pre>{dryRun}</pre> : null}
       </section>
+      <PathAdmin />
       <MediaAdmin admin={!!isAdmin} />
     </>
   );

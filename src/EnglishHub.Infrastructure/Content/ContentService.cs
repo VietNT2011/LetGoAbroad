@@ -61,6 +61,7 @@ public sealed class ContentService(HubDbContext db, Transactions tx, IClock cloc
     public Task Archive(Guid id, string? etag, Guid actor) => tx.Run("catalog", async () =>
     {
         var v = await db.ContentVersions.Include(x => x.Root).SingleOrDefaultAsync(x => x.Id == id) ?? throw new DomainError(404, "content_not_found", "Không tìm thấy nội dung.");
+        DomainError.Require(!await db.PathNodes.AnyAsync(x => x.ContentVersionId == id && x.Stage.PathVersion.Status == PublicationStatus.Published), 409, "content_pinned_in_path", "Nội dung đang được ghim trong lộ trình đã publish; hãy tạo version mới.");
         Etags.Check(v, etag); v.Status = PublicationStatus.Archived;
         if (v.Root.CurrentPublishedVersionId == id) v.Root.CurrentPublishedVersionId = null;
         Audit(actor, "content.archived", id); return true;

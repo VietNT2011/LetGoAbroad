@@ -404,6 +404,12 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("LocalDate")
                         .HasColumnType("date");
 
+                    b.Property<Guid?>("PathNodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PathVersionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ReasonCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -422,10 +428,17 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<int>("SlotKey")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("SourceTaskId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(25)
                         .HasColumnType("nvarchar(25)");
+
+                    b.Property<string>("TimeZoneId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -434,14 +447,27 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ContentVersionId");
 
+                    b.HasIndex("EnrollmentId", "PathNodeId")
+                        .IsUnique()
+                        .HasFilter("[PathNodeId] IS NOT NULL AND [Status] = 'pending'");
+
                     b.HasIndex("EnrollmentId", "UserId");
+
+                    b.HasIndex("PathNodeId", "ContentVersionId");
+
+                    b.HasIndex("PathVersionId", "PathNodeId");
+
+                    b.HasIndex("SourceTaskId", "EnrollmentId");
 
                     b.HasIndex("EnrollmentId", "LocalDate", "SlotKey")
                         .IsUnique();
 
                     b.HasIndex("UserId", "LocalDate", "Status");
 
-                    b.ToTable("DailyTasks");
+                    b.ToTable("DailyTasks", t =>
+                        {
+                            t.HasCheckConstraint("CK_DailyTask_PathPair", "([PathNodeId] IS NULL AND [PathVersionId] IS NULL) OR ([PathNodeId] IS NOT NULL AND [PathVersionId] IS NOT NULL)");
+                        });
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Enrollment", b =>
@@ -461,6 +487,23 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.Property<int>("MinutesPerDay")
                         .HasColumnType("int");
 
+                    b.Property<DateOnly?>("PathStartedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PathStudyDays")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PathTimeZoneId")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid?>("PathVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("PlacementAttemptId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("PlanRevision")
                         .HasColumnType("int");
 
@@ -472,6 +515,11 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
                     b.Property<int>("RuleVersion")
                         .HasColumnType("int");
+
+                    b.Property<string>("SelectionReason")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("TargetScore")
                         .HasColumnType("int");
@@ -485,6 +533,10 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PathVersionId");
+
+                    b.HasIndex("PlacementAttemptId");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -684,6 +736,189 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("OutboxEvents");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.PathNode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CompletionRule")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("ContentVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("MinimumCorrectPercent")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PathVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("StudyDay")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentVersionId");
+
+                    b.HasIndex("PathVersionId", "Key")
+                        .IsUnique();
+
+                    b.HasIndex("StageId", "Order")
+                        .IsUnique();
+
+                    b.HasIndex("StageId", "PathVersionId");
+
+                    b.ToTable("PathNodes");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathPrerequisite", b =>
+                {
+                    b.Property<Guid>("NodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PrerequisiteNodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PathVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("NodeId", "PrerequisiteNodeId");
+
+                    b.HasIndex("PathVersionId", "NodeId");
+
+                    b.HasIndex("PathVersionId", "PrerequisiteNodeId");
+
+                    b.ToTable("PathPrerequisites");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PathVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("nvarchar(240)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PathVersionId", "Key")
+                        .IsUnique();
+
+                    b.HasIndex("PathVersionId", "Order")
+                        .IsUnique();
+
+                    b.ToTable("PathStages");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CurrentPublishedVersionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("Id", "CurrentPublishedVersionId");
+
+                    b.ToTable("PathTemplates");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Attribution")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(240)
+                        .HasColumnType("nvarchar(240)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("PathVersions");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
                 {
                     b.Property<Guid>("Id")
@@ -856,7 +1091,9 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
 
                     b.HasKey("DailyTaskId");
 
-                    b.HasIndex("AttemptId");
+                    b.HasIndex("AttemptId")
+                        .IsUnique()
+                        .HasFilter("[AttemptId] IS NOT NULL");
 
                     b.HasIndex("LessonProgressId");
 
@@ -1205,18 +1442,50 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("EnglishHub.Domain.PathNode", null)
+                        .WithMany()
+                        .HasForeignKey("PathNodeId", "ContentVersionId")
+                        .HasPrincipalKey("Id", "ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.PathNode", "PathNode")
+                        .WithMany()
+                        .HasForeignKey("PathVersionId", "PathNodeId")
+                        .HasPrincipalKey("PathVersionId", "Id")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.DailyTask", null)
+                        .WithMany()
+                        .HasForeignKey("SourceTaskId", "EnrollmentId")
+                        .HasPrincipalKey("Id", "EnrollmentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.Navigation("ContentVersion");
 
                     b.Navigation("Enrollment");
+
+                    b.Navigation("PathNode");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Enrollment", b =>
                 {
+                    b.HasOne("EnglishHub.Domain.PathVersion", "PathVersion")
+                        .WithMany()
+                        .HasForeignKey("PathVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("EnglishHub.Domain.Attempt", null)
+                        .WithMany()
+                        .HasForeignKey("PlacementAttemptId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("PathVersion");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.GradingKey", b =>
@@ -1252,6 +1521,80 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathNode", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.ContentVersion", "ContentVersion")
+                        .WithMany()
+                        .HasForeignKey("ContentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.PathStage", "Stage")
+                        .WithMany("Nodes")
+                        .HasForeignKey("StageId", "PathVersionId")
+                        .HasPrincipalKey("Id", "PathVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("ContentVersion");
+
+                    b.Navigation("Stage");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathPrerequisite", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.PathNode", "Node")
+                        .WithMany("Prerequisites")
+                        .HasForeignKey("PathVersionId", "NodeId")
+                        .HasPrincipalKey("PathVersionId", "Id")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.PathNode", "PrerequisiteNode")
+                        .WithMany()
+                        .HasForeignKey("PathVersionId", "PrerequisiteNodeId")
+                        .HasPrincipalKey("PathVersionId", "Id")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Node");
+
+                    b.Navigation("PrerequisiteNode");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathStage", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.PathVersion", "PathVersion")
+                        .WithMany("Stages")
+                        .HasForeignKey("PathVersionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("PathVersion");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathTemplate", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.PathVersion", "CurrentPublishedVersion")
+                        .WithMany()
+                        .HasForeignKey("Id", "CurrentPublishedVersionId")
+                        .HasPrincipalKey("TemplateId", "Id")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("CurrentPublishedVersion");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathVersion", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.PathTemplate", "Template")
+                        .WithMany("Versions")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Template");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>
@@ -1312,7 +1655,7 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("AttemptId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("EnglishHub.Domain.DailyTask", null)
+                    b.HasOne("EnglishHub.Domain.DailyTask", "DailyTask")
                         .WithOne()
                         .HasForeignKey("EnglishHub.Domain.TaskCompletion", "DailyTaskId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -1322,6 +1665,8 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("LessonProgressId")
                         .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("DailyTask");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
@@ -1396,6 +1741,26 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("EnglishHub.Domain.ContentVersion", b =>
                 {
                     b.Navigation("Groups");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathNode", b =>
+                {
+                    b.Navigation("Prerequisites");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathStage", b =>
+                {
+                    b.Navigation("Nodes");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathTemplate", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.PathVersion", b =>
+                {
+                    b.Navigation("Stages");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.Question", b =>

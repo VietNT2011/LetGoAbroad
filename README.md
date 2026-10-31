@@ -43,6 +43,7 @@ Mật khẩu local demo: `EnglishHub@2026`. Nút demo trên trang đăng nhập 
 ## Có thể thử ngay
 
 1. Đăng nhập demo, vào Lộ trình, chọn bắt đầu từ căn bản hoặc làm placement.
+   Enrollment mới ghim bản lộ trình đã publish. Người học cũ chọn **Áp dụng mẫu lộ trình**; lịch ngày đang có được giữ. Mẫu Foundation có 3 stage, 14 bài/quiz và 4 mốc practice, mở khóa theo bằng chứng hoàn thành. CMS hỗ trợ draft JSON, kiểm tra DAG và publish version mới; xem [lộ trình có phiên bản](docs/paths.md).
 2. Mở bài, đọc nội dung Anh–Việt, làm quiz cuối bài, quay lại dashboard và refresh. Tiến độ lấy từ bằng chứng đã lưu.
 3. Chọn mini test hoặc practice theo Part/số câu. Preview hiển thị số câu thật vì nhóm câu được giữ nguyên.
 4. Chọn đáp án, xem trạng thái autosave, nộp bài và đọc lời giải. Mở hai tab có thể thử ETag conflict; submit lặp không tạo kết quả thứ hai.

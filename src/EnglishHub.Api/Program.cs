@@ -55,12 +55,14 @@ if (app.Configuration.GetValue<bool>("Database:Initialize"))
         await DemoAssessmentSeed.Ensure(db);
         await DemoFoundationSeed.Ensure(db);
         await DemoFillBlankSeed.Ensure(db);
+        await DemoPathSeed.Ensure(db);
     }
 }
 app.MapIdentity();
 app.MapContent();
 app.MapAssessment();
 app.MapLearning();
+app.MapPaths();
 app.MapMedia();
 app.MapHealthChecks("/health/live");
 app.MapGet("/health/ready", async (HubDbContext db, CancellationToken ct) => await db.Database.CanConnectAsync(ct) ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));

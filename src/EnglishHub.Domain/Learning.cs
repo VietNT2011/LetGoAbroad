@@ -11,6 +11,13 @@ public sealed class Enrollment : VersionedEntity
     public int RuleVersion { get; set; } = 1;
     public int PlanRevision { get; set; } = 1;
     public DateTimeOffset CreatedAt { get; set; }
+    public Guid? PathVersionId { get; set; }
+    public PathVersion? PathVersion { get; set; }
+    public Guid? PlacementAttemptId { get; set; }
+    public string SelectionReason { get; set; } = "legacy";
+    public DateOnly? PathStartedOn { get; set; }
+    public string? PathTimeZoneId { get; set; }
+    public string? PathStudyDays { get; set; }
 }
 public sealed class DailyTask : VersionedEntity
 {
@@ -26,6 +33,11 @@ public sealed class DailyTask : VersionedEntity
     public string ReasonText { get; set; } = "";
     public string Status { get; set; } = "pending";
     public DateTimeOffset CreatedAt { get; set; }
+    public Guid? PathVersionId { get; set; }
+    public Guid? PathNodeId { get; set; }
+    public PathNode? PathNode { get; set; }
+    public Guid? SourceTaskId { get; set; }
+    public string? TimeZoneId { get; set; }
 }
 public sealed class LessonProgress : VersionedEntity
 {
@@ -37,6 +49,7 @@ public sealed class LessonProgress : VersionedEntity
 public sealed class TaskCompletion
 {
     public Guid DailyTaskId { get; set; }
+    public DailyTask DailyTask { get; set; } = null!;
     public Guid? LessonProgressId { get; set; }
     public Guid? AttemptId { get; set; }
     public DateTimeOffset CompletedAt { get; set; }

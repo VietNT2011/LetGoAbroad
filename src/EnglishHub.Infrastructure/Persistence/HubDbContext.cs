@@ -41,6 +41,7 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
         b.Entity<DevMail>().HasIndex(x => new { x.Recipient, x.CreatedAt });
         ConfigureAssessment(b);
         ConfigureLearning(b);
+        ConfigurePaths(b);
         ConfigureReview(b);
         ConfigureCommunity(b);
         ConfigureOperations(b);
@@ -59,6 +60,7 @@ public sealed partial class HubDbContext(DbContextOptions<HubDbContext> options)
 
     partial void ConfigureAssessment(ModelBuilder b);
     partial void ConfigureLearning(ModelBuilder b);
+    partial void ConfigurePaths(ModelBuilder b);
     partial void ConfigureReview(ModelBuilder b);
     partial void ConfigureCommunity(ModelBuilder b);
     partial void ConfigureOperations(ModelBuilder b);

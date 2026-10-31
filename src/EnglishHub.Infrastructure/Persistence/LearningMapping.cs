@@ -26,7 +26,7 @@ public sealed partial class HubDbContext
         b.Entity<LessonProgress>().HasOne(x => x.ContentVersion).WithMany().HasForeignKey(x => x.ContentVersionId);
         b.Entity<TaskCompletion>().HasKey(x => x.DailyTaskId);
         b.Entity<TaskCompletion>().Property(x => x.TimeZoneId).HasMaxLength(80);
-        b.Entity<TaskCompletion>().HasOne<DailyTask>().WithOne().HasForeignKey<TaskCompletion>(x => x.DailyTaskId);
+        b.Entity<TaskCompletion>().HasOne(x => x.DailyTask).WithOne().HasForeignKey<TaskCompletion>(x => x.DailyTaskId);
         b.Entity<TaskCompletion>().HasOne<LessonProgress>().WithMany().HasForeignKey(x => x.LessonProgressId);
         b.Entity<TaskCompletion>().HasOne<Attempt>().WithMany().HasForeignKey(x => x.AttemptId);
         b.Entity<TaskCompletion>().ToTable(t => t.HasCheckConstraint("CK_TaskCompletion_OneSource", "([LessonProgressId] IS NOT NULL AND [AttemptId] IS NULL) OR ([LessonProgressId] IS NULL AND [AttemptId] IS NOT NULL)"));

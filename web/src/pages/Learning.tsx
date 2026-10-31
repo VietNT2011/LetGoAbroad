@@ -13,6 +13,11 @@ import { api, post, type Content } from "../api";
 import { ErrorNotice, Loading, useResource } from "../hooks";
 import { useAuth } from "../Auth";
 import "./learning.css";
+import {
+  PathTimeline,
+  type PathPlan,
+  type PathTemplateSummary,
+} from "./PathTimeline";
 export type DashboardData = {
   localDate: string;
   timeZoneId: string;
@@ -32,6 +37,9 @@ export type DashboardData = {
     status: string;
     reasonText: string;
     reasonCode: string;
+    activeAttemptId: string | null;
+    carriedFromPreviousDate: boolean;
+    localDate: string;
   }[];
   statistics: {
     lessonsCompleted: number;
@@ -96,9 +104,11 @@ export function TodayPanel() {
           {data.tasks.map((task, i) => (
             <Link
               to={
-                task.kind === "lesson"
-                  ? `/learn/${task.contentVersionId}`
-                  : `/tests/${task.contentVersionId}`
+                task.activeAttemptId
+                  ? `/attempts/${task.activeAttemptId}`
+                  : task.kind === "lesson"
+                    ? `/learn/${task.contentVersionId}`
+                    : `/tests/${task.contentVersionId}`
               }
               className={`daily-task ${task.status}`}
               key={task.id}
@@ -118,6 +128,12 @@ export function TodayPanel() {
                   ) : null}
                 </h3>
                 <p>{task.reasonText}</p>
+                {task.carriedFromPreviousDate ? (
+                  <small>
+                    Đang tiếp tục nhiệm vụ từ {task.localDate}; thời hạn bài làm
+                    vẫn do server quyết định.
+                  </small>
+                ) : null}
               </div>
               <span className="task-time">
                 <Clock3 size={13} />
@@ -146,17 +162,27 @@ type PathLesson = {
 };
 export function PathsPage() {
   const dashboard = useResource<DashboardData>("/learning/dashboard");
-  const path = useResource<PathLesson[]>("/learning/path");
+  const plan = useResource<PathPlan>("/learning/path-plan");
+  const templates = useResource<PathTemplateSummary[]>("/learning/templates");
+  const path = useResource<PathLesson[]>(
+    plan.data?.legacy ? "/learning/path" : null,
+  );
   const catalog = useResource<Content[]>("/catalog");
   const [error, setError] = useState<Error>();
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const placementCommand = useRef(crypto.randomUUID());
+  const adoptionCommand = useRef(crypto.randomUUID());
+  const [selectedTemplate, setSelectedTemplate] = useState("");
   const start = async () => {
     setBusy(true);
     try {
-      await post("/learning/enrollment", { startFromBasics: true });
+      await post("/learning/enrollment", {
+        startFromBasics: true,
+        pathVersionId: selectedTemplate || null,
+      });
       dashboard.reload();
+      plan.reload();
     } catch (e) {
       setError(e as Error);
     } finally {
@@ -188,7 +214,29 @@ export function PathsPage() {
       await post("/learning/enrollment", {
         startFromBasics: false,
         placementAttemptId: form.get("attemptId"),
+        pathVersionId: selectedTemplate || null,
       });
+      dashboard.reload();
+      plan.reload();
+    } catch (e) {
+      setError(e as Error);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const adopt = async () => {
+    const pathVersionId =
+      selectedTemplate ||
+      templates.data?.find((item) => item.level === "foundation")?.id;
+    if (!pathVersionId) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      await post("/learning/enrollment/adopt-path", {
+        pathVersionId,
+        clientRequestId: adoptionCommand.current,
+      });
+      plan.reload();
       dashboard.reload();
     } catch (e) {
       setError(e as Error);
@@ -196,6 +244,27 @@ export function PathsPage() {
       setBusy(false);
     }
   };
+  const picker = (
+    <label className="path-template-picker">
+      Mẫu đã xuất bản
+      <select
+        value={selectedTemplate}
+        onChange={(e) => {
+          setSelectedTemplate(e.target.value);
+          adoptionCommand.current = crypto.randomUUID();
+        }}
+      >
+        <option value="">
+          Theo gợi ý trình độ / Foundation khi bắt đầu từ căn bản
+        </option>
+        {templates.data?.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.title} · v{item.version} · {item.nodeCount} bước
+          </option>
+        ))}
+      </select>
+    </label>
+  );
   return (
     <>
       <div className="page-heading">
@@ -209,10 +278,18 @@ export function PathsPage() {
         </span>
       </div>
       <ErrorNotice
-        error={error ?? dashboard.error ?? path.error}
+        error={
+          error ??
+          dashboard.error ??
+          path.error ??
+          plan.error ??
+          templates.error
+        }
         retry={() => {
           dashboard.reload();
           path.reload();
+          plan.reload();
+          templates.reload();
         }}
       />
       {dashboard.loading ? (
@@ -225,6 +302,7 @@ export function PathsPage() {
             Bạn có thể xây nền tảng từ đầu hoặc đánh giá trình độ bằng bài mini
             test.
           </p>
+          {picker}
           <div className="button-row">
             <button className="primary" disabled={busy} onClick={start}>
               Bắt đầu từ căn bản <ArrowRight size={15} />
@@ -267,42 +345,69 @@ export function PathsPage() {
                   .replace("_", " ")
                   .toUpperCase()}
               </span>
-              <h2>Từng bước xây nền tảng vững chắc</h2>
+              <h2>{plan.data?.template?.title ?? "Hành trình học hiện tại"}</h2>
               <p>
                 Mục tiêu {dashboard.data.enrollment.targetScore} ·{" "}
                 {dashboard.data.enrollment.minutesPerDay} phút/ngày ·{" "}
                 {dashboard.data.timeZoneId}
+                {plan.data?.template
+                  ? ` · Mẫu v${plan.data.template.version} đã ghim · Ngày học ${plan.data.studyDay}`
+                  : " · Chưa ghim mẫu lộ trình"}
               </p>
             </div>
             <span>
-              {path.data?.filter((x) => x.completed).length ?? 0} /{" "}
-              {path.data?.length ?? 0} bài
+              {plan.data?.template
+                ? `${plan.data.nodes.filter((node) => node.completed).length} / ${plan.data.nodes.length} bước`
+                : `${path.data?.filter((x) => x.completed).length ?? 0} / ${path.data?.length ?? 0} bài`}
             </span>
           </div>
-          <div className="path-list">
-            {path.data?.map((lesson, i) => (
-              <Link
-                to={`/learn/${lesson.id}`}
-                className={`path-node ${lesson.completed ? "completed" : ""}`}
-                key={lesson.id}
-              >
-                <span className="path-dot">
-                  {lesson.completed ? (
-                    <CheckCircle2 size={22} />
-                  ) : (
-                    String(i + 1).padStart(2, "0")
-                  )}
-                </span>
-                <div>
-                  <span className="eyebrow">{lesson.skill.toUpperCase()}</span>
-                  <h3>{lesson.title}</h3>
-                  <p>{lesson.summary}</p>
-                </div>
-                <span className="task-time">{lesson.minutes} phút</span>
-                <ArrowRight size={18} />
-              </Link>
-            ))}
-          </div>
+          {plan.loading ? (
+            <Loading />
+          ) : plan.data?.template ? (
+            <PathTimeline plan={plan.data} />
+          ) : (
+            <>
+              {plan.data?.legacy && templates.data?.length ? (
+                <section className="path-adoption">
+                  <h3>Chuyển sang mẫu có phiên bản</h3>
+                  <p>
+                    Nhiệm vụ hôm nay được giữ nguyên. Các ngày chưa có nhiệm vụ
+                    sẽ dùng mẫu đã ghim; tiến độ bài đã học vẫn được giữ.
+                  </p>
+                  {picker}
+                  <button className="primary" onClick={adopt} disabled={busy}>
+                    {busy ? "Đang áp dụng…" : "Áp dụng mẫu lộ trình"}
+                  </button>
+                </section>
+              ) : null}
+              <div className="path-list">
+                {path.data?.map((lesson, i) => (
+                  <Link
+                    to={`/learn/${lesson.id}`}
+                    className={`path-node ${lesson.completed ? "completed" : ""}`}
+                    key={lesson.id}
+                  >
+                    <span className="path-dot">
+                      {lesson.completed ? (
+                        <CheckCircle2 size={22} />
+                      ) : (
+                        String(i + 1).padStart(2, "0")
+                      )}
+                    </span>
+                    <div>
+                      <span className="eyebrow">
+                        {lesson.skill.toUpperCase()}
+                      </span>
+                      <h3>{lesson.title}</h3>
+                      <p>{lesson.summary}</p>
+                    </div>
+                    <span className="task-time">{lesson.minutes} phút</span>
+                    <ArrowRight size={18} />
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
         </>
       )}
     </>
