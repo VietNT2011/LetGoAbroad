@@ -3,6 +3,7 @@ using EnglishHub.Application;
 using EnglishHub.Application.Learning;
 using EnglishHub.Domain;
 using EnglishHub.Infrastructure.Content;
+using EnglishHub.Infrastructure.Learning;
 using EnglishHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace EnglishHub.Infrastructure.Assessment;
@@ -17,7 +18,7 @@ public sealed record ActiveItem(Guid Id, int Order, string Prompt, string Stimul
 public sealed record AttemptView(Guid Id, Guid ContentVersionId, string Title, string Mode, bool IsFixture, string Status, DateTimeOffset StartedAt, DateTimeOffset DeadlineAt, DateTimeOffset ServerNow, ActiveItem[] Items, DateTimeOffset? ListeningDeadlineAt, string Section);
 
 /// <summary>VI: Autosave, submit và expiry dùng cùng khóa attempt. EN: Autosave, manual submission and expiry serialize on the same attempt lock.</summary>
-public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock)
+public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts receipts, ContentService content, IClock clock, MistakeService mistakes)
 {
     private IQueryable<Attempt> Full => db.Attempts.Include(x => x.ContentVersion).Include(x => x.Result).Include(x => x.Items).ThenInclude(x => x.GradingKey);
 
@@ -139,6 +140,7 @@ public sealed class AssessmentService(HubDbContext db, Transactions tx, Receipts
         };
         a.Status = AttemptStatus.Graded; a.Result = result;
         db.OutboxEvents.Add(new OutboxEvent { Type = "assessment.graded", AggregateId = id, OccurredAt = now, PayloadJson = JsonSerializer.Serialize(new { userId = user, attemptId = id, mode = a.Mode, isFixture = a.ContentVersion.IsFixture }) });
+        await mistakes.Record(user, a);
         receipts.Save(user, scope, input.ClientRequestId, hash, id, result);
         return result;
     });

@@ -708,6 +708,13 @@ export function ResultPage() {
             <span className="eyebrow">EVERY MISTAKE IS A STEP FORWARD</span>
             <h1>Bạn đã tiến thêm một bước.</h1>
             <p>{data.title}</p>
+            {data.mode === "mistake_review" ? (
+              <p className="notice">
+                Kết quả phiên ôn riêng · không cộng vào điểm mock, thống kê kỹ
+                năng hoặc tiến độ bài gốc. Chỉ câu đã chọn trong sổ được cập
+                nhật trạng thái ôn.
+              </p>
+            ) : null}
             <div className="score-row">
               <b>
                 {data.result.correctCount}

@@ -54,12 +54,14 @@ The packaged read-only comparison endpoint matched the existing recent-evidence 
 
 The [versioned card editor](card-editing.md) adds nine relational cases and six frontend cases on **18/11/2026**. The complete local suites passed282 SQLite/288 SQL-media and54 frontend cases, with no failures/skips; production TypeScript/Vite build passed. Reviews retain their original text version, real edits restart scheduling, no-op edits preserve it, stale/concurrent commands cannot rate unseen new text, and duplicate text is rejected without merging histories. The migration binds previously immutable card text/reviews to version1. Native browser verification was not used, following the user's preference. Runtime upgrade preservation is checked separately in the local handover.
 
+The [mistake notebook](mistakes.md) adds fourteen relational cases and six frontend cases on **18/11/2026**. Both complete local profiles passed296 SQLite/302 SQL-media cases, with60 frontend cases and a successful production build. Coverage includes original/blank/typed sources, complete frozen context and archival, selected-target-only updates, separate recall scores, exact due boundaries,25-hour local dates, mastery/reopening, deadline replay, competing starts/imports, bounded historical batches/pages, older-history reconciliation and owner/CSRF/composite-FK boundaries. The schema adds an empty notebook/target/processed-marker index; historical import is an explicit command, not an automatic migration or GET side effect. No native GUI was used.
+
 | Check | Observed result |
 |---|---|
-| `scripts/test.ps1 -SqlServer -Storage` | **288 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
-| `scripts/test.ps1` | **282 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
+| `scripts/test.ps1 -SqlServer -Storage` | **302 passed, 0 failed, 0 skipped**; real SQL Server, Azurite, ffprobe and FFmpeg |
+| `scripts/test.ps1` | **296 passed, 0 failed, 0 skipped**; the six Storage-category cases are excluded by the selected profile |
 | `dotnet restore EnglishHub.slnx --locked-mode` | Passed in the pinned Linux SDK |
-| `npm --prefix web test` | **54 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment, skill-sample comparison and card-editor contracts |
+| `npm --prefix web test` | **60 passed, 0 failed**; simulated DOM/transport session, focus, activity lifecycle, media acknowledgment, skill-sample comparison, card-editor and mistake-notebook contracts |
 | `npm --prefix web run build` | Passed; TypeScript and Vite production output |
 | `npm audit --omit=dev` | 0 production dependency advisories at this checkpoint |
 | `npm --prefix web run audit:ci` | Passed with the documented dev-only picomatch exception; 5 propagated high package findings remain; see [dependency record](frontend-dependencies.md) |

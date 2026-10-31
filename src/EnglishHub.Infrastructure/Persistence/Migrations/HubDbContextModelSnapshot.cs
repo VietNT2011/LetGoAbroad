@@ -1127,6 +1127,103 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                     b.ToTable("MediaAssets");
                 });
 
+            modelBuilder.Entity("EnglishHub.Domain.MistakeItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CorrectReviewDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CycleTimeZoneId")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<DateOnly?>("LastCorrectDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("LastEventAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("LastWrongAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("NextReviewAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SourceAttemptItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("WrongCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceAttemptItemId", "QuestionId");
+
+                    b.HasIndex("UserId", "QuestionId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "Status", "NextReviewAt", "Id");
+
+                    b.ToTable("MistakeItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_Mistake_Values", "[WrongCount] > 0 AND [CorrectReviewDays] >= 0 AND [CorrectReviewDays] <= 2 AND (([Status] = 'learning' AND [NextReviewAt] IS NOT NULL) OR ([Status] = 'mastered' AND [NextReviewAt] IS NULL AND [CorrectReviewDays] = 2))");
+                        });
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MistakeProcessedAttempt", b =>
+                {
+                    b.Property<Guid>("AttemptId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("AttemptId");
+
+                    b.ToTable("MistakeProcessedAttempts");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MistakeReviewTarget", b =>
+                {
+                    b.Property<Guid>("AttemptItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MistakeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("AttemptItemId");
+
+                    b.HasIndex("AttemptItemId", "QuestionId");
+
+                    b.HasIndex("MistakeId", "UserId", "QuestionId");
+
+                    b.ToTable("MistakeReviewTargets");
+                });
+
             modelBuilder.Entity("EnglishHub.Domain.OutboxEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2322,6 +2419,54 @@ namespace EnglishHub.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MistakeItem", b =>
+                {
+                    b.HasOne("EnglishHub.Infrastructure.Persistence.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.AttemptItem", "SourceItem")
+                        .WithMany()
+                        .HasForeignKey("SourceAttemptItemId", "QuestionId")
+                        .HasPrincipalKey("Id", "QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("SourceItem");
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MistakeProcessedAttempt", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.Attempt", null)
+                        .WithMany()
+                        .HasForeignKey("AttemptId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EnglishHub.Domain.MistakeReviewTarget", b =>
+                {
+                    b.HasOne("EnglishHub.Domain.AttemptItem", "Item")
+                        .WithMany()
+                        .HasForeignKey("AttemptItemId", "QuestionId")
+                        .HasPrincipalKey("Id", "QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("EnglishHub.Domain.MistakeItem", "Mistake")
+                        .WithMany()
+                        .HasForeignKey("MistakeId", "UserId", "QuestionId")
+                        .HasPrincipalKey("Id", "UserId", "QuestionId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("Mistake");
                 });
 
             modelBuilder.Entity("EnglishHub.Domain.PathChoiceRevision", b =>

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using EnglishHub.Infrastructure.Assessment;
+using EnglishHub.Infrastructure.Learning;
 using EnglishHub.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 namespace EnglishHub.Api.Endpoints;
@@ -9,6 +10,9 @@ public static class AssessmentEndpoints
     public static void MapAssessment(this WebApplication app)
     {
         var group = app.MapGroup("/api/v1/attempts").RequireAuthorization().WithTags("Assessment");
+        app.MapGet("/api/v1/me/mistakes", (ClaimsPrincipal user, MistakeService service, string status = "learning", bool dueOnly = false, int? part = null, string? skill = null, int offset = 0) => service.List(user.UserId(), status, dueOnly, part, skill, offset)).RequireAuthorization().WithTags("Review");
+        app.MapPost("/api/v1/me/mistakes/import-history", (MistakeCommand input, ClaimsPrincipal user, MistakeService service) => service.Import(user.UserId(), input)).RequireAuthorization().WithTags("Review");
+        app.MapPost("/api/v1/me/mistakes/{id:guid}/review", async (Guid id, MistakeCommand input, ClaimsPrincipal user, MistakeService service, AssessmentService assessment) => await assessment.Read(user.UserId(), await service.Start(user.UserId(), id, input))).RequireAuthorization().WithTags("Review");
         group.MapPost("/", (StartAttempt input, ClaimsPrincipal user, AssessmentService service) => service.Start(user.UserId(), input));
         group.MapPost("/preview", (StartAttempt input, AssessmentService service) => service.Preview(input));
         app.MapGet("/api/v1/tests/{id:guid}/configuration", async (Guid id, HubDbContext db) =>
